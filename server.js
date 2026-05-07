@@ -171,6 +171,6 @@ app.get('/', (req, res) => res.redirect('/index.html'));
 
 // ── Démarrage ─────────────────────────────────────────────────────
 app.listen(PORT, () => {
-  console.log(`InnovaSpray Chantier — http://localhost:${PORT}`);
-  console.log(`Base de données       — ${DB_PATH}`);
+  console.log(`InnovaSpray Chantier v2 — http://localhost:${PORT}`);
+  console.log(`Base de données        — ${DB_PATH}`);
 });
