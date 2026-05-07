@@ -1,0 +1,1569 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Guide n8n + Jobber — InnovaSpray Québec</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bleu:        #0170B9;
+      --bleu-clair:  #1A8FD1;
+      --bleu-light:  #E3F2FD;
+      --orange:      #FF6600;
+      --orange-bg:   #FFF3E0;
+      --gris:        #F4F6F9;
+      --bordure:     #D0D7E3;
+      --texte:       #1A1A2E;
+      --vert:        #2E7D32;
+      --vert-bg:     #E8F5E9;
+      --violet:      #6A1B9A;
+      --violet-bg:   #F3E5F5;
+      --rouge:       #C62828;
+      --rouge-bg:    #FFEBEE;
+      --n8n:         #EA4B71;
+      --jobber:      #0050A0;
+    }
+
+    body {
+      font-family: 'Montserrat', 'Segoe UI', Arial, sans-serif;
+      background: #F0F4F8;
+      color: var(--texte);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .btn-print {
+      display: block;
+      margin: 18px auto;
+      padding: 10px 30px;
+      background: var(--orange);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .2s;
+    }
+    .btn-print:hover { background: #cc5200; }
+
+    .page {
+      max-width: 1020px;
+      margin: 0 auto 40px;
+      background: #fff;
+      box-shadow: 0 4px 24px rgba(1,112,185,.13);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    /* HEADER */
+    .header {
+      background: linear-gradient(135deg, var(--bleu) 0%, #0d3066 100%);
+      color: #fff;
+      padding: 28px 36px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+    .header-left { display: flex; align-items: center; gap: 18px; }
+    .logo-placeholder {
+      width: 72px; height: 72px;
+      border: 2px dashed rgba(255,255,255,.4);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; color: rgba(255,255,255,.6); text-align: center;
+    }
+    .header h1 { font-size: 20px; font-weight: 700; }
+    .header .subtitle {
+      background: var(--orange); color: #fff; font-size: 12px; font-weight: 700;
+      padding: 3px 12px; border-radius: 4px; display: inline-block; margin-top: 6px;
+    }
+    .header-tools { display: flex; gap: 10px; align-items: center; }
+    .tool-badge {
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      text-align: center;
+    }
+    .tool-badge.n8n { background: var(--n8n); color: #fff; }
+    .tool-badge.jobber { background: #fff; color: var(--jobber); }
+    .tool-badge .plus { color: rgba(255,255,255,.8); font-size: 20px; font-weight: 300; }
+
+    /* BODY */
+    .body { padding: 28px 36px; }
+
+    /* TOC */
+    .toc {
+      background: var(--gris);
+      border: 1px solid var(--bordure);
+      border-radius: 10px;
+      padding: 18px 22px;
+      margin-bottom: 28px;
+    }
+    .toc h3 { font-size: 14px; font-weight: 700; color: var(--bleu); margin-bottom: 10px; }
+    .toc ol { padding-left: 20px; }
+    .toc li { margin-bottom: 4px; }
+    .toc a { color: var(--bleu-clair); font-size: 13px; text-decoration: none; font-weight: 600; }
+    .toc a:hover { text-decoration: underline; }
+
+    /* OVERVIEW */
+    .overview {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+    .ov-card {
+      border-radius: 10px;
+      padding: 14px 12px;
+      text-align: center;
+      border: 1px solid var(--bordure);
+      position: relative;
+    }
+    .ov-card .ov-num {
+      position: absolute;
+      top: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 22px;
+      height: 22px;
+      background: var(--orange);
+      color: #fff;
+      border-radius: 50%;
+      font-size: 11px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .ov-card .ov-icon { font-size: 26px; margin: 6px 0; display: block; }
+    .ov-card .ov-title { font-size: 11px; font-weight: 700; color: var(--bleu); text-transform: uppercase; letter-spacing: .4px; line-height: 1.3; }
+
+    /* SECTION TITLE */
+    .section-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--bleu);
+      margin-bottom: 16px;
+      margin-top: 32px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid var(--bleu);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section-title:first-of-type { margin-top: 0; }
+
+    /* WORKFLOW CARD */
+    .workflow-card {
+      border: 1px solid var(--bordure);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 24px;
+      box-shadow: 0 2px 8px rgba(1,112,185,.07);
+    }
+
+    .workflow-header {
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      color: #fff;
+    }
+    .workflow-header.wf1 { background: linear-gradient(90deg, #0170B9, #1A8FD1); }
+    .workflow-header.wf2 { background: linear-gradient(90deg, #2E7D32, #43A047); }
+    .workflow-header.wf3 { background: linear-gradient(90deg, #6A1B9A, #8E24AA); }
+    .workflow-header.wf4 { background: linear-gradient(90deg, #E65100, #FF6600); }
+    .workflow-header.wf5 { background: linear-gradient(90deg, #C62828, #E53935); }
+
+    .workflow-header .wf-num {
+      width: 36px; height: 36px;
+      background: rgba(255,255,255,.25);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .workflow-header .wf-icon { font-size: 24px; flex-shrink: 0; }
+    .workflow-header h3 { font-size: 16px; font-weight: 700; }
+    .workflow-header p { font-size: 12px; opacity: .88; margin-top: 2px; }
+
+    .workflow-body { padding: 20px; }
+
+    /* FLOW STEPS */
+    .flow-steps {
+      display: flex;
+      align-items: stretch;
+      gap: 0;
+      margin-bottom: 18px;
+      overflow-x: auto;
+    }
+    .flow-step {
+      flex: 1;
+      min-width: 120px;
+      background: var(--gris);
+      border: 1px solid var(--bordure);
+      padding: 12px 10px;
+      text-align: center;
+      position: relative;
+    }
+    .flow-step:first-child { border-radius: 8px 0 0 8px; }
+    .flow-step:last-child { border-radius: 0 8px 8px 0; }
+    .flow-step::after {
+      content: '▶';
+      position: absolute;
+      right: -12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--bleu-clair);
+      font-size: 14px;
+      z-index: 1;
+    }
+    .flow-step:last-child::after { display: none; }
+    .flow-step .step-icon { font-size: 20px; display: block; margin-bottom: 4px; }
+    .flow-step .step-label { font-size: 11px; font-weight: 700; color: var(--bleu); text-transform: uppercase; letter-spacing: .4px; margin-bottom: 2px; }
+    .flow-step .step-desc { font-size: 10px; color: #666; line-height: 1.3; }
+    .flow-step.trigger { background: #E8F4FD; border-color: #90CAF9; }
+    .flow-step.action { background: var(--vert-bg); border-color: #A5D6A7; }
+    .flow-step.output { background: var(--orange-bg); border-color: #FFCC80; }
+
+    /* DETAILS GRID */
+    .details-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 14px;
+      margin-top: 12px;
+    }
+    .detail-box {
+      border-radius: 8px;
+      padding: 14px;
+      border: 1px solid var(--bordure);
+    }
+    .detail-box .db-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .detail-box.trigger-box { background: #E8F4FD; border-color: #90CAF9; }
+    .detail-box.trigger-box .db-title { color: #1565C0; }
+    .detail-box.nodes-box { background: var(--vert-bg); border-color: #A5D6A7; }
+    .detail-box.nodes-box .db-title { color: var(--vert); }
+    .detail-box.fields-box { background: var(--orange-bg); border-color: #FFCC80; }
+    .detail-box.fields-box .db-title { color: var(--orange); }
+
+    .code-tag {
+      display: inline-block;
+      background: rgba(0,0,0,.07);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      margin: 2px 2px 2px 0;
+      border: 1px solid rgba(0,0,0,.1);
+      white-space: nowrap;
+    }
+    .detail-box ul { padding-left: 16px; }
+    .detail-box li { font-size: 12px; margin-bottom: 4px; line-height: 1.4; }
+
+    /* SETUP SECTION */
+    .setup-steps { counter-reset: setup-step; }
+    .setup-step {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 18px;
+      align-items: flex-start;
+    }
+    .setup-step-num {
+      counter-increment: setup-step;
+      width: 32px; height: 32px;
+      background: var(--bleu);
+      color: #fff;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .setup-step-content h4 { font-size: 14px; font-weight: 700; color: var(--bleu); margin-bottom: 4px; }
+    .setup-step-content p { font-size: 13px; color: #444; line-height: 1.6; }
+    .setup-step-content code {
+      background: #1A1A2E;
+      color: #58E6D9;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+    }
+
+    /* CODE BLOCK */
+    .code-block {
+      background: #1A1A2E;
+      color: #ACE;
+      padding: 16px 18px;
+      border-radius: 8px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      line-height: 1.7;
+      overflow-x: auto;
+      margin: 8px 0;
+    }
+    .code-block .key { color: #58E6D9; }
+    .code-block .val { color: #FFD54F; }
+    .code-block .comment { color: #78909C; }
+    .code-block .str { color: #A5D6A7; }
+
+    /* WEBHOOK EVENTS TABLE */
+    .events-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      margin-bottom: 12px;
+    }
+    .events-table thead tr { background: var(--bleu); color: #fff; }
+    .events-table thead th { padding: 10px 12px; text-align: left; font-size: 12px; }
+    .events-table tbody tr:nth-child(even) { background: var(--gris); }
+    .events-table tbody td { padding: 10px 12px; border-bottom: 1px solid var(--bordure); vertical-align: top; }
+
+    /* CALLOUT BOXES */
+    .callout {
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin: 12px 0;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+    .callout .callout-icon { font-size: 20px; flex-shrink: 0; }
+    .callout p { font-size: 13px; line-height: 1.6; }
+    .callout.info { background: var(--bleu-light); border: 1px solid #90CAF9; }
+    .callout.warning { background: var(--orange-bg); border: 1px solid #FFCC80; }
+    .callout.tip { background: var(--vert-bg); border: 1px solid #A5D6A7; }
+
+    /* QUICK REF TABLE */
+    .quick-ref {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 12px;
+    }
+    .qr-card {
+      border: 1px solid var(--bordure);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .qr-card .qr-header {
+      padding: 8px 14px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+    }
+    .qr-card.n8n-card .qr-header { background: var(--n8n); color: #fff; }
+    .qr-card.jobber-card .qr-header { background: var(--jobber); color: #fff; }
+    .qr-card .qr-body { padding: 12px 14px; }
+    .qr-card li { font-size: 12px; margin-bottom: 5px; padding-left: 2px; }
+    .qr-card ul { padding-left: 16px; }
+
+    /* ECOSYSTEM APPS */
+    .apps-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+    .app-card {
+      border-radius: 12px;
+      border: 1px solid var(--bordure);
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(1,112,185,.07);
+    }
+    .app-card-header {
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #fff;
+      font-weight: 700;
+      font-size: 14px;
+    }
+    .app-card-header .app-icon { font-size: 22px; flex-shrink: 0; }
+    .app-card-header .app-name { font-size: 14px; font-weight: 700; }
+    .app-card-header .app-role { font-size: 10px; font-weight: 600; opacity: .85; text-transform: uppercase; letter-spacing: .5px; }
+    .app-card-body { padding: 12px 14px; background: #fff; }
+    .app-card-body ul { padding-left: 16px; }
+    .app-card-body li { font-size: 11.5px; margin-bottom: 4px; line-height: 1.4; color: #444; }
+    .app-card-body .app-link { font-size: 11px; color: var(--bleu-clair); font-weight: 600; margin-top: 8px; display: block; }
+    .app-card-body .app-plan { display: inline-block; background: var(--vert-bg); border: 1px solid #A5D6A7; border-radius: 4px; padding: 2px 8px; font-size: 10px; font-weight: 700; color: var(--vert); margin-top: 6px; }
+    .app-card-body .app-plan.paid { background: var(--orange-bg); border-color: #FFCC80; color: var(--orange); }
+
+    .app-h-jobber   { background: linear-gradient(90deg, #0050A0, #0170B9); }
+    .app-h-n8n      { background: linear-gradient(90deg, #C0004C, #EA4B71); }
+    .app-h-netlify  { background: linear-gradient(90deg, #006B88, #00A8C4); }
+    .app-h-gmail    { background: linear-gradient(90deg, #B23121, #EA4335); }
+    .app-h-gsheets  { background: linear-gradient(90deg, #0F7238, #1E8E3E); }
+    .app-h-twilio   { background: linear-gradient(90deg, #C3284B, #F22F46); }
+    .app-h-gcal     { background: linear-gradient(90deg, #1557A0, #1A73E8); }
+    .app-h-slack    { background: linear-gradient(90deg, #2F185C, #4A154B); }
+
+    /* FOOTER */
+    .doc-footer { background: var(--bleu); color: rgba(255,255,255,.8); text-align: center; padding: 12px; font-size: 11px; }
+
+    @media print {
+      body { background: #fff; }
+      .btn-print { display: none !important; }
+      .page { box-shadow: none; border-radius: 0; max-width: 100%; margin: 0; }
+      .body { padding: 20px 28px; }
+      .flow-steps { flex-wrap: wrap; }
+    }
+  </style>
+</head>
+<body>
+
+<button class="btn-print no-print" onclick="window.print()">🖨 Imprimer / Sauvegarder PDF</button>
+
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-left">
+      <img src="https://innovaspray.com/wp-content/uploads/2025/09/organization_logo_par.jpg" width="68" height="68" style="border-radius:8px;object-fit:contain;background:white;padding:4px;" alt="InnovaSpray Québec">
+      <div>
+        <h1>INNOVASPRAY QUÉBEC</h1>
+        <div class="subtitle">GUIDE D'AUTOMATISATION — n8n + JOBBER CRM</div>
+      </div>
+    </div>
+    <div class="header-tools">
+      <div class="tool-badge n8n">n8n</div>
+      <span style="color:rgba(255,255,255,.6);font-size:22px;">+</span>
+      <div class="tool-badge jobber">Jobber</div>
+    </div>
+  </div>
+
+  <div class="body">
+
+    <!-- TABLE DES MATIÈRES -->
+    <div class="toc">
+      <h3>📑 Table des matières</h3>
+      <ol>
+        <li><a href="#overview">Vue d'ensemble des 5 automatisations</a></li>
+        <li><a href="#wf1">Workflow 1 — Bon de travail → Email au chef d'équipe</a></li>
+        <li><a href="#wf2">Workflow 2 — Soumission approuvée → Création de job + SMS</a></li>
+        <li><a href="#wf3">Workflow 3 — Travail complété → Sondage de satisfaction</a></li>
+        <li><a href="#wf4">Workflow 4 — Stock bas → Bon de commande fournisseur</a></li>
+        <li><a href="#wf6">Workflow 5 — Soumission de fiches → Email au bureau ⭐ NOUVEAU</a></li>
+        <li><a href="#webhooks">Événements webhook Jobber à surveiller</a></li>
+        <li><a href="#setup">Configuration de la clé API Jobber</a></li>
+        <li><a href="#quickref">Référence rapide — Champs API Jobber</a></li>
+        <li><a href="#ecosystem">Applications &amp; services utilisés</a></li>
+      </ol>
+    </div>
+
+    <!-- OVERVIEW -->
+    <div id="overview" class="section-title">🔄 Vue d'ensemble des automatisations</div>
+
+    <div class="callout info">
+      <span class="callout-icon">ℹ</span>
+      <p>Ces 5 automatisations connectent votre CRM <strong>Jobber</strong> à <strong>n8n</strong> (outil d'automatisation no-code) pour éliminer les tâches manuelles répétitives. Chaque workflow se déclenche automatiquement sur un événement Jobber et exécute une série d'actions sans intervention humaine.</p>
+    </div>
+
+    <div class="overview" style="margin-top:16px;grid-template-columns:repeat(3,1fr);max-width:100%;">
+      <div class="ov-card">
+        <div class="ov-num">1</div>
+        <span class="ov-icon">📧</span>
+        <div class="ov-title">Bon de travail → Email chef d'équipe</div>
+      </div>
+      <div class="ov-card">
+        <div class="ov-num">2</div>
+        <span class="ov-icon">✅</span>
+        <div class="ov-title">Approbation → Job créé + SMS</div>
+      </div>
+      <div class="ov-card">
+        <div class="ov-num">3</div>
+        <span class="ov-icon">⭐</span>
+        <div class="ov-title">Fin de job → Sondage satisfaction</div>
+      </div>
+      <div class="ov-card">
+        <div class="ov-num">4</div>
+        <span class="ov-icon">📦</span>
+        <div class="ov-title">Stock bas → Bon de commande</div>
+      </div>
+      <div class="ov-card" style="border-color:#EA4B71;background:#FFF0F4;">
+        <div class="ov-num" style="background:#EA4B71;">5</div>
+        <span class="ov-icon">📤</span>
+        <div class="ov-title" style="color:#C62828;">Fiches chantier → Email bureau ⭐</div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════ WORKFLOW 1 -->
+    <div id="wf1" class="section-title">📋 Workflow 1 — Bon de travail</div>
+
+    <div class="workflow-card">
+      <div class="workflow-header wf1">
+        <div class="wf-num">1</div>
+        <div class="wf-icon">📋</div>
+        <div>
+          <h3>Nouveau job Jobber → Envoi automatique du bon de travail au chef d'équipe</h3>
+          <p>Dès qu'un job est créé dans Jobber, n8n envoie automatiquement le bon de travail par email au chef d'équipe assigné : tâches, couleurs, adresse du chantier et instructions.</p>
+        </div>
+      </div>
+      <div class="workflow-body">
+        <div class="flow-steps">
+          <div class="flow-step trigger">
+            <span class="step-icon">🔔</span>
+            <div class="step-label">Déclencheur</div>
+            <div class="step-desc">Jobber Webhook<br><em>job.created</em></div>
+          </div>
+          <div class="flow-step">
+            <span class="step-icon">🔍</span>
+            <div class="step-label">Fetch données</div>
+            <div class="step-desc">HTTP Request GET<br>Jobber API<br>/jobs/{id}</div>
+          </div>
+          <div class="flow-step action">
+            <span class="step-icon">📄</span>
+            <div class="step-label">Générer PDF</div>
+            <div class="step-desc">HTML Template<br>bon de travail<br>+ données job</div>
+          </div>
+          <div class="flow-step action">
+            <span class="step-icon">📧</span>
+            <div class="step-label">Email chef</div>
+            <div class="step-desc">SMTP / Gmail<br>→ chef d'équipe</div>
+          </div>
+          <div class="flow-step output">
+            <span class="step-icon">📝</span>
+            <div class="step-label">Logger</div>
+            <div class="step-desc">Google Sheets<br>registre des jobs</div>
+          </div>
+        </div>
+
+        <div class="details-grid">
+          <div class="detail-box trigger-box">
+            <div class="db-title">🔔 Déclencheur Jobber</div>
+            <ul>
+              <li>Événement: <span class="code-tag">job.created</span></li>
+              <li>Méthode: Webhook POST vers n8n</li>
+              <li>Configurer dans Jobber Settings → Developer → Webhooks</li>
+              <li>URL n8n: <span class="code-tag">/webhook/job-created</span></li>
+            </ul>
+          </div>
+          <div class="detail-box nodes-box">
+            <div class="db-title">⚙ Nœuds n8n à utiliser</div>
+            <ul>
+              <li><span class="code-tag">Webhook</span> — Réception de l'événement</li>
+              <li><span class="code-tag">HTTP Request</span> — GET /jobs/{id}</li>
+              <li><span class="code-tag">HTML</span> — Template bon de travail</li>
+              <li><span class="code-tag">Email (SMTP)</span> — Envoi au chef d'équipe</li>
+              <li><span class="code-tag">Google Sheets</span> — Log du job</li>
+            </ul>
+          </div>
+          <div class="detail-box fields-box">
+            <div class="db-title">🏷 Champs API Jobber utilisés</div>
+            <span class="code-tag">job.id</span>
+            <span class="code-tag">job.job_number</span>
+            <span class="code-tag">job.title</span>
+            <span class="code-tag">job.client.name</span>
+            <span class="code-tag">job.property.address</span>
+            <span class="code-tag">job.start_at</span>
+            <span class="code-tag">job.assigned_employees</span>
+            <span class="code-tag">job.line_items</span>
+          </div>
+        </div>
+
+        <div class="code-block" style="margin-top:14px;">
+<span class="comment">// Exemple corps d'email — nœud n8n Email</span>
+<span class="key">À</span>: <span class="str">{{ $json.assigned_employees[0].email }}</span>
+<span class="key">Objet</span>: <span class="str">"📋 Bon de travail #{{ $json.job_number }} — {{ $json.property.address }}"</span>
+<span class="key">Corps</span>: <span class="str">"Bonjour {{ $json.assigned_employees[0].name }},\n\nVoici votre bon de travail
+pour le chantier du {{ $json.start_at }}.\n\nClient : {{ $json.client.name }}
+Adresse : {{ $json.property.address }}\n\nConsultez le bon de travail ci-joint
+pour les tâches, couleurs et instructions."</span>
+<span class="key">PJ</span>: <span class="str">bon_travail_{{ $json.job_number }}.pdf</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════ WORKFLOW 2 -->
+    <div id="wf2" class="section-title">✅ Workflow 2 — Soumission approuvée</div>
+
+    <div class="workflow-card">
+      <div class="workflow-header wf2">
+        <div class="wf-num">2</div>
+        <div class="wf-icon">✅</div>
+        <div>
+          <h3>Soumission approuvée → Création du job Jobber + SMS de bienvenue</h3>
+          <p>Quand le client approuve la soumission, Jobber crée automatiquement le job et n8n envoie un SMS de confirmation au client.</p>
+        </div>
+      </div>
+      <div class="workflow-body">
+        <div class="flow-steps">
+          <div class="flow-step trigger">
+            <span class="step-icon">🔔</span>
+            <div class="step-label">Déclencheur</div>
+            <div class="step-desc">Webhook<br><em>quote_approved</em></div>
+          </div>
+          <div class="flow-step">
+            <span class="step-icon">🔍</span>
+            <div class="step-label">Fetch soumission</div>
+            <div class="step-desc">GET /quotes/{id}<br>Jobber API</div>
+          </div>
+          <div class="flow-step action">
+            <span class="step-icon">🏗</span>
+            <div class="step-label">Créer job</div>
+            <div class="step-desc">POST /jobs<br>Jobber API</div>
+          </div>
+          <div class="flow-step action">
+            <span class="step-icon">📱</span>
+            <div class="step-label">Envoyer SMS</div>
+            <div class="step-desc">Twilio ou<br>Vonage SMS</div>
+          </div>
+          <div class="flow-step output">
+            <span class="step-icon">📅</span>
+            <div class="step-label">Calendrier</div>
+            <div class="step-desc">Google Calendar<br>événement créé</div>
+          </div>
+        </div>
+
+        <div class="details-grid">
+          <div class="detail-box trigger-box">
+            <div class="db-title">🔔 Déclencheur Jobber</div>
+            <ul>
+              <li>Événement: <span class="code-tag">quote.approved</span></li>
+              <li>Payload reçu: objet <span class="code-tag">quote</span> complet</li>
+              <li>Contient: client, adresse, montant, lignes</li>
+              <li>Note: la création du job peut aussi être faite directement dans Jobber via le bouton "Convert to Job"</li>
+            </ul>
+          </div>
+          <div class="detail-box nodes-box">
+            <div class="db-title">⚙ Nœuds n8n à utiliser</div>
+            <ul>
+              <li><span class="code-tag">Webhook</span> — Réception événement</li>
+              <li><span class="code-tag">HTTP Request (GET)</span> — Détails soumission</li>
+              <li><span class="code-tag">HTTP Request (POST)</span> — Créer job Jobber</li>
+              <li><span class="code-tag">Twilio</span> — Envoi SMS client</li>
+              <li><span class="code-tag">Google Calendar</span> — Planification</li>
+              <li><span class="code-tag">Slack/Email</span> — Notif interne équipe</li>
+            </ul>
+          </div>
+          <div class="detail-box fields-box">
+            <div class="db-title">🏷 Champs API Jobber — Créer Job</div>
+            <span class="code-tag">client_id</span>
+            <span class="code-tag">title</span>
+            <span class="code-tag">description</span>
+            <span class="code-tag">property_id</span>
+            <span class="code-tag">start_at</span>
+            <span class="code-tag">end_at</span>
+            <span class="code-tag">instructions</span>
+            <span class="code-tag">line_items</span>
+            <span class="code-tag">assigned_employees</span>
+          </div>
+        </div>
+
+        <div class="code-block" style="margin-top:14px;">
+<span class="comment">// Exemple SMS — nœud Twilio</span>
+<span class="key">To</span>: <span class="str">"{{ $json.client.phone }}"</span>
+<span class="key">Body</span>: <span class="str">"Bonjour {{ $json.client.first_name }}! 🎨 Votre soumission InnovaSpray Québec
+a été approuvée. Votre job #{{ $json.job.job_number }} est confirmé pour le
+{{ $json.job.start_at | formatDate }}. Questions? (514) 555-0100"</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════ WORKFLOW 3 -->
+    <div id="wf3" class="section-title">⭐ Workflow 3 — Travail complété</div>
+
+    <div class="workflow-card">
+      <div class="workflow-header wf3">
+        <div class="wf-num">3</div>
+        <div class="wf-icon">⭐</div>
+        <div>
+          <h3>Job complété → Envoi automatique du sondage de satisfaction</h3>
+          <p>À la fermeture d'un job dans Jobber, un délai de 2h est appliqué puis le sondage rapport_satisfaction.html est envoyé au client par email.</p>
+        </div>
+      </div>
+      <div class="workflow-body">
+        <div class="flow-steps">
+          <div class="flow-step trigger">
+            <span class="step-icon">🔔</span>
+            <div class="step-label">Déclencheur</div>
+            <div class="step-desc">Webhook<br><em>job_completed</em></div>
+          </div>
+          <div class="flow-step">
+            <span class="step-icon">⏳</span>
+            <div class="step-label">Délai 2h</div>
+            <div class="step-desc">Wait node<br>7200 secondes</div>
+          </div>
+          <div class="flow-step action">
+            <span class="step-icon">🔗</span>
+            <div class="step-label">Générer lien</div>
+            <div class="step-desc">Préremplir URL<br>avec données job</div>
+          </div>
+          <div class="flow-step action">
+            <span class="step-icon">📧</span>
+            <div class="step-label">Email sondage</div>
+            <div class="step-desc">Envoi HTML<br>avec lien unique</div>
+          </div>
+          <div class="flow-step output">
+            <span class="step-icon">📊</span>
+            <div class="step-label">Traiter réponse</div>
+            <div class="step-desc">Webhook retour<br>→ Jobber + Sheets</div>
+          </div>
+        </div>
+
+        <div class="details-grid">
+          <div class="detail-box trigger-box">
+            <div class="db-title">🔔 Déclencheur Jobber</div>
+            <ul>
+              <li>Événement: <span class="code-tag">job.completed</span></li>
+              <li>Attendre: <strong>2 heures</strong> (nœud Wait)</li>
+              <li>Vérifier: job bien fermé et non annulé</li>
+              <li>Condition: <span class="code-tag">job.status === 'completed'</span></li>
+            </ul>
+          </div>
+          <div class="detail-box nodes-box">
+            <div class="db-title">⚙ Nœuds n8n à utiliser</div>
+            <ul>
+              <li><span class="code-tag">Webhook</span> — Réception job.completed</li>
+              <li><span class="code-tag">Wait</span> — Délai 2h</li>
+              <li><span class="code-tag">IF</span> — Vérifier statut</li>
+              <li><span class="code-tag">Set</span> — Préparer données email</li>
+              <li><span class="code-tag">Email (HTML)</span> — Sondage</li>
+              <li><span class="code-tag">Webhook (réception)</span> — Réponses sondage</li>
+              <li><span class="code-tag">Google Sheets</span> — Stocker résultats</li>
+            </ul>
+          </div>
+          <div class="detail-box fields-box">
+            <div class="db-title">🏷 Champs API Jobber utilisés</div>
+            <span class="code-tag">job.id</span>
+            <span class="code-tag">job.job_number</span>
+            <span class="code-tag">job.client.name</span>
+            <span class="code-tag">job.client.email</span>
+            <span class="code-tag">job.property.address</span>
+            <span class="code-tag">job.completed_at</span>
+            <span class="code-tag">job.assigned_employees</span>
+            <span class="code-tag">job.total</span>
+          </div>
+        </div>
+
+        <div class="callout tip" style="margin-top:14px;">
+          <span class="callout-icon">💡</span>
+          <p>Le sondage <strong>rapport_satisfaction.html</strong> envoie ses réponses vers un webhook n8n (<code>N8N_WEBHOOK_URL</code>). Dans n8n, créez un second workflow "Satisfaction Survey Response" qui reçoit ces données, les enregistre dans Google Sheets et notifie l'équipe si la note globale est ≤ 3 étoiles.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════ WORKFLOW 4 -->
+    <div id="wf4" class="section-title">📦 Workflow 4 — Alerte stock bas</div>
+
+    <div class="workflow-card">
+      <div class="workflow-header wf4">
+        <div class="wf-num">4</div>
+        <div class="wf-icon">📦</div>
+        <div>
+          <h3>Stock bas → Génération et envoi automatique d'un bon de commande</h3>
+          <p>Chaque matin à 7h, n8n vérifie le stock via Google Sheets ou Jobber et envoie un bon de commande au fournisseur si un produit est sous le seuil minimum.</p>
+        </div>
+      </div>
+      <div class="workflow-body">
+        <div class="flow-steps">
+          <div class="flow-step trigger">
+            <span class="step-icon">⏰</span>
+            <div class="step-label">Déclencheur</div>
+            <div class="step-desc">Cron Job<br>Tous les jours<br>7h00 AM</div>
+          </div>
+          <div class="flow-step">
+            <span class="step-icon">📋</span>
+            <div class="step-label">Lire stock</div>
+            <div class="step-desc">Google Sheets<br>Feuille "Inventaire"</div>
+          </div>
+          <div class="flow-step action">
+            <span class="step-icon">🔍</span>
+            <div class="step-label">Filtrer bas</div>
+            <div class="step-desc">IF: qté &lt; seuil<br>par produit</div>
+          </div>
+          <div class="flow-step action">
+            <span class="step-icon">📄</span>
+            <div class="step-label">Créer BC</div>
+            <div class="step-desc">Template HTML<br>bon de commande</div>
+          </div>
+          <div class="flow-step output">
+            <span class="step-icon">📧</span>
+            <div class="step-label">Email fournisseur</div>
+            <div class="step-desc">Benjamin Moore<br>ou Sherwin-W.</div>
+          </div>
+        </div>
+
+        <div class="details-grid">
+          <div class="detail-box trigger-box">
+            <div class="db-title">⏰ Déclencheur Cron</div>
+            <ul>
+              <li>Type: <span class="code-tag">Cron</span> (planifié)</li>
+              <li>Fréquence: tous les jours à 7h00</li>
+              <li>Expression cron: <span class="code-tag">0 7 * * *</span></li>
+              <li>Fuseau: America/Toronto (EST)</li>
+              <li>Peut aussi se déclencher sur mise à jour Google Sheets</li>
+            </ul>
+          </div>
+          <div class="detail-box nodes-box">
+            <div class="db-title">⚙ Nœuds n8n à utiliser</div>
+            <ul>
+              <li><span class="code-tag">Schedule Trigger</span> — Cron quotidien</li>
+              <li><span class="code-tag">Google Sheets</span> — Lire inventaire</li>
+              <li><span class="code-tag">Filter</span> — Items sous seuil</li>
+              <li><span class="code-tag">IF</span> — Aucun stock bas → stop</li>
+              <li><span class="code-tag">HTML Template</span> — Bon de commande</li>
+              <li><span class="code-tag">Email</span> — Envoyer au fournisseur</li>
+              <li><span class="code-tag">Slack</span> — Notifier gestionnaire</li>
+            </ul>
+          </div>
+          <div class="detail-box fields-box">
+            <div class="db-title">🏷 Colonnes Google Sheets</div>
+            <span class="code-tag">product_name</span>
+            <span class="code-tag">product_code</span>
+            <span class="code-tag">current_qty</span>
+            <span class="code-tag">min_threshold</span>
+            <span class="code-tag">reorder_qty</span>
+            <span class="code-tag">unit_price</span>
+            <span class="code-tag">supplier_email</span>
+            <span class="code-tag">last_order_date</span>
+          </div>
+        </div>
+
+        <div class="code-block" style="margin-top:14px;">
+<span class="comment">// Condition nœud Filter — n8n</span>
+<span class="key">Règle</span>: {{ $json.current_qty }} <span class="str">&lt;=</span> {{ $json.min_threshold }}
+<span class="comment">// Calculer quantité à commander</span>
+<span class="key">reorder_qty</span>: {{ $json.reorder_qty - $json.current_qty }}
+<span class="comment">// Exemple objet bon de commande</span>
+{
+  <span class="key">"fournisseur"</span>: <span class="str">"Benjamin Moore"</span>,
+  <span class="key">"produits"</span>: [{ <span class="key">"code"</span>: <span class="str">"OC-17"</span>, <span class="key">"qte"</span>: 12, <span class="key">"format"</span>: <span class="str">"3.78L"</span> }]
+}
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════ WORKFLOW 5 -->
+    <div id="wf6" class="section-title" style="color:#C62828;border-color:#C62828;">📤 Workflow 5 — Soumission de fiches chantier au bureau ⭐</div>
+
+    <div class="workflow-card" style="border-color:#EA4B71;">
+      <div class="workflow-header" style="background:linear-gradient(90deg,#C62828,#EA4B71);">
+        <div class="wf-num">5</div>
+        <div class="wf-icon">📤</div>
+        <div>
+          <h3>Chef d'équipe soumet une fiche → Email formaté envoyé au bureau</h3>
+          <p>Quand un chef clique "📤 Soumettre au bureau" depuis son cellulaire, n8n reçoit toutes les données du formulaire et vous envoie un email HTML complet avec toutes les informations du chantier.</p>
+        </div>
+      </div>
+      <div class="workflow-body">
+
+        <div class="callout info">
+          <span class="callout-icon">ℹ</span>
+          <p>Ce workflow reçoit les soumissions des 3 documents : <strong>Bon de travail</strong>, <strong>Fiche de chantier</strong> et <strong>Checklist qualité</strong>. Le champ <code>document</code> dans le payload identifie lequel a été soumis. Un seul workflow n8n gère les 3.</p>
+        </div>
+
+        <div class="flow-steps" style="margin-top:16px;">
+          <div class="flow-step trigger">
+            <span class="step-icon">📱</span>
+            <div class="step-label">Chef clique</div>
+            <div class="step-desc">📤 Soumettre<br>au bureau<br>(cellulaire)</div>
+          </div>
+          <div class="flow-step trigger">
+            <span class="step-icon">🌐</span>
+            <div class="step-label">Webhook n8n</div>
+            <div class="step-desc">POST JSON<br>tous les champs<br>du formulaire</div>
+          </div>
+          <div class="flow-step">
+            <span class="step-icon">🔀</span>
+            <div class="step-label">Switch doc</div>
+            <div class="step-desc">Bon de travail?<br>Fiche chantier?<br>Checklist?</div>
+          </div>
+          <div class="flow-step action">
+            <span class="step-icon">📝</span>
+            <div class="step-label">Formater HTML</div>
+            <div class="step-desc">Template email<br>selon le type<br>de document</div>
+          </div>
+          <div class="flow-step output">
+            <span class="step-icon">📧</span>
+            <div class="step-label">Email bureau</div>
+            <div class="step-desc">Gmail / SMTP<br>→ vous</div>
+          </div>
+        </div>
+
+        <!-- ÉTAPES DÉTAILLÉES -->
+        <div style="margin-top:20px;">
+          <div style="font-size:15px;font-weight:700;color:#C62828;margin-bottom:14px;border-bottom:2px solid #FFCDD2;padding-bottom:6px;">
+            ⚙ Configuration pas-à-pas dans n8n
+          </div>
+
+          <div class="setup-steps">
+
+            <div class="setup-step">
+              <div class="setup-step-num" style="background:#C62828;">1</div>
+              <div class="setup-step-content">
+                <h4>Créer un nouveau workflow dans n8n</h4>
+                <p>Dans n8n, cliquez <strong>+ New Workflow</strong>. Nommez-le : <strong>"ISQ — Soumission fiches chantier"</strong>.</p>
+              </div>
+            </div>
+
+            <div class="setup-step">
+              <div class="setup-step-num" style="background:#C62828;">2</div>
+              <div class="setup-step-content">
+                <h4>Nœud 1 — Webhook (déclencheur)</h4>
+                <p>Ajoutez un nœud <strong>Webhook</strong>. Configurez :</p>
+                <div class="code-block" style="margin-top:8px;">
+<span class="key">HTTP Method</span>: <span class="str">POST</span>
+<span class="key">Path</span>: <span class="str">isq-fiches-chantier</span>
+<span class="key">Authentication</span>: <span class="str">None</span>
+<span class="key">Response Mode</span>: <span class="str">Immediately</span>
+<span class="key">Response Code</span>: <span class="val">200</span>
+<span class="key">Response Data</span>: <span class="str">{"status":"ok"}</span>
+                </div>
+                <p style="margin-top:8px;">Copiez l'<strong>URL du webhook</strong> (format : <code>https://votre-n8n.com/webhook/isq-fiches-chantier</code>). C'est cette URL que vous collez dans <strong>index.html → Soumission de fiches au bureau</strong>.</p>
+              </div>
+            </div>
+
+            <div class="setup-step">
+              <div class="setup-step-num" style="background:#C62828;">3</div>
+              <div class="setup-step-content">
+                <h4>Coller l'URL dans index.html</h4>
+                <p>Ouvrez <strong>index.html</strong> sur votre téléphone ou ordinateur. Dans la section <strong>🔗 URLs des Webhooks n8n</strong>, collez l'URL dans le champ <strong>"📤 Soumission de fiches au bureau"</strong>. Cliquez <strong>Enregistrer</strong>. Chaque chef devra faire la même chose sur son téléphone une seule fois.</p>
+                <div class="callout tip" style="margin-top:8px;">
+                  <span class="callout-icon">💡</span>
+                  <p>Le chef peut aussi scanner un QR code de l'URL index.html depuis votre Netlify — il configure ses webhooks une fois et c'est enregistré sur son téléphone.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="setup-step">
+              <div class="setup-step-num" style="background:#C62828;">4</div>
+              <div class="setup-step-content">
+                <h4>Nœud 2 — Switch (selon type de document)</h4>
+                <p>Ajoutez un nœud <strong>Switch</strong> après le webhook. Configurez :</p>
+                <div class="code-block" style="margin-top:8px;">
+<span class="key">Mode</span>: <span class="str">Rules</span>
+<span class="key">Value to compare</span>: <span class="str">{{ $json.body.document }}</span>
+
+<span class="comment">// Règle 1</span>
+<span class="key">Value</span>: <span class="str">"Bon de travail"</span>  →  Output <span class="val">0</span>
+
+<span class="comment">// Règle 2</span>
+<span class="key">Value</span>: <span class="str">"Fiche de chantier"</span>  →  Output <span class="val">1</span>
+
+<span class="comment">// Règle 3</span>
+<span class="key">Value</span>: <span class="str">"Checklist qualité"</span>  →  Output <span class="val">2</span>
+                </div>
+                <p style="margin-top:6px;">Chaque output relie à un nœud <strong>Set</strong> qui formate l'email spécifique.</p>
+              </div>
+            </div>
+
+            <div class="setup-step">
+              <div class="setup-step-num" style="background:#C62828;">5</div>
+              <div class="setup-step-content">
+                <h4>Nœud 3 — Set (formater le HTML de l'email)</h4>
+                <p>Pour chaque branche, ajoutez un nœud <strong>Set</strong> qui construit le corps de l'email. Exemple pour <strong>Fiche de chantier</strong> :</p>
+                <div class="code-block" style="margin-top:8px;">
+<span class="comment">// Nœud Set — Variable "email_html"</span>
+<span class="str">`&lt;h2 style="color:#0170B9;"&gt;📋 Fiche de chantier — {{ $json.body.job_number }}&lt;/h2&gt;
+&lt;p&gt;&lt;strong&gt;Date:&lt;/strong&gt; {{ $json.body.date_locale }}&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Client:&lt;/strong&gt; {{ $json.body.client_name }}&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Adresse:&lt;/strong&gt; {{ $json.body.client_address }}&lt;/p&gt;
+&lt;hr&gt;
+&lt;h3&gt;👷 Équipe&lt;/h3&gt;
+&lt;p&gt;Chef: {{ $json.body.chef_nom }}&lt;/p&gt;
+&lt;h3&gt;⏱ Heures&lt;/h3&gt;
+&lt;p&gt;Début: {{ $json.body.heure_debut }} — Fin: {{ $json.body.heure_fin }}&lt;/p&gt;
+&lt;h3&gt;🌤 Météo&lt;/h3&gt;
+&lt;p&gt;{{ $json.body.meteo_conditions }}&lt;/p&gt;
+&lt;h3&gt;📦 Matériaux&lt;/h3&gt;
+&lt;p&gt;{{ $json.body.materiaux_utilises }}&lt;/p&gt;
+&lt;p style="color:#666;font-size:12px;"&gt;Soumis le {{ $json.body.date_locale }} à {{ $json.body.heure_locale }}&lt;/p&gt;`</span>
+                </div>
+                <p style="margin-top:6px;font-size:12px;color:#666;">Ajustez les noms de champs selon ceux définis dans vos <code>data-jobber-field</code> dans fiche_chantier.html. Tous les champs du formulaire sont dans <code>$json.body.*</code>.</p>
+              </div>
+            </div>
+
+            <div class="setup-step">
+              <div class="setup-step-num" style="background:#C62828;">6</div>
+              <div class="setup-step-content">
+                <h4>Nœud 4 — Gmail / SMTP (envoyer l'email)</h4>
+                <p>Ajoutez un nœud <strong>Gmail</strong> (ou <strong>Email SMTP</strong>) après chaque nœud Set. Configurez :</p>
+                <div class="code-block" style="margin-top:8px;">
+<span class="key">To Email</span>: <span class="str">votre-courriel@innovaspray.ca</span>
+<span class="key">Subject</span>: <span class="str">📤 {{ $json.body.document }} — Job #{{ $json.body.job_number }} — {{ $json.body.date_locale }}</span>
+<span class="key">Email Type</span>: <span class="str">HTML</span>
+<span class="key">HTML Body</span>: <span class="str">{{ $json.email_html }}</span>
+                </div>
+                <div class="callout tip" style="margin-top:8px;">
+                  <span class="callout-icon">💡</span>
+                  <p><strong>Gmail :</strong> Dans n8n Credentials, ajoutez votre compte Gmail (OAuth2). <strong>SMTP :</strong> Utilisez les paramètres SMTP de votre fournisseur de courriel (ex: Hostinger, cPanel, Microsoft 365).</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="setup-step">
+              <div class="setup-step-num" style="background:#C62828;">7</div>
+              <div class="setup-step-content">
+                <h4>Optionnel — Google Sheets (registre automatique)</h4>
+                <p>Ajoutez un nœud <strong>Google Sheets → Append Row</strong> après l'email. Crée automatiquement une ligne dans votre tableau de bord :</p>
+                <div class="code-block" style="margin-top:8px;">
+<span class="key">Spreadsheet</span>: <span class="str">"ISQ — Registre des chantiers"</span>
+<span class="key">Sheet</span>: <span class="str">"Fiches reçues"</span>
+<span class="key">Colonnes</span>:
+  <span class="key">A — Date</span>:     <span class="str">{{ $json.body.date_locale }}</span>
+  <span class="key">B — Heure</span>:    <span class="str">{{ $json.body.heure_locale }}</span>
+  <span class="key">C — Document</span>: <span class="str">{{ $json.body.document }}</span>
+  <span class="key">D — Job #</span>:    <span class="str">{{ $json.body.job_number }}</span>
+  <span class="key">E — Client</span>:   <span class="str">{{ $json.body.client_name }}</span>
+  <span class="key">F — Chef</span>:     <span class="str">{{ $json.body.chef_nom }}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="setup-step">
+              <div class="setup-step-num" style="background:#C62828;">8</div>
+              <div class="setup-step-content">
+                <h4>Activer le workflow et tester</h4>
+                <p>Dans n8n, cliquez <strong>Activate</strong> (toggle en haut à droite). Puis sur votre cellulaire, ouvrez <strong>fiche_chantier.html</strong>, remplissez quelques champs, et cliquez <strong>📤 Soumettre au bureau</strong>. Vous devriez recevoir l'email dans les secondes qui suivent.</p>
+                <div class="callout warning" style="margin-top:8px;">
+                  <span class="callout-icon">⚠</span>
+                  <p>En mode <strong>Test</strong> dans n8n, l'URL du webhook change (elle contient <code>/webhook-test/</code>). Pour la production, utilisez toujours l'URL sans <code>-test</code>, qui n'est active que quand le workflow est activé.</p>
+                </div>
+              </div>
+            </div>
+
+          </div><!-- /setup-steps -->
+        </div>
+
+        <!-- PAYLOAD EXAMPLE -->
+        <div style="margin-top:20px;">
+          <div style="font-size:13px;font-weight:700;color:#C62828;margin-bottom:8px;">Exemple de payload JSON reçu par n8n (Fiche de chantier)</div>
+          <div class="code-block">
+<span class="comment">// Données envoyées automatiquement par fiche_chantier.html</span>
+{
+  <span class="key">"document"</span>:          <span class="str">"Fiche de chantier"</span>,
+  <span class="key">"timestamp"</span>:         <span class="str">"2025-06-15T14:32:00.000Z"</span>,
+  <span class="key">"date_locale"</span>:       <span class="str">"2025-06-15"</span>,
+  <span class="key">"heure_locale"</span>:      <span class="str">"10:32"</span>,
+  <span class="key">"job_number"</span>:         <span class="str">"JOB-2025-047"</span>,
+  <span class="key">"client_name"</span>:        <span class="str">"Jean Tremblay"</span>,
+  <span class="key">"client_address"</span>:     <span class="str">"142 rue des Érables, Québec, G1A 1A1"</span>,
+  <span class="key">"chef_nom"</span>:           <span class="str">"Marc Gagnon"</span>,
+  <span class="key">"heure_debut"</span>:        <span class="str">"07:00"</span>,
+  <span class="key">"heure_fin"</span>:          <span class="str">"16:30"</span>,
+  <span class="key">"meteo_conditions"</span>:   <span class="str">"Partiellement nuageux, 18°C, Humidité 55%"</span>,
+  <span class="key">"meteo_vent"</span>:         <span class="str">"12 km/h"</span>,
+  <span class="key">"avancement_p1"</span>:      <span class="str">"100%"</span>,
+  <span class="key">"avancement_p2"</span>:      <span class="str">"75%"</span>,
+  <span class="key">"materiaux_m1_desc"</span>:  <span class="str">"Peinture extérieure blanche"</span>,
+  <span class="key">"materiaux_m1_qte"</span>:   <span class="str">"4"</span>,
+  <span class="key">"materiaux_m1_unite"</span>: <span class="str">"gal"</span>
+  <span class="comment">// ... tous les autres champs data-jobber-field du document</span>
+}
+          </div>
+        </div>
+
+        <!-- RÉSUMÉ VISUEL -->
+        <div class="details-grid" style="margin-top:20px;">
+          <div class="detail-box trigger-box">
+            <div class="db-title">📱 Documents qui soumettent</div>
+            <ul>
+              <li>📋 <strong>Bon de travail</strong><br><span style="font-size:11px;color:#666;">Tâches, couleurs, matériaux</span></li>
+              <li>🏗 <strong>fiche_chantier.html</strong><br><span style="font-size:11px;color:#666;">Équipe + météo + heures + matériaux + photos</span></li>
+              <li>✅ <strong>checklist_qualite.html</strong><br><span style="font-size:11px;color:#666;">Inspection + déficiences + signature client</span></li>
+            </ul>
+          </div>
+          <div class="detail-box nodes-box">
+            <div class="db-title">⚙ Nœuds n8n à utiliser</div>
+            <ul>
+              <li><span class="code-tag">Webhook</span> — Reçoit le POST JSON</li>
+              <li><span class="code-tag">Switch</span> — Route selon "document"</li>
+              <li><span class="code-tag">Set</span> — Construit le HTML de l'email</li>
+              <li><span class="code-tag">Gmail</span> ou <span class="code-tag">Email (SMTP)</span></li>
+              <li><span class="code-tag">Google Sheets</span> — Registre (optionnel)</li>
+            </ul>
+          </div>
+          <div class="detail-box fields-box">
+            <div class="db-title">🏷 Champs toujours présents</div>
+            <span class="code-tag">document</span>
+            <span class="code-tag">timestamp</span>
+            <span class="code-tag">date_locale</span>
+            <span class="code-tag">heure_locale</span>
+            <span class="code-tag">job_number</span>
+            <span class="code-tag">client_name</span>
+            <span class="code-tag">client_address</span>
+            <span class="code-tag">chef_nom</span>
+            <span style="font-size:11px;color:#666;display:block;margin-top:6px;">+ tous les champs data-jobber-field<br>spécifiques au document soumis</span>
+          </div>
+        </div>
+
+      </div><!-- /workflow-body -->
+    </div><!-- /workflow-card -->
+
+    <!-- WEBHOOK EVENTS -->
+    <div id="webhooks" class="section-title">🔔 Événements Webhook Jobber</div>
+
+    <div class="callout info">
+      <span class="callout-icon">ℹ</span>
+      <p>Pour configurer les webhooks Jobber: <strong>Settings → App Marketplace → Jobber Webhooks</strong> ou via l'API GraphQL Jobber. Chaque webhook envoie un POST JSON vers votre URL n8n.</p>
+    </div>
+
+    <table class="events-table" style="margin-top:14px;">
+      <thead>
+        <tr>
+          <th style="width:22%">Événement Jobber</th>
+          <th style="width:16%">Type</th>
+          <th style="width:30%">Données clés dans le payload</th>
+          <th style="width:32%">Workflow(s) concerné(s)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="code-tag">quote.created</span></td>
+          <td>Soumission créée</td>
+          <td>quote_id, client, total, line_items, expiry_date</td>
+          <td>✉ Workflow 1 — Email PDF soumission</td>
+        </tr>
+        <tr>
+          <td><span class="code-tag">quote.approved</span></td>
+          <td>Soumission approuvée</td>
+          <td>quote_id, client, approved_at, job_created</td>
+          <td>✅ Workflow 2 — Créer job + SMS</td>
+        </tr>
+        <tr>
+          <td><span class="code-tag">quote.archived</span></td>
+          <td>Soumission archivée</td>
+          <td>quote_id, archived_reason, client</td>
+          <td>Notif interne (optionnel)</td>
+        </tr>
+        <tr>
+          <td><span class="code-tag">job.created</span></td>
+          <td>Job créé</td>
+          <td>job_id, job_number, client, start_at, end_at</td>
+          <td>Calendrier + notification équipe</td>
+        </tr>
+        <tr>
+          <td><span class="code-tag">job.completed</span></td>
+          <td>Job complété</td>
+          <td>job_id, completed_at, client, total, assigned_employees</td>
+          <td>⭐ Workflow 3 — Sondage satisfaction</td>
+        </tr>
+        <tr>
+          <td><span class="code-tag">job.on_my_way</span></td>
+          <td>Équipe en route</td>
+          <td>job_id, employee, estimated_arrival</td>
+          <td>SMS automatique au client (optionnel)</td>
+        </tr>
+        <tr>
+          <td><span class="code-tag">invoice.created</span></td>
+          <td>Facture créée</td>
+          <td>invoice_id, invoice_number, total, due_date, client</td>
+          <td>Email de facturation automatique</td>
+        </tr>
+        <tr>
+          <td><span class="code-tag">invoice.overdue</span></td>
+          <td>Facture en retard</td>
+          <td>invoice_id, balance, due_date, days_overdue, client</td>
+          <td>Non utilisé</td>
+        </tr>
+        <tr>
+          <td><span class="code-tag">invoice.paid</span></td>
+          <td>Facture payée</td>
+          <td>invoice_id, paid_at, amount, payment_method</td>
+          <td>Email reçu + annuler rappels en cours</td>
+        </tr>
+        <tr>
+          <td><span class="code-tag">client.created</span></td>
+          <td>Nouveau client</td>
+          <td>client_id, name, email, phone, address</td>
+          <td>Ajout CRM secondaire (optionnel)</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- SETUP API KEY -->
+    <div id="setup" class="section-title">🔑 Configuration de la clé API Jobber</div>
+
+    <div class="callout warning">
+      <span class="callout-icon">⚠</span>
+      <p><strong>Sécurité :</strong> Ne jamais partager votre clé API Jobber. Ne jamais la copier dans le code source. Utilisez les variables d'environnement n8n (<strong>Settings → Credentials</strong>) pour stocker la clé en toute sécurité.</p>
+    </div>
+
+    <div class="setup-steps" style="margin-top:16px;">
+
+      <div class="setup-step">
+        <div class="setup-step-num">1</div>
+        <div class="setup-step-content">
+          <h4>Accéder aux paramètres développeur Jobber</h4>
+          <p>Dans Jobber, allez à <strong>Gear icon (⚙) → Settings → Developer Tools → API Keys</strong>. Si l'option n'est pas visible, activez-la dans <strong>Settings → App Marketplace → Jobber API</strong>.</p>
+        </div>
+      </div>
+
+      <div class="setup-step">
+        <div class="setup-step-num">2</div>
+        <div class="setup-step-content">
+          <h4>Créer une nouvelle clé API</h4>
+          <p>Cliquez sur <strong>New API Key</strong>. Donnez-lui un nom descriptif (ex: "n8n Automatisation"). Sélectionnez les permissions requises : <strong>Quotes (read), Jobs (read/write), Clients (read), Invoices (read), Webhooks (read/write)</strong>.</p>
+        </div>
+      </div>
+
+      <div class="setup-step">
+        <div class="setup-step-num">3</div>
+        <div class="setup-step-content">
+          <h4>Copier la clé et l'URL de base</h4>
+          <p>Notez votre clé API (format Bearer Token). L'URL de base de l'API Jobber est :<br>
+          <code>https://api.getjobber.com/api/graphql</code> (GraphQL) ou<br>
+          <code>https://api.getjobber.com/api/v1</code> (REST selon votre plan)</p>
+        </div>
+      </div>
+
+      <div class="setup-step">
+        <div class="setup-step-num">4</div>
+        <div class="setup-step-content">
+          <h4>Configurer le credential dans n8n</h4>
+          <p>Dans n8n: <strong>Credentials → New → HTTP Header Auth</strong>. Nom: "Jobber API". Header Name: <code>Authorization</code>. Header Value: <code>Bearer VOTRE_CLE_API_ICI</code>. Enregistrer et tester la connexion.</p>
+        </div>
+      </div>
+
+      <div class="setup-step">
+        <div class="setup-step-num">5</div>
+        <div class="setup-step-content">
+          <h4>Configurer les webhooks Jobber</h4>
+          <p>Dans Jobber <strong>Developer Tools → Webhooks → New Webhook</strong>. Pour chaque événement voulu, entrez l'URL de votre workflow n8n. Format d'URL n8n: <code>https://votre-n8n.com/webhook/nom-du-workflow</code>. Sélectionnez les événements (quote.approved, job.completed, invoice.overdue).</p>
+        </div>
+      </div>
+
+      <div class="setup-step">
+        <div class="setup-step-num">6</div>
+        <div class="setup-step-content">
+          <h4>Tester avec un événement réel ou simulé</h4>
+          <p>Jobber permet d'envoyer un payload de test depuis Developer Tools → Webhooks → Send Test. Dans n8n, activez le workflow en mode "Test" pour voir les données reçues avant de passer en production.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- EXEMPLE REQUETE API -->
+    <div style="margin-top:16px;">
+      <div style="font-size:13px;font-weight:700;color:var(--bleu);margin-bottom:8px;">Exemple de requête HTTP Request n8n — GET Job Details</div>
+      <div class="code-block">
+<span class="comment">// Nœud HTTP Request — Récupérer détails d'un job</span>
+<span class="key">Method</span>: <span class="str">GET</span>
+<span class="key">URL</span>: <span class="str">https://api.getjobber.com/api/v1/jobs/{{ $json.job_id }}</span>
+<span class="key">Headers</span>:
+  <span class="key">Authorization</span>: <span class="str">Bearer {{ $credentials.jobberApi.key }}</span>
+  <span class="key">Content-Type</span>: <span class="str">application/json</span>
+  <span class="key">X-JOBBER-GRAPHQL-VERSION</span>: <span class="str">2024-01-15</span>
+
+<span class="comment">// Réponse attendue (résumé)</span>
+{
+  <span class="key">"id"</span>: <span class="val">12345</span>,
+  <span class="key">"job_number"</span>: <span class="str">"JOB-2024-001"</span>,
+  <span class="key">"status"</span>: <span class="str">"completed"</span>,
+  <span class="key">"client"</span>: { <span class="key">"name"</span>: <span class="str">"Jean Dupont"</span>, <span class="key">"email"</span>: <span class="str">"jean@email.com"</span> },
+  <span class="key">"total"</span>: <span class="val">3450.00</span>,
+  <span class="key">"completed_at"</span>: <span class="str">"2024-10-15T16:30:00Z"</span>
+}
+      </div>
+    </div>
+
+    <!-- QUICK REFERENCE -->
+    <div id="quickref" class="section-title">📋 Référence rapide</div>
+
+    <div class="quick-ref">
+      <div class="qr-card n8n-card">
+        <div class="qr-header">Nœuds n8n les plus utilisés</div>
+        <div class="qr-body">
+          <ul>
+            <li><strong>Webhook</strong> — Réception d'événements entrants</li>
+            <li><strong>Schedule Trigger</strong> — Déclenchement planifié (cron)</li>
+            <li><strong>HTTP Request</strong> — Appels API REST</li>
+            <li><strong>IF / Switch</strong> — Logique conditionnelle</li>
+            <li><strong>Set</strong> — Transformer/préparer les données</li>
+            <li><strong>Wait</strong> — Pause entre étapes</li>
+            <li><strong>Email (SMTP)</strong> — Envoi d'emails</li>
+            <li><strong>Gmail</strong> — Via compte Google</li>
+            <li><strong>Google Sheets</strong> — Lire/écrire tableur</li>
+            <li><strong>Twilio</strong> — Envoi SMS</li>
+            <li><strong>Slack</strong> — Notifications équipe</li>
+            <li><strong>Code</strong> — JavaScript personnalisé</li>
+            <li><strong>HTML</strong> — Générer contenu HTML</li>
+            <li><strong>Merge</strong> — Combiner plusieurs branches</li>
+          </ul>
+        </div>
+      </div>
+      <div class="qr-card jobber-card">
+        <div class="qr-header">Endpoints API Jobber fréquents</div>
+        <div class="qr-body">
+          <ul>
+            <li><span class="code-tag">GET /quotes</span> — Liste des soumissions</li>
+            <li><span class="code-tag">GET /quotes/{id}</span> — Détail soumission</li>
+            <li><span class="code-tag">POST /quotes</span> — Créer soumission</li>
+            <li><span class="code-tag">GET /jobs</span> — Liste des jobs</li>
+            <li><span class="code-tag">POST /jobs</span> — Créer un job</li>
+            <li><span class="code-tag">PATCH /jobs/{id}</span> — Modifier un job</li>
+            <li><span class="code-tag">GET /clients</span> — Liste des clients</li>
+            <li><span class="code-tag">GET /clients/{id}</span> — Détail client</li>
+            <li><span class="code-tag">GET /invoices</span> — Liste des factures</li>
+            <li><span class="code-tag">GET /invoices?status=overdue</span></li>
+            <li><span class="code-tag">POST /invoices/{id}/notes</span></li>
+            <li><span class="code-tag">GET /expenses</span> — Dépenses</li>
+            <li><span class="code-tag">GET /timesheets</span> — Feuilles de temps</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout tip" style="margin-top:16px;">
+      <span class="callout-icon">💡</span>
+      <p><strong>Ressources utiles :</strong> Documentation API Jobber: <strong>developer.getjobber.com</strong> &nbsp;|&nbsp; Documentation n8n: <strong>docs.n8n.io</strong> &nbsp;|&nbsp; Templates n8n communauté: <strong>n8n.io/workflows</strong> &nbsp;|&nbsp; Forum support n8n: <strong>community.n8n.io</strong></p>
+    </div>
+
+    <!-- ECOSYSTEM -->
+    <div id="ecosystem" class="section-title">🛠 Applications &amp; services utilisés</div>
+
+    <div class="callout info">
+      <span class="callout-icon">ℹ</span>
+      <p>Voici tous les outils qui font fonctionner le système d'automatisation InnovaSpray Québec. Chaque application joue un rôle précis dans la chaîne — de la collecte des données sur le chantier jusqu'à l'envoi automatique des emails au bureau.</p>
+    </div>
+
+    <div class="apps-grid" style="margin-top:16px;">
+
+      <!-- Jobber -->
+      <div class="app-card">
+        <div class="app-card-header app-h-jobber">
+          <span class="app-icon">🏢</span>
+          <div>
+            <div class="app-name">Jobber</div>
+            <div class="app-role">CRM & Gestion terrain</div>
+          </div>
+        </div>
+        <div class="app-card-body">
+          <ul>
+            <li>Création des soumissions, jobs, factures</li>
+            <li>Gestion des clients et propriétés</li>
+            <li>Envoi de webhooks vers n8n</li>
+            <li>API REST + GraphQL</li>
+            <li>Application mobile pour l'équipe</li>
+          </ul>
+          <span class="app-plan paid">Abonnement payant</span>
+          <span class="app-link">getjobber.com</span>
+        </div>
+      </div>
+
+      <!-- n8n -->
+      <div class="app-card">
+        <div class="app-card-header app-h-n8n">
+          <span class="app-icon">⚡</span>
+          <div>
+            <div class="app-name">n8n</div>
+            <div class="app-role">Moteur d'automatisation</div>
+          </div>
+        </div>
+        <div class="app-card-body">
+          <ul>
+            <li>Reçoit les webhooks de Jobber</li>
+            <li>Exécute les 6 workflows automatisés</li>
+            <li>Connecte toutes les apps entre elles</li>
+            <li>Hébergé en cloud (n8n.cloud) ou auto-hébergé</li>
+            <li>Interface visuelle no-code</li>
+          </ul>
+          <span class="app-plan paid">Gratuit / Payant selon usage</span>
+          <span class="app-link">n8n.io</span>
+        </div>
+      </div>
+
+      <!-- Netlify -->
+      <div class="app-card">
+        <div class="app-card-header app-h-netlify">
+          <span class="app-icon">🌐</span>
+          <div>
+            <div class="app-name">Netlify</div>
+            <div class="app-role">Hébergement des formulaires HTML</div>
+          </div>
+        </div>
+        <div class="app-card-body">
+          <ul>
+            <li>Héberge index.html, fiche_chantier.html, checklist_qualite.html, bon_de_travail.html</li>
+            <li>URL publique accessible depuis les téléphones de l'équipe</li>
+            <li>Déploiement par glisser-déposer ou GitHub</li>
+            <li>HTTPS automatique inclus</li>
+            <li>QR code partageable aux chefs d'équipe</li>
+          </ul>
+          <span class="app-plan">Gratuit (plan Starter)</span>
+          <span class="app-link">netlify.com</span>
+        </div>
+      </div>
+
+      <!-- Gmail / SMTP -->
+      <div class="app-card">
+        <div class="app-card-header app-h-gmail">
+          <span class="app-icon">📧</span>
+          <div>
+            <div class="app-name">Gmail / SMTP</div>
+            <div class="app-role">Envoi d'emails automatiques</div>
+          </div>
+        </div>
+        <div class="app-card-body">
+          <ul>
+            <li>Envoi des soumissions PDF aux clients</li>
+            <li>Sondages de satisfaction post-job</li>
+            <li>Rappels de paiement pour factures en retard</li>
+            <li>Emails de fiches chantier au bureau</li>
+            <li>Compatible Gmail OAuth2 ou SMTP (Hostinger, cPanel, Microsoft 365)</li>
+          </ul>
+          <span class="app-plan">Gratuit (Gmail) ou inclus hébergement</span>
+          <span class="app-link">gmail.com / votre fournisseur</span>
+        </div>
+      </div>
+
+      <!-- Google Sheets -->
+      <div class="app-card">
+        <div class="app-card-header app-h-gsheets">
+          <span class="app-icon">📊</span>
+          <div>
+            <div class="app-name">Google Sheets</div>
+            <div class="app-role">Base de données & registres</div>
+          </div>
+        </div>
+        <div class="app-card-body">
+          <ul>
+            <li>Registre automatique des fiches soumises</li>
+            <li>Suivi de l'inventaire des matériaux</li>
+            <li>Stockage des résultats de satisfaction</li>
+            <li>Log des emails envoyés</li>
+            <li>Accessible depuis n'importe quel appareil</li>
+          </ul>
+          <span class="app-plan">Gratuit (compte Google)</span>
+          <span class="app-link">sheets.google.com</span>
+        </div>
+      </div>
+
+      <!-- Twilio -->
+      <div class="app-card">
+        <div class="app-card-header app-h-twilio">
+          <span class="app-icon">📱</span>
+          <div>
+            <div class="app-name">Twilio</div>
+            <div class="app-role">Envoi de SMS clients</div>
+          </div>
+        </div>
+        <div class="app-card-body">
+          <ul>
+            <li>SMS de confirmation quand soumission approuvée</li>
+            <li>SMS "En route" vers le client (optionnel)</li>
+            <li>Rappels de paiement par SMS</li>
+            <li>Numéro canadien disponible</li>
+            <li>Intégration native dans n8n</li>
+          </ul>
+          <span class="app-plan paid">Payant à l'usage (~0,01$/SMS)</span>
+          <span class="app-link">twilio.com</span>
+        </div>
+      </div>
+
+      <!-- Google Calendar -->
+      <div class="app-card">
+        <div class="app-card-header app-h-gcal">
+          <span class="app-icon">📅</span>
+          <div>
+            <div class="app-name">Google Calendar</div>
+            <div class="app-role">Planification des jobs</div>
+          </div>
+        </div>
+        <div class="app-card-body">
+          <ul>
+            <li>Crée automatiquement un événement quand un job est confirmé</li>
+            <li>Visible par toute l'équipe</li>
+            <li>Rappels automatiques avant le jour J</li>
+            <li>Synchronisation avec les appareils mobiles</li>
+            <li>Intégration native dans n8n</li>
+          </ul>
+          <span class="app-plan">Gratuit (compte Google)</span>
+          <span class="app-link">calendar.google.com</span>
+        </div>
+      </div>
+
+      <!-- Slack -->
+      <div class="app-card">
+        <div class="app-card-header app-h-slack">
+          <span class="app-icon">💬</span>
+          <div>
+            <div class="app-name">Slack</div>
+            <div class="app-role">Notifications internes</div>
+          </div>
+        </div>
+        <div class="app-card-body">
+          <ul>
+            <li>Alerte gestionnaire si facture impayée à J+21</li>
+            <li>Notification quand stock sous le seuil minimum</li>
+            <li>Confirmation de job créé à l'équipe</li>
+            <li>Alerte si note de satisfaction ≤ 3 étoiles</li>
+            <li>Optionnel — remplaçable par email interne</li>
+          </ul>
+          <span class="app-plan">Gratuit (plan Free) ou payant</span>
+          <span class="app-link">slack.com</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ARCHITECTURE DIAGRAM -->
+    <div style="background:var(--gris);border:1px solid var(--bordure);border-radius:12px;padding:20px;margin-bottom:20px;">
+      <div style="font-size:15px;font-weight:700;color:var(--bleu);margin-bottom:14px;display:flex;align-items:center;gap:8px;">
+        🔗 Comment les apps se connectent entre elles
+      </div>
+      <div style="display:flex;align-items:center;flex-wrap:wrap;gap:6px;justify-content:center;">
+        <div style="background:#fff;border:2px solid #0050A0;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;color:#0050A0;text-align:center;">
+          📱 Téléphone chef<br><span style="font-size:10px;font-weight:400;color:#666;">fiche_chantier.html<br>sur Netlify</span>
+        </div>
+        <span style="font-size:18px;color:var(--bleu-clair);font-weight:700;">→</span>
+        <div style="background:#fff;border:2px solid #EA4B71;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;color:#EA4B71;text-align:center;">
+          ⚡ n8n<br><span style="font-size:10px;font-weight:400;color:#666;">Webhook POST<br>automatisation</span>
+        </div>
+        <span style="font-size:18px;color:var(--bleu-clair);font-weight:700;">→</span>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div style="background:#fff;border:2px solid #EA4335;border-radius:8px;padding:6px 12px;font-size:11px;font-weight:700;color:#EA4335;">📧 Gmail → Bureau</div>
+          <div style="background:#fff;border:2px solid #1E8E3E;border-radius:8px;padding:6px 12px;font-size:11px;font-weight:700;color:#1E8E3E;">📊 Google Sheets → Registre</div>
+        </div>
+        <span style="margin-left:20px;font-size:18px;color:var(--bleu-clair);font-weight:700;">|</span>
+        <div style="background:#fff;border:2px solid #0050A0;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;color:#0050A0;text-align:center;margin-left:20px;">
+          🏢 Jobber<br><span style="font-size:10px;font-weight:400;color:#666;">CRM + Webhooks<br>vers n8n</span>
+        </div>
+        <span style="font-size:18px;color:var(--bleu-clair);font-weight:700;">→</span>
+        <div style="background:#fff;border:2px solid #EA4B71;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;color:#EA4B71;text-align:center;">
+          ⚡ n8n<br><span style="font-size:10px;font-weight:400;color:#666;">6 workflows<br>automatisés</span>
+        </div>
+        <span style="font-size:18px;color:var(--bleu-clair);font-weight:700;">→</span>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div style="background:#fff;border:2px solid #EA4335;border-radius:8px;padding:6px 12px;font-size:11px;font-weight:700;color:#EA4335;">📧 Gmail → Client</div>
+          <div style="background:#fff;border:2px solid #F22F46;border-radius:8px;padding:6px 12px;font-size:11px;font-weight:700;color:#F22F46;">📱 Twilio → SMS client</div>
+          <div style="background:#fff;border:2px solid #1A73E8;border-radius:8px;padding:6px 12px;font-size:11px;font-weight:700;color:#1A73E8;">📅 Google Calendar</div>
+          <div style="background:#fff;border:2px solid #4A154B;border-radius:8px;padding:6px 12px;font-size:11px;font-weight:700;color:#4A154B;">💬 Slack → Équipe</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <span class="callout-icon">💡</span>
+      <p><strong>Pour commencer :</strong> Les seuls comptes obligatoires pour démarrer sont <strong>Jobber</strong> (déjà actif), <strong>n8n</strong> (gratuit au départ), <strong>Netlify</strong> (gratuit) et <strong>Gmail</strong> (gratuit). Twilio, Google Calendar et Slack sont optionnels et peuvent être activés progressivement.</p>
+    </div>
+
+  </div><!-- /body -->
+
+  <div class="doc-footer">
+    InnovaSpray Québec &nbsp;|&nbsp; Guide d'automatisation n8n + Jobber &nbsp;|&nbsp; Version 1.0 — Mars 2024 &nbsp;|&nbsp; www.innovaspray.ca
+  </div>
+
+</div><!-- /page -->
+
+</body>
+</html>

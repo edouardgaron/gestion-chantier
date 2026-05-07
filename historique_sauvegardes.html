@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <title>Historique des sauvegardes — InnovaSpray Québec</title>
+  <script src="webhooks.config.js"></script>
+  <script src="isq-storage.js"></script>
+  <script src="isq-auth.js"></script>
+  <script>ISQAuth.requireLogin();</script>
+  <script src="isq-core.js"></script>
+  <script src="isq-saves-db.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bleu:       #0170B9;
+      --bleu-clair: #1A8FD1;
+      --orange:     #FF6600;
+      --gris:       #F4F6F9;
+      --bordure:    #D0D7E3;
+      --texte:      #1A1A2E;
+      --vert:       #2E7D32;
+      --rouge:      #C62828;
+    }
+    body {
+      font-family: 'Montserrat', 'Segoe UI', Arial, sans-serif;
+      background: #F0F4F8;
+      color: var(--texte);
+      font-size: 13px;
+      min-height: 100vh;
+    }
+
+    /* ── Navbar ── */
+    .navbar {
+      background: linear-gradient(135deg, var(--bleu) 0%, #0a3d6b 100%);
+      color: #fff;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .navbar-title h1 { font-size: 17px; font-weight: 800; }
+    .navbar-title p  { font-size: 11px; opacity: .75; margin-top: 2px; }
+    .navbar-back {
+      margin-left: auto;
+      background: rgba(255,255,255,.15);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,.3);
+      border-radius: 8px;
+      padding: 7px 14px;
+      font-size: 12px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .navbar-back:hover { background: rgba(255,255,255,.25); }
+
+    /* ── Conteneur principal ── */
+    .main { max-width: 1100px; margin: 0 auto; padding: 20px 16px 40px; }
+
+    /* ── Stats ── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .stat-card {
+      background: #fff;
+      border-radius: 12px;
+      border: 1.5px solid var(--bordure);
+      padding: 14px 16px;
+      text-align: center;
+    }
+    .stat-card .stat-num {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--bleu);
+      line-height: 1.1;
+    }
+    .stat-card .stat-label {
+      font-size: 11px;
+      color: #666;
+      margin-top: 4px;
+      font-weight: 600;
+    }
+    .stat-card.orange .stat-num { color: var(--orange); }
+    .stat-card.vert   .stat-num { color: var(--vert); }
+
+    /* ── Barre de filtres ── */
+    .filters {
+      background: #fff;
+      border: 1.5px solid var(--bordure);
+      border-radius: 12px;
+      padding: 14px 16px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: flex-end;
+      margin-bottom: 16px;
+    }
+    .filter-group { display: flex; flex-direction: column; gap: 4px; }
+    .filter-group label { font-size: 11px; font-weight: 700; color: #555; }
+    .filter-group select,
+    .filter-group input {
+      border: 1.5px solid var(--bordure);
+      border-radius: 7px;
+      padding: 6px 10px;
+      font-family: inherit;
+      font-size: 12px;
+      color: var(--texte);
+      background: #fff;
+      min-width: 140px;
+    }
+    .filter-group select:focus,
+    .filter-group input:focus { outline: none; border-color: var(--bleu); }
+    .btn-filter {
+      background: var(--bleu);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      align-self: flex-end;
+    }
+    .btn-filter:hover { background: var(--bleu-clair); }
+    .btn-reset {
+      background: var(--gris);
+      color: #555;
+      border: 1.5px solid var(--bordure);
+      border-radius: 8px;
+      padding: 7px 14px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      align-self: flex-end;
+    }
+    .btn-reset:hover { background: #e0e4eb; }
+
+    /* ── Actions globales ── */
+    .actions-bar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+    .btn-action {
+      background: #fff;
+      border: 1.5px solid var(--bordure);
+      border-radius: 8px;
+      padding: 7px 14px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--texte);
+    }
+    .btn-action:hover { background: var(--gris); }
+    .btn-action.danger { color: var(--rouge); border-color: #e8a0a0; }
+    .btn-action.danger:hover { background: #fff5f5; }
+    .btn-action.export { color: var(--vert); border-color: #a5d6a7; }
+    .btn-action.export:hover { background: #f0faf0; }
+
+    /* ── Compteur résultats ── */
+    .results-count {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+
+    /* ── Tableau ── */
+    .table-wrap {
+      background: #fff;
+      border: 1.5px solid var(--bordure);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    thead th {
+      background: #f7f9fc;
+      padding: 10px 14px;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 700;
+      color: #555;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      border-bottom: 1.5px solid var(--bordure);
+    }
+    tbody tr {
+      cursor: pointer;
+      transition: background .12s;
+    }
+    tbody tr:hover { background: #f0f6ff; }
+    tbody tr.expanded { background: #e8f2ff; }
+    tbody td {
+      padding: 10px 14px;
+      border-bottom: 1px solid #eef0f5;
+      vertical-align: middle;
+      font-size: 12px;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+
+    /* Badges */
+    .badge {
+      display: inline-block;
+      padding: 3px 9px;
+      border-radius: 20px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .4px;
+    }
+    .badge-envoi    { background: #e8f5e9; color: #2e7d32; }
+    .badge-fermeture { background: #e3f2fd; color: #0d47a1; }
+
+    .doc-badge {
+      display: inline-block;
+      padding: 3px 9px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      background: var(--gris);
+      color: var(--bleu);
+    }
+
+    .job-num {
+      font-weight: 700;
+      color: var(--orange);
+      font-size: 13px;
+    }
+
+    /* ── Ligne dépliée ── */
+    .detail-row td {
+      padding: 0;
+      background: #f4f8ff;
+      border-bottom: 2px solid var(--bleu);
+    }
+    .detail-content {
+      padding: 16px 20px;
+    }
+    .detail-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 6px 16px;
+    }
+    .detail-field {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+    .detail-field .df-key {
+      font-size: 10px;
+      color: #888;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .detail-field .df-val {
+      font-size: 12px;
+      color: var(--texte);
+      word-break: break-word;
+    }
+    .detail-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 14px;
+    }
+    .btn-detail {
+      border: none;
+      border-radius: 8px;
+      padding: 7px 14px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn-restore {
+      background: var(--bleu);
+      color: #fff;
+    }
+    .btn-restore:hover { background: var(--bleu-clair); }
+    .btn-delete-entry {
+      background: #fff;
+      color: var(--rouge);
+      border: 1.5px solid #e8a0a0 !important;
+    }
+    .btn-delete-entry:hover { background: #fff5f5; }
+
+    /* ── Vide ── */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #aaa;
+    }
+    .empty-state .es-icon { font-size: 48px; margin-bottom: 12px; }
+    .empty-state p { font-size: 14px; }
+
+    /* ── Modal confirmation ── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.45);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal {
+      background: #fff;
+      border-radius: 14px;
+      padding: 28px 28px 22px;
+      max-width: 420px;
+      width: 90%;
+      box-shadow: 0 20px 60px rgba(0,0,0,.2);
+    }
+    .modal h3 { font-size: 16px; font-weight: 800; margin-bottom: 10px; }
+    .modal p  { font-size: 13px; color: #555; margin-bottom: 20px; }
+    .modal-btns { display: flex; gap: 10px; justify-content: flex-end; }
+    .btn-modal-cancel {
+      background: var(--gris);
+      color: #555;
+      border: none;
+      border-radius: 8px;
+      padding: 9px 18px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn-modal-confirm {
+      background: var(--rouge);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 9px 18px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: #1A1A2E;
+      color: #fff;
+      padding: 10px 22px;
+      border-radius: 30px;
+      font-size: 13px;
+      font-weight: 600;
+      transition: transform .3s ease;
+      z-index: 2000;
+      white-space: nowrap;
+    }
+    #toast.show { transform: translateX(-50%) translateY(0); }
+
+    @media (max-width: 600px) {
+      .filters { flex-direction: column; }
+      .filter-group { width: 100%; }
+      .filter-group select, .filter-group input { min-width: unset; width: 100%; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      thead th:nth-child(3), tbody td:nth-child(3) { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<div class="navbar">
+  <div class="navbar-title">
+    <h1>Historique des sauvegardes</h1>
+    <p>Toutes les sauvegardes enregistrées — InnovaSpray Québec</p>
+  </div>
+  <a class="navbar-back" href="index.html">← Accueil</a>
+</div>
+
+<div class="main">
+
+  <!-- Stats -->
+  <div class="stats-grid" id="statsGrid">
+    <div class="stat-card">
+      <div class="stat-num" id="statTotal">—</div>
+      <div class="stat-label">Total sauvegardes</div>
+    </div>
+    <div class="stat-card orange">
+      <div class="stat-num" id="statEnvoi">—</div>
+      <div class="stat-label">Envois au bureau</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" id="statFermeture">—</div>
+      <div class="stat-label">Fermetures auto</div>
+    </div>
+    <div class="stat-card vert">
+      <div class="stat-num" id="statLastDate">—</div>
+      <div class="stat-label">Dernière sauvegarde</div>
+    </div>
+  </div>
+
+  <!-- Filtres -->
+  <div class="filters">
+    <div class="filter-group">
+      <label>Document</label>
+      <select id="fDoc">
+        <option value="">Tous les documents</option>
+        <option value="bon_travail">Bon de travail</option>
+        <option value="fiche_chantier">Fiche de chantier</option>
+        <option value="checklist">Checklist qualité</option>
+        <option value="materiaux">Suivi matériaux</option>
+        <option value="satisfaction">Rapport satisfaction</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>No. de job</label>
+      <input type="text" id="fJob" placeholder="ex: 826">
+    </div>
+    <div class="filter-group">
+      <label>Déclencheur</label>
+      <select id="fTrigger">
+        <option value="">Tous</option>
+        <option value="envoi">Envoi au bureau</option>
+        <option value="fermeture">Fermeture auto</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Depuis</label>
+      <input type="date" id="fDateFrom">
+    </div>
+    <button class="btn-filter" onclick="applyFilters()">Filtrer</button>
+    <button class="btn-reset"  onclick="resetFilters()">Réinitialiser</button>
+  </div>
+
+  <!-- Actions globales -->
+  <div class="actions-bar">
+    <button class="btn-action export" onclick="exportJSON()">⬇ Exporter JSON</button>
+    <button class="btn-action danger" onclick="confirmClearAll()">🗑 Tout effacer</button>
+  </div>
+
+  <div class="results-count" id="resultsCount"></div>
+
+  <!-- Tableau -->
+  <div class="table-wrap">
+    <table id="savesTable">
+      <thead>
+        <tr>
+          <th>Date / Heure</th>
+          <th>Document</th>
+          <th>No. job</th>
+          <th>Déclencheur</th>
+          <th style="text-align:right">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="savesBody">
+        <tr>
+          <td colspan="5">
+            <div class="empty-state">
+              <div class="es-icon">⏳</div>
+              <p>Chargement…</p>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div><!-- /main -->
+
+<!-- Modal confirmation -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h3 id="modalTitle">Confirmer</h3>
+    <p  id="modalMsg">Êtes-vous certain ?</p>
+    <div class="modal-btns">
+      <button class="btn-modal-cancel" onclick="closeModal()">Annuler</button>
+      <button class="btn-modal-confirm" id="modalConfirmBtn">Confirmer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+  var _allSaves    = [];   // Toutes les entrées brutes
+  var _filtered    = [];   // Après filtrage
+  var _expandedId  = null; // ID de la ligne dépliée
+  var _modalAction = null;
+
+  /* ── Chargement initial ── */
+  function loadAll() {
+    ISQSavesDB.getAllSaves(function (rows) {
+      _allSaves = rows;
+      updateStats(rows);
+      applyFilters();
+    });
+  }
+
+  /* ── Stats ── */
+  function updateStats(rows) {
+    var envoi     = rows.filter(function (r) { return r.trigger === 'envoi'; }).length;
+    var fermeture = rows.filter(function (r) { return r.trigger === 'fermeture'; }).length;
+    var last      = rows.length ? rows[0].timestamp : null;
+
+    document.getElementById('statTotal').textContent     = rows.length;
+    document.getElementById('statEnvoi').textContent     = envoi;
+    document.getElementById('statFermeture').textContent = fermeture;
+    document.getElementById('statLastDate').textContent  = last
+      ? fmtDate(last).date
+      : '—';
+  }
+
+  /* ── Filtres ── */
+  function applyFilters() {
+    var doc      = document.getElementById('fDoc').value;
+    var job      = document.getElementById('fJob').value.trim().toLowerCase();
+    var trigger  = document.getElementById('fTrigger').value;
+    var dateFrom = document.getElementById('fDateFrom').value; // 'YYYY-MM-DD'
+
+    _filtered = _allSaves.filter(function (r) {
+      if (doc     && r.docType   !== doc)                        return false;
+      if (job     && r.jobNumber.toLowerCase().indexOf(job) < 0) return false;
+      if (trigger && r.trigger   !== trigger)                    return false;
+      if (dateFrom && r.timestamp.slice(0, 10) < dateFrom)       return false;
+      return true;
+    });
+
+    document.getElementById('resultsCount').textContent =
+      _filtered.length + ' sauvegarde' + (_filtered.length !== 1 ? 's' : '') + ' trouvée' + (_filtered.length !== 1 ? 's' : '');
+
+    renderTable(_filtered);
+  }
+
+  function resetFilters() {
+    document.getElementById('fDoc').value     = '';
+    document.getElementById('fJob').value     = '';
+    document.getElementById('fTrigger').value = '';
+    document.getElementById('fDateFrom').value= '';
+    applyFilters();
+  }
+
+  /* ── Rendu du tableau ── */
+  function renderTable(rows) {
+    var tbody = document.getElementById('savesBody');
+    _expandedId = null;
+
+    if (!rows.length) {
+      tbody.innerHTML =
+        '<tr><td colspan="5"><div class="empty-state">' +
+        '<div class="es-icon">📭</div><p>Aucune sauvegarde trouvée.</p>' +
+        '</div></td></tr>';
+      return;
+    }
+
+    var html = '';
+    rows.forEach(function (r) {
+      var dt      = fmtDate(r.timestamp);
+      var docLbl  = ISQSavesDB.DOC_LABELS[r.docType] || r.docType;
+      var trgBadge = r.trigger === 'envoi'
+        ? '<span class="badge badge-envoi">Envoi</span>'
+        : '<span class="badge badge-fermeture">Auto</span>';
+
+      html +=
+        '<tr data-id="' + r.id + '" onclick="toggleRow(' + r.id + ')">' +
+        '<td>' + dt.date + ' <span style="color:#888">' + dt.heure + '</span></td>' +
+        '<td><span class="doc-badge">' + escHtml(docLbl) + '</span></td>' +
+        '<td><span class="job-num">' + escHtml(r.jobNumber || '—') + '</span></td>' +
+        '<td>' + trgBadge + '</td>' +
+        '<td style="text-align:right">' +
+          '<button class="btn-detail btn-delete-entry" onclick="event.stopPropagation();confirmDelete(' + r.id + ')" style="border:none;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;background:#fff5f5;color:#C62828;">Supprimer</button>' +
+        '</td>' +
+        '</tr>';
+    });
+    tbody.innerHTML = html;
+  }
+
+  /* ── Dépliage d'une ligne ── */
+  function toggleRow(id) {
+    var tbody = document.getElementById('savesBody');
+
+    // Retirer l'ancienne ligne dépliée
+    var old = tbody.querySelector('tr.detail-row');
+    if (old) old.remove();
+    var oldExp = tbody.querySelector('tr.expanded');
+    if (oldExp) oldExp.classList.remove('expanded');
+
+    if (_expandedId === id) { _expandedId = null; return; }
+    _expandedId = id;
+
+    var row = tbody.querySelector('tr[data-id="' + id + '"]');
+    if (!row) return;
+    row.classList.add('expanded');
+
+    var entry = _allSaves.find(function (r) { return r.id === id; });
+    if (!entry) return;
+
+    var data    = entry.data || {};
+    var keys    = Object.keys(data).filter(function (k) {
+      return data[k] !== '' && data[k] !== null && !Array.isArray(data[k]);
+    });
+
+    var fieldsHtml = keys.map(function (k) {
+      return '<div class="detail-field">' +
+        '<span class="df-key">' + escHtml(k) + '</span>' +
+        '<span class="df-val">' + escHtml(String(data[k]).slice(0, 200)) + '</span>' +
+        '</div>';
+    }).join('');
+
+    var detailRow = document.createElement('tr');
+    detailRow.className = 'detail-row';
+    detailRow.innerHTML =
+      '<td colspan="5"><div class="detail-content">' +
+      '<div class="detail-grid">' + fieldsHtml + '</div>' +
+      '<div class="detail-actions">' +
+        '<button class="btn-detail btn-restore" onclick="restoreEntry(' + id + ')">♻️ Restaurer dans ISQStore</button>' +
+        '<button class="btn-detail btn-delete-entry" onclick="confirmDelete(' + id + ')" style="background:#fff5f5;color:#C62828;border:1.5px solid #e8a0a0;">🗑 Supprimer</button>' +
+      '</div>' +
+      '</div></td>';
+
+    row.insertAdjacentElement('afterend', detailRow);
+  }
+
+  /* ── Restaurer dans ISQStore ── */
+  function restoreEntry(id) {
+    var entry = _allSaves.find(function (r) { return r.id === id; });
+    if (!entry) return;
+
+    var data = entry.data || {};
+    var key  = '';
+    var jn   = entry.jobNumber || '';
+
+    if (entry.docType === 'bon_travail') {
+      key = 'isq_bon_travail_courant';
+      if (jn) ISQStore.setItem('isq_bon_travail_' + jn, JSON.stringify(data));
+    } else if (entry.docType === 'fiche_chantier') {
+      key = 'isq_fiche_courant_j1';
+      if (jn) ISQStore.setItem('isq_fiche_' + jn + '_j1', JSON.stringify(data));
+    } else if (entry.docType === 'checklist') {
+      key = 'isq_checklist_courant';
+      if (jn) ISQStore.setItem('isq_checklist_' + jn, JSON.stringify(data));
+    } else if (entry.docType === 'materiaux') {
+      key = 'isq_materiaux_courant';
+      if (jn) ISQStore.setItem('isq_materiaux_' + jn, JSON.stringify(data));
+    } else if (entry.docType === 'satisfaction') {
+      key = 'isq_satisfaction_courant';
+      if (jn) ISQStore.setItem('isq_satisfaction_' + jn, JSON.stringify(data));
+    }
+
+    if (key) {
+      ISQStore.setItem(key, JSON.stringify(data));
+      showToast('Restauré dans ISQStore — ouvrez le document pour vérifier');
+    }
+  }
+
+  /* ── Supprimer une entrée ── */
+  function confirmDelete(id) {
+    openModal(
+      'Supprimer cette sauvegarde',
+      'Cette action est irréversible. La sauvegarde sera définitivement supprimée.',
+      function () {
+        ISQSavesDB.deleteSave(id, function () {
+          loadAll();
+          showToast('Sauvegarde supprimée');
+        });
+      }
+    );
+  }
+
+  /* ── Tout effacer ── */
+  function confirmClearAll() {
+    openModal(
+      'Effacer tout l\'historique',
+      'Toutes les ' + _allSaves.length + ' sauvegardes seront définitivement supprimées. Cette action est irréversible.',
+      function () {
+        ISQSavesDB.clearAll(function () {
+          loadAll();
+          showToast('Historique effacé');
+        });
+      }
+    );
+  }
+
+  /* ── Export JSON ── */
+  function exportJSON() {
+    var data = JSON.stringify(_filtered.length ? _filtered : _allSaves, null, 2);
+    var blob = new Blob([data], { type: 'application/json' });
+    var url  = URL.createObjectURL(blob);
+    var a    = document.createElement('a');
+    a.href   = url;
+    a.download = 'isq_sauvegardes_' + new Date().toISOString().slice(0,10) + '.json';
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('Export téléchargé');
+  }
+
+  /* ── Helpers ── */
+  function fmtDate(iso) {
+    try {
+      var d = new Date(iso);
+      return {
+        date:  d.toLocaleDateString('fr-CA'),
+        heure: d.toLocaleTimeString('fr-CA', { hour: '2-digit', minute: '2-digit' })
+      };
+    } catch(e) { return { date: iso, heure: '' }; }
+  }
+
+  function escHtml(str) {
+    return String(str)
+      .replace(/&/g,'&amp;')
+      .replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;');
+  }
+
+  function showToast(msg) {
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(function () { t.classList.remove('show'); }, 2500);
+  }
+
+  /* ── Modal ── */
+  function openModal(title, msg, onConfirm) {
+    document.getElementById('modalTitle').textContent = title;
+    document.getElementById('modalMsg').textContent   = msg;
+    _modalAction = onConfirm;
+    document.getElementById('modalConfirmBtn').onclick = function () {
+      var action = _modalAction;
+      closeModal();
+      if (action) action();
+    };
+    document.getElementById('modalOverlay').classList.add('show');
+  }
+
+  function closeModal() {
+    document.getElementById('modalOverlay').classList.remove('show');
+    _modalAction = null;
+  }
+
+  document.getElementById('modalOverlay').addEventListener('click', function (e) {
+    if (e.target === this) closeModal();
+  });
+
+  // Lancement
+  loadAll();
+</script>
+</body>
+</html>

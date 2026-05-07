@@ -1,0 +1,12 @@
+{
+  "name": "isq-gestion-chantier",
+  "version": "1.0.0",
+  "description": "InnovaSpray Québec — Gestion Chantier",
+  "main": "server.js",
+  "scripts": {
+    "start": "node --no-warnings server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}

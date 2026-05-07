@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Configuration — InnovaSpray Québec</title>
+  <script src="isq-storage.js"></script>
+  <script src="isq-auth.js"></script>
+  <script>ISQAuth.requireAdmin();</script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bleu:       #0170B9;
+      --bleu-clair: #1A8FD1;
+      --orange:     #FF6600;
+      --vert:       #2E7D32;
+      --gris:       #F4F6F9;
+      --bordure:    #D0D7E3;
+      --texte:      #1A1A2E;
+    }
+    body {
+      font-family: 'Montserrat', 'Segoe UI', Arial, sans-serif;
+      background: #F0F4F8;
+      color: var(--texte);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .top-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 16px 16px 0;
+      align-items: center;
+    }
+    .btn-home {
+      display: inline-block;
+      padding: 10px 18px;
+      background: #fff;
+      color: var(--bleu);
+      border: 2px solid var(--bleu);
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background .2s, color .2s;
+    }
+    .btn-home:hover { background: var(--bleu); color: #fff; }
+
+    .save-status {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--vert);
+      padding: 4px 0;
+      min-width: 120px;
+    }
+
+    .page {
+      background: #fff;
+      max-width: 960px;
+      margin: 12px auto 40px;
+      border-radius: 10px;
+      box-shadow: 0 2px 12px rgba(0,0,0,.08);
+      overflow: hidden;
+    }
+    .header {
+      background: linear-gradient(135deg, var(--bleu) 0%, #014d82 100%);
+      color: #fff;
+      padding: 20px 28px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    .company-info h1 {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      margin-bottom: 2px;
+    }
+    .company-info p { font-size: 12px; opacity: .85; }
+    .doc-label { margin-left: auto; text-align: right; }
+    .doc-label .titre {
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+    .doc-label .sous-titre { font-size: 11px; opacity: .8; margin-top: 2px; }
+
+    .body { padding: 24px 28px; }
+
+    .section-title {
+      font-weight: 800;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--bleu);
+      border-bottom: 2px solid var(--bordure);
+      padding-bottom: 6px;
+      margin: 0 0 16px;
+    }
+
+    /* CONFIG COMPOSANTS */
+    .cfg-note {
+      background: #e8f4fd;
+      border: 1px solid #b3d9f5;
+      border-radius: 6px;
+      padding: 10px 14px;
+      font-size: 12px;
+      color: #1a5276;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .btn-reset {
+      padding: 6px 14px;
+      background: #fff;
+      color: #c0392b;
+      border: 1.5px solid #c0392b;
+      border-radius: 5px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .btn-reset:hover { background: #fdf3f2; }
+
+    .cfg-section {
+      background: #fff;
+      border: 1px solid var(--bordure);
+      border-radius: 8px;
+      padding: 16px 18px;
+      margin-bottom: 16px;
+    }
+    .cfg-section-title {
+      font-weight: 700;
+      font-size: 13px;
+      color: var(--bleu);
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      margin-bottom: 14px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid var(--bordure);
+    }
+    .cfg-subsection-title {
+      font-weight: 600;
+      font-size: 11px;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: .4px;
+      margin: 14px 0 8px;
+    }
+    .cfg-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+      gap: 7px;
+    }
+    .cfg-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 3px 0;
+    }
+    .cfg-row label {
+      flex: 1;
+      font-size: 12px;
+      color: #444;
+      min-width: 0;
+    }
+    .cfg-row input[type="number"] {
+      width: 82px;
+      padding: 5px 7px;
+      border: 1px solid var(--bordure);
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      text-align: right;
+      background: #fffbe6;
+      transition: background .15s;
+    }
+    .cfg-row input[type="number"]:focus { outline: 2px solid var(--bleu); background: #fff; }
+    .cfg-row input[type="number"].modified { background: #fff3cd; }
+    .cfg-unit { font-size: 11px; color: #888; white-space: nowrap; min-width: 80px; }
+
+    .cfg-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      margin-bottom: 4px;
+    }
+    .cfg-table th {
+      background: #eef2f7;
+      border: 1px solid var(--bordure);
+      padding: 7px 8px;
+      text-align: center;
+      font-weight: 700;
+      font-size: 11px;
+      color: #555;
+    }
+    .cfg-table th:first-child { text-align: left; min-width: 200px; }
+    .cfg-table td {
+      border: 1px solid var(--bordure);
+      padding: 5px 6px;
+      vertical-align: middle;
+    }
+    .cfg-table td:first-child { font-size: 12px; color: #333; padding-left: 10px; }
+    .cfg-table td:not(:first-child) { text-align: center; }
+    .cfg-table tr:nth-child(even) td { background: #f9fafb; }
+    .cfg-table input[type="number"] {
+      width: 76px;
+      padding: 4px 6px;
+      border: 1px solid var(--bordure);
+      border-radius: 3px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      text-align: right;
+      background: #fffbe6;
+      transition: background .15s;
+    }
+    .cfg-table input[type="number"]:focus { outline: 2px solid var(--bleu); background: #fff; }
+    .cfg-table input[type="number"].modified { background: #fff3cd; }
+
+    .doc-footer {
+      background: #f0f4f8;
+      border-top: 1px solid var(--bordure);
+      padding: 10px 28px;
+      font-size: 11px;
+      color: #888;
+      text-align: center;
+    }
+
+    @media print {
+      body { background: #fff; }
+      .top-bar { display: none !important; }
+      .save-status { display: none !important; }
+      .page { box-shadow: none; border-radius: 0; margin: 0; max-width: 100%; }
+      input { background: transparent !important; border: none !important; }
+    }
+    @media (max-width: 600px) {
+      .body { padding: 14px; }
+      .header { flex-wrap: wrap; padding: 14px; gap: 10px; }
+      .doc-label { margin-left: 0; text-align: left; }
+      .cfg-grid { grid-template-columns: 1fr; }
+      .cfg-table { display: block; overflow-x: auto; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="top-bar">
+  <a class="btn-home" href="index.html">← Accueil</a>
+  <span class="save-status" id="saveStatus"></span>
+</div>
+
+<div class="page">
+
+  <div class="header">
+    <img src="https://innovaspray.com/wp-content/uploads/2025/09/organization_logo_par.jpg" width="80" height="80" style="border-radius:8px;object-fit:contain;background:#fff;padding:4px;flex-shrink:0;" alt="InnovaSpray Québec">
+    <div class="company-info">
+      <h1>INNOVASPRAY QUÉBEC</h1>
+      <p>info@innovaspray.ca &nbsp;|&nbsp; innovaspray.ca</p>
+    </div>
+    <div class="doc-label">
+      <div class="titre">Configuration</div>
+      <div class="sous-titre">Normes de production — option MOYEN</div>
+    </div>
+  </div>
+
+  <div class="body">
+
+    <div class="section-title">⚙️ Normes de production utilisées dans les calculs</div>
+
+    <div class="cfg-note">
+      Ces valeurs sont utilisées par le <strong>Bon de travail</strong> pour calculer automatiquement les quantités de peinture et les heures de travail. Toute modification est sauvegardée instantanément.
+      <button onclick="resetCFG()" class="btn-reset">↩ Rétablir les valeurs par défaut</button>
+    </div>
+
+    <!-- DÉPLACEMENT -->
+    <div class="cfg-section">
+      <div class="cfg-section-title">Déplacement</div>
+      <div class="cfg-grid">
+        <div class="cfg-row">
+          <label>Coût par kilomètre</label>
+          <input type="number" data-cfg="deplacement_km" step="0.01" min="0">
+          <span class="cfg-unit">$/km</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- PRÉPARATION -->
+    <div class="cfg-section">
+      <div class="cfg-section-title">Préparation — taux par étage (MOYEN)</div>
+      <table class="cfg-table">
+        <thead>
+          <tr><th>Description</th><th>1er étage</th><th>2e étage</th><th>3e étage</th><th>Unité</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Lavage à pression</td>
+            <td><input type="number" data-cfg="lavage_1" step="1"></td>
+            <td><input type="number" data-cfg="lavage_2" step="1"></td>
+            <td><input type="number" data-cfg="lavage_3" step="0.01"></td>
+            <td>pi²/h</td>
+          </tr>
+          <tr>
+            <td>Lavage gouttières / soffites / fascia</td>
+            <td><input type="number" data-cfg="lavage_gout_1" step="1"></td>
+            <td><input type="number" data-cfg="lavage_gout_2" step="1"></td>
+            <td><input type="number" data-cfg="lavage_gout_3" step="0.1"></td>
+            <td>pi li./h</td>
+          </tr>
+          <tr>
+            <td>Sablage revêtement écaillé</td>
+            <td><input type="number" data-cfg="sablage_rev_1" step="0.01"></td>
+            <td><input type="number" data-cfg="sablage_rev_2" step="0.01"></td>
+            <td><input type="number" data-cfg="sablage_rev_3" step="0.01"></td>
+            <td>pi²/h</td>
+          </tr>
+          <tr>
+            <td>Sablage gouttières / soffites / fascia</td>
+            <td><input type="number" data-cfg="sablage_gout_1" step="0.01"></td>
+            <td><input type="number" data-cfg="sablage_gout_2" step="0.01"></td>
+            <td><input type="number" data-cfg="sablage_gout_3" step="0.01"></td>
+            <td>pi li./h</td>
+          </tr>
+          <tr>
+            <td>Grattage</td>
+            <td><input type="number" data-cfg="grattage_1" step="1"></td>
+            <td><input type="number" data-cfg="grattage_2" step="1"></td>
+            <td><input type="number" data-cfg="grattage_3" step="0.01"></td>
+            <td>pi²/h</td>
+          </tr>
+          <tr>
+            <td>Application apprêt complet</td>
+            <td><input type="number" data-cfg="apret_app_1" step="1"></td>
+            <td><input type="number" data-cfg="apret_app_2" step="1"></td>
+            <td><input type="number" data-cfg="apret_app_3" step="1"></td>
+            <td>pi²/h</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="cfg-grid" style="margin-top:12px;">
+        <div class="cfg-row">
+          <label>Apprêt — couverture</label>
+          <input type="number" data-cfg="apret_pi2_gal" step="1">
+          <span class="cfg-unit">pi²/gallon</span>
+        </div>
+        <div class="cfg-row">
+          <label>Sablage porte de garage</label>
+          <input type="number" data-cfg="sablage_porte_garage_h" step="0.01">
+          <span class="cfg-unit">h/unité</span>
+        </div>
+        <div class="cfg-row">
+          <label>Sablage porte</label>
+          <input type="number" data-cfg="sablage_porte_h" step="0.01">
+          <span class="cfg-unit">h/unité</span>
+        </div>
+        <div class="cfg-row">
+          <label>Sablage fenêtre</label>
+          <input type="number" data-cfg="sablage_fen_h" step="0.01">
+          <span class="cfg-unit">h/unité</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- REVÊTEMENT -->
+    <div class="cfg-section">
+      <div class="cfg-section-title">Revêtement — application et couverture</div>
+      <table class="cfg-table">
+        <thead>
+          <tr><th>Application peinture (pi²/h)</th><th>1er étage</th><th>2e étage</th><th>3e étage</th><th>Unité</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Maçonnerie (stuc / brique / agrégat)</td>
+            <td><input type="number" data-cfg="app_macon_1" step="1"></td>
+            <td><input type="number" data-cfg="app_macon_2" step="0.01"></td>
+            <td><input type="number" data-cfg="app_macon_3" step="0.001"></td>
+            <td>pi²/h</td>
+          </tr>
+          <tr>
+            <td>Standard (vinyle / bois / aluminium / Canexel)</td>
+            <td><input type="number" data-cfg="app_std_1" step="1"></td>
+            <td><input type="number" data-cfg="app_std_2" step="1"></td>
+            <td><input type="number" data-cfg="app_std_3" step="1"></td>
+            <td>pi²/h</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="cfg-grid" style="margin-top:12px;">
+        <div class="cfg-row">
+          <label>Couverture — Maçonnerie (stuc / brique)</label>
+          <input type="number" data-cfg="rev_macon_pi2_gal" step="1">
+          <span class="cfg-unit">pi²/gallon</span>
+        </div>
+        <div class="cfg-row">
+          <label>Couverture — Standard (vinyle / bois / alu)</label>
+          <input type="number" data-cfg="rev_std_pi2_gal" step="1">
+          <span class="cfg-unit">pi²/gallon</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- CORNICHE / GOUTTIÈRES -->
+    <div class="cfg-section">
+      <div class="cfg-section-title">Corniche / Gouttières / Soffites / Fascias</div>
+      <table class="cfg-table">
+        <thead>
+          <tr><th>Description</th><th>1er étage</th><th>2e étage</th><th>3e étage</th><th>Unité</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Application peinture</td>
+            <td><input type="number" data-cfg="gout_app_1" step="0.1"></td>
+            <td><input type="number" data-cfg="gout_app_2" step="0.1"></td>
+            <td><input type="number" data-cfg="gout_app_3" step="0.5"></td>
+            <td>pi li./h</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="cfg-grid" style="margin-top:12px;">
+        <div class="cfg-row">
+          <label>Couverture peinture</label>
+          <input type="number" data-cfg="gout_pi_li_gal" step="1">
+          <span class="cfg-unit">pi li./gallon</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOITURE -->
+    <div class="cfg-section">
+      <div class="cfg-section-title">Toiture</div>
+      <div class="cfg-grid">
+        <div class="cfg-row">
+          <label>Application alkyde — taux (MOYEN)</label>
+          <input type="number" data-cfg="toiture_alkyde_app" step="1">
+          <span class="cfg-unit">pi²/h</span>
+        </div>
+        <div class="cfg-row">
+          <label>Couverture alkyde</label>
+          <input type="number" data-cfg="toiture_alkyde_pi2_gal" step="1">
+          <span class="cfg-unit">pi²/gallon</span>
+        </div>
+        <div class="cfg-row">
+          <label>Application bardeaux d'asphalte — taux (MOYEN)</label>
+          <input type="number" data-cfg="toiture_bardeau_app" step="1">
+          <span class="cfg-unit">pi²/h</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- PORTES ET FENÊTRES -->
+    <div class="cfg-section">
+      <div class="cfg-section-title">Portes et Fenêtres</div>
+
+      <div class="cfg-subsection-title">Masquage / Démasquage (h/unité) — 1er étage</div>
+      <div class="cfg-grid">
+        <div class="cfg-row"><label>Porte</label><input type="number" data-cfg="maq_porte" step="0.01"><span class="cfg-unit">h/unité</span></div>
+        <div class="cfg-row"><label>Porte de garage</label><input type="number" data-cfg="maq_garage" step="0.01"><span class="cfg-unit">h/unité</span></div>
+        <div class="cfg-row"><label>Fenêtre simple</label><input type="number" data-cfg="maq_fen_simple" step="0.01"><span class="cfg-unit">h/unité</span></div>
+        <div class="cfg-row"><label>Fenêtre double</label><input type="number" data-cfg="maq_fen_double" step="0.01"><span class="cfg-unit">h/unité</span></div>
+      </div>
+
+      <div class="cfg-subsection-title">Application peinture (h/unité)</div>
+      <div class="cfg-grid">
+        <div class="cfg-row"><label>Porte (tous étages)</label><input type="number" data-cfg="app_porte" step="0.01"><span class="cfg-unit">h/unité</span></div>
+        <div class="cfg-row"><label>Porte de garage (tous étages)</label><input type="number" data-cfg="app_garage" step="0.01"><span class="cfg-unit">h/unité</span></div>
+        <div class="cfg-row"><label>Fenêtre simple — 1er étage</label><input type="number" data-cfg="app_fen_1" step="0.01"><span class="cfg-unit">h/unité</span></div>
+        <div class="cfg-row"><label>Fenêtre simple — 2e étage</label><input type="number" data-cfg="app_fen_2" step="0.01"><span class="cfg-unit">h/unité</span></div>
+        <div class="cfg-row"><label>Fenêtre simple — 3e étage</label><input type="number" data-cfg="app_fen_3" step="0.01"><span class="cfg-unit">h/unité</span></div>
+      </div>
+
+      <div class="cfg-subsection-title">Quantité de peinture (gallon/unité)</div>
+      <div class="cfg-grid">
+        <div class="cfg-row"><label>Porte</label><input type="number" data-cfg="gal_porte" step="0.01"><span class="cfg-unit">gal/unité</span></div>
+        <div class="cfg-row"><label>Porte de garage</label><input type="number" data-cfg="gal_garage" step="0.01"><span class="cfg-unit">gal/unité</span></div>
+        <div class="cfg-row"><label>Fenêtre simple</label><input type="number" data-cfg="gal_fen_simple" step="0.01"><span class="cfg-unit">gal/unité</span></div>
+        <div class="cfg-row"><label>Fenêtre double</label><input type="number" data-cfg="gal_fen_double" step="0.01"><span class="cfg-unit">gal/unité</span></div>
+        <div class="cfg-row"><label>Fenêtre triple</label><input type="number" data-cfg="gal_fen_triple" step="0.01"><span class="cfg-unit">gal/unité</span></div>
+        <div class="cfg-row"><label>Fenêtre quadruple</label><input type="number" data-cfg="gal_fen_quad" step="0.01"><span class="cfg-unit">gal/unité</span></div>
+      </div>
+    </div>
+
+    <!-- CALFEUTRAGE -->
+    <div class="cfg-section">
+      <div class="cfg-section-title">Calfeutrage — 1er étage (MOYEN)</div>
+      <table class="cfg-table">
+        <thead>
+          <tr><th>Description</th><th>Masquage (h)</th><th>Application (h)</th><th>Tubes (unité)</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Porte</td>
+            <td><input type="number" data-cfg="calf_porte_maq" step="0.001"></td>
+            <td><input type="number" data-cfg="calf_porte_app" step="0.01"></td>
+            <td><input type="number" data-cfg="calf_porte_tube" step="0.01"></td>
+          </tr>
+          <tr>
+            <td>Porte de garage</td>
+            <td><input type="number" data-cfg="calf_garage_maq" step="0.001"></td>
+            <td><input type="number" data-cfg="calf_garage_app" step="0.01"></td>
+            <td><input type="number" data-cfg="calf_garage_tube" step="0.01"></td>
+          </tr>
+          <tr>
+            <td>Fenêtre simple</td>
+            <td><input type="number" data-cfg="calf_fen_simple_maq" step="0.001"></td>
+            <td><input type="number" data-cfg="calf_fen_simple_app" step="0.01"></td>
+            <td><input type="number" data-cfg="calf_fen_simple_tube" step="0.01"></td>
+          </tr>
+          <tr>
+            <td>Fenêtre double</td>
+            <td><input type="number" data-cfg="calf_fen_double_maq" step="0.001"></td>
+            <td><input type="number" data-cfg="calf_fen_double_app" step="0.01"></td>
+            <td><input type="number" data-cfg="calf_fen_double_tube" step="0.01"></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- CONSOMMABLES -->
+    <div class="cfg-section">
+      <div class="cfg-section-title">Consommables</div>
+      <div class="cfg-grid">
+        <div class="cfg-row"><label>Tape 3M — 1 rouleau par N gallons</label><input type="number" data-cfg="tape_par_gal" step="1"><span class="cfg-unit">gallons/rouleau</span></div>
+        <div class="cfg-row"><label>Tape 3M — ratio par rouleau polythène</label><input type="number" data-cfg="tape_par_poly" step="0.1"><span class="cfg-unit">rouleau/poly</span></div>
+        <div class="cfg-row"><label>Polythène — 1 rouleau par N fenêtres</label><input type="number" data-cfg="poly_par_fen" step="1"><span class="cfg-unit">fenêtres/rouleau</span></div>
+        <div class="cfg-row"><label>Rouleaux papier — 1 rouleau par N gallons</label><input type="number" data-cfg="papier_par_gal" step="1"><span class="cfg-unit">gallons/rouleau</span></div>
+        <div class="cfg-row"><label>Disques à sabler — 1 disque par N pi²</label><input type="number" data-cfg="disque_par_pi2" step="1"><span class="cfg-unit">pi²/disque</span></div>
+      </div>
+    </div>
+
+    <!-- NACELLE -->
+    <div class="cfg-section">
+      <div class="cfg-section-title">Location nacelle</div>
+      <div class="cfg-grid">
+        <div class="cfg-row"><label>Tarif journalier</label><input type="number" data-cfg="nacelle_jour" step="1"><span class="cfg-unit">$/jour</span></div>
+        <div class="cfg-row"><label>Tarif hebdomadaire</label><input type="number" data-cfg="nacelle_semaine" step="1"><span class="cfg-unit">$/semaine</span></div>
+      </div>
+    </div>
+
+  </div><!-- /body -->
+
+  <div class="doc-footer">
+    InnovaSpray Québec &nbsp;|&nbsp; innovaspray.ca &nbsp;|&nbsp; Valeurs par défaut basées sur les normes MOYEN de production
+  </div>
+
+</div><!-- /page -->
+
+<script>
+// ================================================================
+// CONFIGURATION — normes de production (valeurs MOYEN par défaut)
+// Partagées avec Bon de travail.html via ISQStore (clé: isq_config)
+// ================================================================
+var CFG_DEFAULTS = {
+  deplacement_km: 0.65,
+  lavage_1: 320,    lavage_2: 288,    lavage_3: 247,
+  lavage_gout_1: 50, lavage_gout_2: 46, lavage_gout_3: 39.9,
+  sablage_rev_1: 63,  sablage_rev_2: 63,  sablage_rev_3: 54.15,
+  sablage_gout_1: 17, sablage_gout_2: 15, sablage_gout_3: 12.35,
+  sablage_porte_garage_h: 0.75, sablage_porte_h: 0.5, sablage_fen_h: 0.27,
+  grattage_1: 150,  grattage_2: 135,  grattage_3: 114.95,
+  apret_app_1: 200, apret_app_2: 180, apret_app_3: 150,
+  apret_pi2_gal: 300,
+  app_macon_1: 200, app_macon_2: 170, app_macon_3: 140,
+  app_std_1: 316,   app_std_2: 267,   app_std_3: 227,
+  rev_macon_pi2_gal: 80,
+  rev_std_pi2_gal: 200,
+  gout_app_1: 22, gout_app_2: 18.5, gout_app_3: 12.5,
+  gout_pi_li_gal: 40,
+  toiture_alkyde_app: 234,
+  toiture_alkyde_pi2_gal: 67,
+  toiture_bardeau_app: 270,
+  maq_porte: 2.43, maq_garage: 2.96, maq_fen_simple: 1.37, maq_fen_double: 1.63,
+  app_porte: 1.06, app_garage: 1.59,
+  app_fen_1: 0.70, app_fen_2: 0.77, app_fen_3: 0.89,
+  gal_porte: 0.5, gal_garage: 1.05, gal_fen_simple: 0.2,
+  gal_fen_double: 0.3, gal_fen_triple: 0.35, gal_fen_quad: 0.4,
+  calf_porte_maq: 1.518,       calf_porte_app: 0.35,       calf_porte_tube: 0.75,
+  calf_garage_maq: 2.156,      calf_garage_app: 0.47,      calf_garage_tube: 1.0,
+  calf_fen_simple_maq: 1.045,  calf_fen_simple_app: 0.23,  calf_fen_simple_tube: 0.5,
+  calf_fen_double_maq: 1.166,  calf_fen_double_app: 0.30,  calf_fen_double_tube: 0.6,
+  tape_par_gal: 5, tape_par_poly: 0.5, poly_par_fen: 5,
+  papier_par_gal: 8, disque_par_pi2: 100,
+  nacelle_jour: 450, nacelle_semaine: 1650
+};
+
+function loadCFG() {
+  var saved = {};
+  try { saved = JSON.parse(ISQStore.getItem('isq_config') || '{}'); } catch(e) {}
+  window.CFG = {};
+  Object.keys(CFG_DEFAULTS).forEach(function(k) {
+    window.CFG[k] = (saved[k] !== undefined) ? saved[k] : CFG_DEFAULTS[k];
+  });
+}
+
+function saveCFG() {
+  ISQStore.setItem('isq_config', JSON.stringify(window.CFG));
+  showSaveStatus();
+}
+
+function resetCFG() {
+  if (!confirm('Rétablir toutes les valeurs aux paramètres par défaut ?')) return;
+  ISQStore.removeItem('isq_config');
+  loadCFG();
+  fillCFGInputs();
+  showSaveStatus('Valeurs réinitialisées');
+}
+
+function fillCFGInputs() {
+  document.querySelectorAll('[data-cfg]').forEach(function(el) {
+    var key = el.getAttribute('data-cfg');
+    if (window.CFG[key] !== undefined) {
+      el.value = window.CFG[key];
+      el.classList.remove('modified');
+    }
+  });
+}
+
+var saveTimer;
+function showSaveStatus(msg) {
+  var el = document.getElementById('saveStatus');
+  if (!el) return;
+  el.textContent = msg || '✓ Sauvegardé';
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(function() { el.textContent = ''; }, 2500);
+}
+
+loadCFG();
+
+document.addEventListener('DOMContentLoaded', function() {
+  fillCFGInputs();
+
+  document.querySelectorAll('[data-cfg]').forEach(function(el) {
+    el.addEventListener('input', function() {
+      var key = el.getAttribute('data-cfg');
+      var val = parseFloat(el.value);
+      if (!isNaN(val) && val > 0) {
+        window.CFG[key] = val;
+        el.classList.add('modified');
+        saveCFG();
+      }
+    });
+  });
+});
+</script>
+
+</body>
+</html>

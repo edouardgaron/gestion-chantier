@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rapport de Satisfaction — InnovaSpray Québec</title>
+  <script src="webhooks.config.js"></script>
+  <script src="isq-storage.js"></script>
+  <script src="isq-auth.js"></script>
+  <script>ISQAuth.requireLogin();</script>
+  <script src="isq-core.js"></script>
+  <script src="isq-saves-db.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bleu:       #0170B9;
+      --bleu-clair: #1A8FD1;
+      --orange:     #FF6600;
+      --gris:       #F4F6F9;
+      --bordure:    #D0D7E3;
+      --texte:      #1A1A2E;
+      --vert:       #2E7D32;
+      --vert-bg:    #E8F5E9;
+    }
+
+    body {
+      font-family: 'Montserrat', 'Segoe UI', Arial, sans-serif;
+      background: linear-gradient(135deg, #1B4F8A 0%, #2E6DB4 50%, #1B4F8A 100%);
+      min-height: 100vh;
+      padding: 20px;
+      color: var(--texte);
+    }
+
+    .btn-print {
+      display: block;
+      margin: 0 auto 18px;
+      padding: 9px 24px;
+      background: rgba(255,255,255,.2);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,.4);
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      backdrop-filter: blur(4px);
+      transition: background .2s;
+    }
+    .btn-print:hover { background: rgba(255,255,255,.3); }
+
+    .page {
+      max-width: 680px;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,.3);
+    }
+
+    /* HEADER */
+    .header {
+      background: var(--bleu);
+      color: #fff;
+      padding: 32px 36px;
+      text-align: center;
+      position: relative;
+    }
+    .header::after {
+      content: '';
+      position: absolute;
+      bottom: -20px; left: 0; right: 0;
+      height: 40px;
+      background: #fff;
+      border-radius: 50% 50% 0 0 / 40px 40px 0 0;
+    }
+    .logo-placeholder {
+      width: 80px; height: 80px;
+      border: 2px dashed rgba(255,255,255,.5);
+      border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 10px; color: rgba(255,255,255,.7); text-align: center;
+      margin-bottom: 12px;
+    }
+    .header h1 { font-size: 22px; font-weight: 700; }
+    .header h2 { font-size: 16px; font-weight: 400; opacity: .85; margin-top: 4px; }
+    .header .tag {
+      display: inline-block;
+      background: var(--orange);
+      color: #fff;
+      padding: 4px 16px;
+      border-radius: 99px;
+      font-size: 12px;
+      font-weight: 700;
+      margin-top: 10px;
+      letter-spacing: .5px;
+    }
+
+    /* BODY */
+    .body { padding: 40px 36px 30px; }
+
+    /* WELCOME MESSAGE */
+    .welcome-box {
+      background: var(--gris);
+      border-left: 4px solid var(--orange);
+      padding: 16px 18px;
+      border-radius: 0 8px 8px 0;
+      margin-bottom: 28px;
+      font-size: 13px;
+      line-height: 1.7;
+    }
+    .welcome-box strong { color: var(--bleu); }
+
+    /* SECTION TITLE */
+    .section-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--bleu);
+      margin-bottom: 16px;
+      margin-top: 28px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .section-title::after {
+      content: '';
+      flex: 1;
+      height: 2px;
+      background: var(--bordure);
+    }
+
+    /* STAR RATING */
+    .rating-group { margin-bottom: 20px; }
+    .rating-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: var(--gris);
+      border: 1px solid var(--bordure);
+      border-radius: 10px;
+      margin-bottom: 10px;
+      transition: border-color .2s;
+    }
+    .rating-item:hover { border-color: var(--bleu-clair); }
+    .rating-item .ri-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      min-width: 200px;
+    }
+    .rating-item .ri-icon { font-size: 20px; }
+    .star-group {
+      display: flex;
+      gap: 4px;
+    }
+    .star-group { flex-direction: row-reverse; }
+    .star-group input[type="radio"] { display: none; }
+    .star-group label {
+      font-size: 28px;
+      color: #D0D7E3;
+      cursor: pointer;
+      transition: color .1s;
+      line-height: 1;
+    }
+    /* Hover: highlight hovered star and all stars with higher value (earlier in DOM = higher value due to row-reverse) */
+    .star-group label:hover,
+    .star-group label:hover ~ label { color: #FFB300; }
+    /* Checked state */
+    .star-group input[type="radio"]:checked ~ label { color: #D0D7E3; }
+    .star-group label:has(~ input[type="radio"]:checked),
+    .star-group input[type="radio"]:checked + label { color: #FFB300; }
+
+    /* NPS SCORE */
+    .nps-section { margin-bottom: 20px; }
+    .nps-label { font-size: 14px; font-weight: 600; margin-bottom: 10px; color: var(--bleu); }
+    .nps-scale {
+      display: flex;
+      gap: 4px;
+      justify-content: space-between;
+    }
+    .nps-btn {
+      flex: 1;
+      padding: 10px 0;
+      border: 1px solid var(--bordure);
+      border-radius: 6px;
+      background: var(--gris);
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+      transition: all .15s;
+      color: var(--texte);
+    }
+    .nps-btn:hover { background: var(--bleu); color: #fff; border-color: var(--bleu); }
+    .nps-btn.selected { background: var(--bleu); color: #fff; border-color: var(--bleu); }
+    .nps-btn.selected.promoter { background: var(--vert); border-color: var(--vert); }
+    .nps-btn.selected.detractor { background: #C62828; border-color: #C62828; }
+    .nps-subtext { display: flex; justify-content: space-between; margin-top: 4px; font-size: 10px; color: #888; }
+
+    /* TEXTAREA */
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 600; color: var(--bleu); margin-bottom: 6px; }
+    .form-textarea {
+      width: 100%;
+      min-height: 90px;
+      border: 1px solid var(--bordure);
+      border-radius: 8px;
+      padding: 12px;
+      font-family: inherit;
+      font-size: 13px;
+      background: var(--gris);
+      resize: vertical;
+      transition: border-color .2s;
+    }
+    .form-textarea:focus { outline: none; border-color: var(--bleu-clair); background: #fff; }
+    .form-input {
+      width: 100%;
+      border: 1px solid var(--bordure);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-family: inherit;
+      font-size: 13px;
+      background: var(--gris);
+      transition: border-color .2s;
+    }
+    .form-input:focus { outline: none; border-color: var(--bleu-clair); background: #fff; }
+
+    /* RADIO CHOICE */
+    .radio-group { display: flex; gap: 12px; flex-wrap: wrap; }
+    .radio-option {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 9px 16px;
+      border: 1px solid var(--bordure);
+      border-radius: 99px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: all .15s;
+      background: var(--gris);
+    }
+    .radio-option:hover { border-color: var(--bleu-clair); background: #eaf0fb; }
+    .radio-option input[type="radio"] { accent-color: var(--bleu); }
+    .radio-option:has(input:checked) { background: var(--bleu); color: #fff; border-color: var(--bleu); }
+
+    /* GOOGLE CTA */
+    .google-cta {
+      background: linear-gradient(135deg, #4285F4, #34A853);
+      color: #fff;
+      border-radius: 12px;
+      padding: 20px 22px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .google-cta h3 { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+    .google-cta p { font-size: 12px; opacity: .9; margin-bottom: 14px; line-height: 1.5; }
+    .google-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #fff;
+      color: #4285F4;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 22px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      transition: box-shadow .2s;
+    }
+    .google-btn:hover { box-shadow: 0 4px 12px rgba(0,0,0,.2); }
+
+    /* REFERRAL */
+    .referral-box {
+      border: 2px solid var(--orange);
+      border-radius: 12px;
+      padding: 18px 20px;
+      margin-bottom: 24px;
+      background: #FFF8F0;
+    }
+    .referral-box h3 { font-size: 15px; font-weight: 700; color: var(--orange); margin-bottom: 6px; }
+    .referral-box p { font-size: 12px; color: #555; margin-bottom: 12px; line-height: 1.5; }
+
+    /* SUBMIT BTN */
+    .submit-btn {
+      display: block;
+      width: 100%;
+      padding: 14px;
+      background: var(--orange);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: .5px;
+      transition: background .2s, transform .1s;
+      margin-top: 8px;
+    }
+    .submit-btn:hover { background: #cc5200; transform: translateY(-1px); }
+    .submit-btn:active { transform: translateY(0); }
+
+    /* SUCCESS MESSAGE */
+    .success-message {
+      display: none;
+      background: var(--vert-bg);
+      border: 2px solid #A5D6A7;
+      border-radius: 12px;
+      padding: 24px;
+      text-align: center;
+      margin-top: 16px;
+    }
+    .success-message h3 { color: var(--vert); font-size: 18px; margin-bottom: 8px; }
+    .success-message p { color: #444; font-size: 13px; line-height: 1.6; }
+
+    /* FOOTER */
+    .survey-footer {
+      background: var(--bleu);
+      color: rgba(255,255,255,.7);
+      text-align: center;
+      padding: 14px;
+      font-size: 11px;
+    }
+    .survey-footer a { color: rgba(255,255,255,.85); }
+
+    /* HIDDEN FIELDS */
+    .hidden-fields { display: none; }
+
+    @media print {
+      body { background: #fff; padding: 0; }
+      .btn-print, .submit-btn, .google-cta { display: none !important; }
+      .page { box-shadow: none; border-radius: 0; max-width: 100%; }
+    }
+
+    /* BOUTON ACCUEIL */
+    .btn-home {
+      display: inline-block;
+      padding: 10px 18px;
+      background: #fff;
+      color: #0170B9;
+      border: 2px solid #0170B9;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background .2s, color .2s;
+    }
+    .btn-home:hover { background: #0170B9; color: #fff; }
+
+    @media (max-width: 600px) {
+      body { font-size: 15px; }
+      .page { border-radius: 0; }
+      .btn-print, .btn-home {
+        width: 100%;
+        padding: 14px;
+        font-size: 16px;
+        margin: 8px 0;
+        display: block;
+        text-align: center;
+        min-height: 44px;
+      }
+      .body { padding: 20px 16px; }
+      input[type="text"], input[type="number"], textarea, select {
+        font-size: 16px !important;
+        padding: 10px 8px;
+        min-height: 44px;
+      }
+      input[type="checkbox"] {
+        width: 22px;
+        height: 22px;
+        min-width: 22px;
+      }
+      /* Boutons tactiles ≥ 44px */
+      button { min-height: 44px !important; }
+      .submit-btn { min-height: 52px; font-size: 17px; }
+      .google-btn { min-height: 44px; }
+      /* NPS sur mobile : tient dans 390px (flex:1 distribue l'espace) */
+      .nps-scale { gap: 2px; flex-wrap: nowrap; }
+      .nps-btn { flex: 1; min-width: 0; min-height: 44px; font-size: 12px !important; padding: 8px 0; flex-shrink: 1; }
+      /* Texte minimum 12px */
+      .nps-subtext { font-size: 12px !important; }
+      .survey-footer { font-size: 12px !important; }
+      .ri-label { font-size: 13px; }
+      small { font-size: 12px; }
+      .rating-item { flex-direction: column; align-items: flex-start; gap: 8px; }
+      .radio-group { flex-direction: column; }
+      .radio-option { padding: 12px 16px; min-height: 44px; }
+    }
+
+    @media print {
+      .btn-home { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+<div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-bottom:8px;">
+  <a class="btn-home no-print" href="index.html" onclick="event.preventDefault();saveDocData();window.location.href='index.html';">← Accueil</a>
+  <button class="btn-print no-print" onclick="window.print()">🖨 Imprimer</button>
+</div>
+
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="header">
+    <img src="https://innovaspray.com/wp-content/uploads/2025/09/organization_logo_par.jpg" width="90" height="90" style="border-radius:50%;object-fit:contain;background:white;padding:6px;margin-bottom:12px;display:block;margin-left:auto;margin-right:auto;" alt="InnovaSpray Québec">
+    <h1>INNOVASPRAY QUÉBEC</h1>
+    <h2>Votre opinion nous tient à cœur</h2>
+    <div class="tag">SONDAGE DE SATISFACTION</div>
+  </div>
+
+  <!-- HIDDEN JOBBER FIELDS FOR N8N -->
+  <div class="hidden-fields">
+    <input type="hidden" id="job_number" data-jobber-field="job_number" value="">
+    <input type="hidden" id="client_id" data-jobber-field="client_id" value="">
+    <input type="hidden" id="client_name" data-jobber-field="client_name" value="">
+    <input type="hidden" id="client_email" data-jobber-field="client_email" value="">
+    <input type="hidden" id="job_completion_date" data-jobber-field="job_completion_date" value="">
+    <input type="hidden" id="assigned_employee" data-jobber-field="assigned_employee" value="">
+  </div>
+
+  <div class="body">
+
+    <!-- WELCOME -->
+    <div class="welcome-box">
+      Bonjour <strong data-jobber-field="client_name">cher client</strong>,<br><br>
+      Merci d'avoir choisi <strong>InnovaSpray Québec</strong> pour vos travaux de <strong>peinture extérieure</strong> au
+      <strong data-jobber-field="job_address">[adresse du chantier]</strong>, complétés le
+      <strong data-jobber-field="job_completion_date">[date de fin]</strong>.<br><br>
+      Votre satisfaction est notre priorité absolue. Ce sondage ne prend que <strong>2 minutes</strong>
+      et nous aide à continuer de vous offrir un service d'excellence. Merci!
+    </div>
+
+    <form id="satisfactionForm" data-n8n-webhook="satisfaction_survey_submitted">
+
+      <!-- ÉVALUATIONS PAR ÉTOILES -->
+      <div class="section-title"><span>⭐</span> Évaluations</div>
+      <div class="rating-group">
+
+        <!-- Qualité des travaux -->
+        <div class="rating-item">
+          <div class="ri-label">
+            <span class="ri-icon">🖌</span>
+            Qualité des travaux de peinture
+          </div>
+          <div class="star-group">
+            <input type="radio" name="rating_quality" id="q5" value="5"><label for="q5" title="Excellent">★</label>
+            <input type="radio" name="rating_quality" id="q4" value="4"><label for="q4" title="Très bien">★</label>
+            <input type="radio" name="rating_quality" id="q3" value="3"><label for="q3" title="Bien">★</label>
+            <input type="radio" name="rating_quality" id="q2" value="2"><label for="q2" title="Moyen">★</label>
+            <input type="radio" name="rating_quality" id="q1" value="1"><label for="q1" title="Mauvais">★</label>
+          </div>
+        </div>
+
+        <!-- Propreté -->
+        <div class="rating-item">
+          <div class="ri-label">
+            <span class="ri-icon">🧹</span>
+            Propreté du chantier pendant et après les travaux
+          </div>
+          <div class="star-group">
+            <input type="radio" name="rating_cleanliness" id="c5" value="5"><label for="c5">★</label>
+            <input type="radio" name="rating_cleanliness" id="c4" value="4"><label for="c4">★</label>
+            <input type="radio" name="rating_cleanliness" id="c3" value="3"><label for="c3">★</label>
+            <input type="radio" name="rating_cleanliness" id="c2" value="2"><label for="c2">★</label>
+            <input type="radio" name="rating_cleanliness" id="c1" value="1"><label for="c1">★</label>
+          </div>
+        </div>
+
+        <!-- Ponctualité -->
+        <div class="rating-item">
+          <div class="ri-label">
+            <span class="ri-icon">⏰</span>
+            Respect des délais et ponctualité de l'équipe
+          </div>
+          <div class="star-group">
+            <input type="radio" name="rating_punctuality" id="p5" value="5"><label for="p5">★</label>
+            <input type="radio" name="rating_punctuality" id="p4" value="4"><label for="p4">★</label>
+            <input type="radio" name="rating_punctuality" id="p3" value="3"><label for="p3">★</label>
+            <input type="radio" name="rating_punctuality" id="p2" value="2"><label for="p2">★</label>
+            <input type="radio" name="rating_punctuality" id="p1" value="1"><label for="p1">★</label>
+          </div>
+        </div>
+
+        <!-- Communication -->
+        <div class="rating-item">
+          <div class="ri-label">
+            <span class="ri-icon">💬</span>
+            Communication et service à la clientèle
+          </div>
+          <div class="star-group">
+            <input type="radio" name="rating_communication" id="com5" value="5"><label for="com5">★</label>
+            <input type="radio" name="rating_communication" id="com4" value="4"><label for="com4">★</label>
+            <input type="radio" name="rating_communication" id="com3" value="3"><label for="com3">★</label>
+            <input type="radio" name="rating_communication" id="com2" value="2"><label for="com2">★</label>
+            <input type="radio" name="rating_communication" id="com1" value="1"><label for="com1">★</label>
+          </div>
+        </div>
+
+        <!-- Rapport qualité-prix -->
+        <div class="rating-item">
+          <div class="ri-label">
+            <span class="ri-icon">💰</span>
+            Rapport qualité-prix (valeur pour l'argent)
+          </div>
+          <div class="star-group">
+            <input type="radio" name="rating_value" id="v5" value="5"><label for="v5">★</label>
+            <input type="radio" name="rating_value" id="v4" value="4"><label for="v4">★</label>
+            <input type="radio" name="rating_value" id="v3" value="3"><label for="v3">★</label>
+            <input type="radio" name="rating_value" id="v2" value="2"><label for="v2">★</label>
+            <input type="radio" name="rating_value" id="v1" value="1"><label for="v1">★</label>
+          </div>
+        </div>
+
+        <!-- Durabilité attendue -->
+        <div class="rating-item">
+          <div class="ri-label">
+            <span class="ri-icon">🛡</span>
+            Confiance en la durabilité et protection à long terme
+          </div>
+          <div class="star-group">
+            <input type="radio" name="rating_durability" id="d5" value="5"><label for="d5">★</label>
+            <input type="radio" name="rating_durability" id="d4" value="4"><label for="d4">★</label>
+            <input type="radio" name="rating_durability" id="d3" value="3"><label for="d3">★</label>
+            <input type="radio" name="rating_durability" id="d2" value="2"><label for="d2">★</label>
+            <input type="radio" name="rating_durability" id="d1" value="1"><label for="d1">★</label>
+          </div>
+        </div>
+
+        <!-- Résultat global -->
+        <div class="rating-item" style="background: #eaf0fb; border-color: var(--bleu-clair);">
+          <div class="ri-label">
+            <span class="ri-icon">🏆</span>
+            <strong>Satisfaction globale</strong>
+          </div>
+          <div class="star-group">
+            <input type="radio" name="rating_overall" id="o5" value="5"><label for="o5">★</label>
+            <input type="radio" name="rating_overall" id="o4" value="4"><label for="o4">★</label>
+            <input type="radio" name="rating_overall" id="o3" value="3"><label for="o3">★</label>
+            <input type="radio" name="rating_overall" id="o2" value="2"><label for="o2">★</label>
+            <input type="radio" name="rating_overall" id="o1" value="1"><label for="o1">★</label>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- NPS -->
+      <div class="section-title"><span>📊</span> Recommandation</div>
+      <div class="nps-section">
+        <div class="nps-label">Sur une échelle de 0 à 10, quelle est la probabilité que vous recommandiez InnovaSpray Québec à un ami ou un voisin pour des travaux de peinture extérieure ?</div>
+        <div class="nps-scale" id="npsScale">
+          <button type="button" class="nps-btn detractor" data-score="0" onclick="selectNPS(this)">0</button>
+          <button type="button" class="nps-btn detractor" data-score="1" onclick="selectNPS(this)">1</button>
+          <button type="button" class="nps-btn detractor" data-score="2" onclick="selectNPS(this)">2</button>
+          <button type="button" class="nps-btn detractor" data-score="3" onclick="selectNPS(this)">3</button>
+          <button type="button" class="nps-btn detractor" data-score="4" onclick="selectNPS(this)">4</button>
+          <button type="button" class="nps-btn detractor" data-score="5" onclick="selectNPS(this)">5</button>
+          <button type="button" class="nps-btn detractor" data-score="6" onclick="selectNPS(this)">6</button>
+          <button type="button" class="nps-btn" data-score="7" onclick="selectNPS(this)">7</button>
+          <button type="button" class="nps-btn" data-score="8" onclick="selectNPS(this)">8</button>
+          <button type="button" class="nps-btn promoter" data-score="9" onclick="selectNPS(this)">9</button>
+          <button type="button" class="nps-btn promoter" data-score="10" onclick="selectNPS(this)">10</button>
+        </div>
+        <input type="hidden" name="nps_score" id="npsValue" data-jobber-field="nps_score" value="">
+        <div class="nps-subtext">
+          <span>0 = Pas du tout probable</span>
+          <span>10 = Extrêmement probable</span>
+        </div>
+      </div>
+
+      <!-- COMMENTAIRES ÉCRITS -->
+      <div class="section-title"><span>💬</span> Vos commentaires</div>
+
+      <div class="form-group">
+        <label for="feedback_positive">Qu'est-ce que vous avez le plus apprécié dans notre service ? ✅</label>
+        <textarea class="form-textarea" id="feedback_positive" name="feedback_positive" data-jobber-field="feedback_positive" placeholder="Ce qui vous a le plus impressionné, ce qui a dépassé vos attentes..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="feedback_improve">Qu'aurions-nous pu faire différemment ou mieux ? 🔧</label>
+        <textarea class="form-textarea" id="feedback_improve" name="feedback_improve" data-jobber-field="feedback_improve" placeholder="Suggestions d'amélioration, points à peaufiner..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="feedback_crew">Un commentaire sur notre équipe ? (chef d'équipe, ouvriers) 👷</label>
+        <textarea class="form-textarea" id="feedback_crew" name="feedback_crew" data-jobber-field="feedback_crew" placeholder="Professionnalisme, attitude, expertise technique..."></textarea>
+      </div>
+
+      <!-- QUESTION RÉFÉRENCE -->
+      <div class="section-title"><span>👥</span> Référence</div>
+
+      <div class="referral-box">
+        <h3>🎁 Programme de référence</h3>
+        <p>Si vous recommandez InnovaSpray Québec à un voisin ou un ami et qu'il nous engage pour des travaux extérieurs, <strong>vous recevez un crédit de 100 $ sur votre prochain projet</strong>!</p>
+        <div class="form-group" style="margin-bottom:12px;">
+          <label>Avez-vous des personnes à nous référer dès maintenant ?</label>
+          <div class="radio-group" style="margin-top:8px;">
+            <label class="radio-option"><input type="radio" name="has_referral" value="oui" data-jobber-field="has_referral"> Oui, j'ai quelqu'un en tête</label>
+            <label class="radio-option"><input type="radio" name="has_referral" value="peut-etre" data-jobber-field="has_referral"> Peut-être plus tard</label>
+            <label class="radio-option"><input type="radio" name="has_referral" value="non" data-jobber-field="has_referral"> Non merci</label>
+          </div>
+        </div>
+        <div id="referralFields" style="display:none;">
+          <div class="form-group" style="margin-bottom:10px;">
+            <label for="referral_name">Nom de la personne référée :</label>
+            <input type="text" class="form-input" id="referral_name" name="referral_name" data-jobber-field="referral_name" placeholder="Prénom et nom">
+          </div>
+          <div class="form-group" style="margin-bottom:0;">
+            <label for="referral_phone">Téléphone / courriel :</label>
+            <input type="text" class="form-input" id="referral_phone" name="referral_phone" data-jobber-field="referral_phone" placeholder="(514) 555-0000 ou email@exemple.com">
+          </div>
+        </div>
+      </div>
+
+      <!-- GOOGLE REVIEW CTA -->
+      <div class="section-title"><span>⭐</span> Laisser un avis en ligne</div>
+      <div class="google-cta" data-n8n-action="google_review_prompt">
+        <h3>Votre avis Google nous aide énormément!</h3>
+        <p>Si vous êtes satisfait de notre travail, un avis Google de 2 minutes aide d'autres familles à trouver un peintre de confiance.<br>Ça compte vraiment pour nous — merci d'avance !</p>
+        <a class="google-btn" id="googleReviewLink" href="https://g.page/r/VOTRE-GOOGLE-PLACE-ID/review" target="_blank" rel="noopener" data-n8n-field="google_review_clicked">
+          <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+          Laisser un avis Google ★★★★★
+        </a>
+      </div>
+
+      <!-- NEXT PROJECT -->
+      <div class="section-title"><span>🏠</span> Projets futurs</div>
+      <div class="form-group">
+        <label>Avez-vous d'autres projets de peinture prévus ?</label>
+        <div class="radio-group" style="margin-top:8px;">
+          <label class="radio-option"><input type="radio" name="future_project" value="oui-moins-6mois" data-jobber-field="future_project"> Dans moins de 6 mois</label>
+          <label class="radio-option"><input type="radio" name="future_project" value="oui-6-12mois" data-jobber-field="future_project"> Dans 6-12 mois</label>
+          <label class="radio-option"><input type="radio" name="future_project" value="peut-etre" data-jobber-field="future_project"> Peut-être</label>
+          <label class="radio-option"><input type="radio" name="future_project" value="non" data-jobber-field="future_project"> Pas pour l'instant</label>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Si oui, quel type de travaux envisagez-vous ?</label>
+        <input type="text" class="form-input" name="future_project_type" data-jobber-field="future_project_type" placeholder="Ex: Cabanon, clôture, terrasse, toiture, chalet…">
+      </div>
+
+      <div class="form-group">
+        <label for="contact_ok">Pouvons-nous vous contacter pour un prochain devis ?</label>
+        <div class="radio-group" style="margin-top:8px;">
+          <label class="radio-option"><input type="radio" name="contact_ok" value="oui" data-jobber-field="contact_permission"> Oui, contactez-moi</label>
+          <label class="radio-option"><input type="radio" name="contact_ok" value="non" data-jobber-field="contact_permission"> Non merci</label>
+        </div>
+      </div>
+
+      <!-- SUBMIT -->
+      <div id="submitError" style="display:none;padding:12px 16px;background:#FFEBEE;border:1px solid #EF9A9A;border-radius:8px;color:#C62828;font-size:13px;font-weight:600;margin-bottom:12px;"></div>
+      <button type="submit" class="submit-btn">
+        Envoyer mon sondage ✔
+      </button>
+
+    </form>
+
+    <!-- SUCCESS MESSAGE -->
+    <div class="success-message" id="successMsg">
+      <div style="font-size:48px;margin-bottom:12px;">🎉</div>
+      <h3>Merci pour votre précieux retour!</h3>
+      <p>Votre sondage a bien été reçu. Votre opinion nous aide à améliorer continuellement notre service.<br><br>
+      Nous espérons avoir le plaisir de vous servir à nouveau bientôt!<br><br>
+      <strong>— L'équipe InnovaSpray Québec</strong></p>
+    </div>
+
+  </div><!-- /body -->
+
+  <div class="survey-footer">
+    InnovaSpray Québec &nbsp;|&nbsp; (514) 555-0100 &nbsp;|&nbsp; info@innovaspray.ca &nbsp;|&nbsp;
+    <a href="https://www.innovaspray.ca">www.innovaspray.ca</a><br>
+    Vos réponses sont confidentielles et utilisées uniquement pour améliorer notre service.
+  </div>
+
+</div><!-- /page -->
+
+<script>
+  // NPS selection
+  function selectNPS(btn) {
+    document.querySelectorAll('.nps-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    document.getElementById('npsValue').value = btn.dataset.score;
+    saveDocData();
+  }
+
+  // Referral fields toggle
+  document.querySelectorAll('input[name="has_referral"]').forEach(radio => {
+    radio.addEventListener('change', () => {
+      const show = radio.value === 'oui';
+      document.getElementById('referralFields').style.display = show ? 'block' : 'none';
+    });
+  });
+
+  // Form submission — sends to n8n webhook (URL lue depuis ISQStore)
+  document.getElementById('satisfactionForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    var n8nUrl = ISQ.getWebhooks().satisfaction || '';
+
+    const submitBtn = this.querySelector('.submit-btn');
+    if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = '⏳ Envoi en cours…'; }
+
+    const formData = new FormData(this);
+    const payload = {};
+
+    // Toutes les données du formulaire
+    formData.forEach((value, key) => { payload[key] = value; });
+
+    // Champs cachés Jobber
+    document.querySelectorAll('.hidden-fields input[data-jobber-field]').forEach(el => {
+      payload[el.dataset.jobberField] = el.value;
+    });
+
+    // Évaluations par étoiles (groupes radio)
+    ['rating_quality','rating_cleanliness','rating_punctuality','rating_communication','rating_value','rating_durability','rating_overall'].forEach(name => {
+      const checked = document.querySelector('input[name="' + name + '"]:checked');
+      if (checked) payload[name] = checked.value;
+    });
+
+    // NPS depuis le champ caché
+    payload.nps_score = document.getElementById('npsValue').value;
+
+    // Métadonnées
+    payload.submitted_at = new Date().toISOString();
+    payload.date_locale  = new Date().toLocaleDateString('fr-CA');
+    payload.source       = 'rapport_satisfaction';
+    payload.page_url     = window.location.href;
+
+    // Sauvegarder avant envoi
+    saveDocData();
+
+    if (!n8nUrl) {
+      // Pas d'URL configurée — afficher succès local
+      console.warn('URL webhook satisfaction non configurée — sondage sauvegardé localement uniquement.');
+      this.style.display = 'none';
+      document.getElementById('successMsg').style.display = 'block';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    try {
+      const r = await fetch(n8nUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      // Succès — enregistrer le statut d'envoi et afficher le message
+      if (window.ISQ) ISQ.writeStatutEnvoi('satisfaction');
+      this.style.display = 'none';
+      document.getElementById('successMsg').style.display = 'block';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (err) {
+      // Erreur réseau ou webhook — avertir l'utilisateur sans masquer le formulaire
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Envoyer mon sondage ✔';
+      }
+      const errDiv = document.getElementById('submitError');
+      if (errDiv) {
+        errDiv.textContent = '❌ Erreur d\'envoi — vérifiez votre connexion et réessayez. (' + err.message + ')';
+        errDiv.style.display = 'block';
+      }
+    }
+  });
+</script>
+
+
+<script>
+(function(){
+  try {
+    var params = new URLSearchParams(window.location.search);
+    var stored = {};
+    try { stored = JSON.parse(ISQStore.getItem('isq_projet') || '{}'); } catch(e){}
+    var fields = ['job_number','client_name','client_phone','job_address','foreman_name','start_date'];
+    var p = {};
+    fields.forEach(function(f){ p[f] = params.get(f) || stored[f] || ''; });
+    if (params.toString()) {
+      try {
+        var projMerge = JSON.parse(ISQStore.getItem('isq_projet') || '{}');
+        Object.keys(p).forEach(function(f){ if (p[f]) projMerge[f] = p[f]; });
+        ISQStore.setItem('isq_projet', JSON.stringify(projMerge));
+      } catch(e){}
+    }
+    function fill(field, val) {
+      if (!val) return;
+      document.querySelectorAll('[data-jobber-field="'+field+'"]').forEach(function(el){
+        if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') el.value = val;
+        else el.textContent = val;
+      });
+    }
+    fill('job_number', p.job_number);
+    fill('client_name', p.client_name);
+    fill('job_address', p.job_address);
+
+    var saved = null;
+    try {
+      if (p.job_number) saved = JSON.parse(ISQStore.getItem('isq_satisfaction_' + p.job_number) || 'null');
+      if (!saved)        saved = JSON.parse(ISQStore.getItem('isq_satisfaction_courant')           || 'null');
+    } catch(e) {}
+    if (saved) {
+      Object.keys(saved).forEach(function(f) {
+        document.querySelectorAll('[data-jobber-field="' + f + '"]').forEach(function(el) {
+          if (el.type === 'checkbox') el.checked = (saved[f] === 'Oui' || saved[f] === true || saved[f] === '1');
+          else if (el.type === 'radio') el.checked = (el.value === saved[f]);
+          else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') el.value = saved[f] || '';
+        });
+      });
+
+      // Restaurer la sélection visuelle des boutons NPS
+      var savedNPS = saved.nps_score || '';
+      if (savedNPS !== '') {
+        document.querySelectorAll('.nps-btn').forEach(function(b) { b.classList.remove('selected'); });
+        var npsBtn = document.querySelector('.nps-btn[data-score="' + savedNPS + '"]');
+        if (npsBtn) npsBtn.classList.add('selected');
+      }
+
+      // Restaurer la visibilité du champ référence
+      var refEl = document.getElementById('referralFields');
+      if (refEl && saved.has_referral === 'oui') refEl.style.display = 'block';
+
+      // Restaurer les groupes radio de notation (étoiles)
+      ['rating_quality','rating_cleanliness','rating_punctuality','rating_communication','rating_value','rating_durability','rating_overall'].forEach(function(name) {
+        var val = saved['_radio_' + name];
+        if (val) {
+          var el = document.querySelector('input[name="' + name + '"][value="' + val + '"]');
+          if (el) el.checked = true;
+        }
+      });
+    }
+
+    // Toujours appliquer les infos projet depuis isq_projet (source de vérité)
+    try {
+      var proj = JSON.parse(ISQStore.getItem('isq_projet') || '{}');
+      ['job_number','client_name','client_phone','job_address','foreman_name','start_date',
+       'client_email','work_type','end_date','job_completion_date'].forEach(function(f) {
+        if (!proj[f]) return;
+        document.querySelectorAll('[data-jobber-field="' + f + '"]').forEach(function(el) {
+          if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') { if (!el.value) el.value = proj[f]; }
+          else { if (!el.textContent || el.textContent === '#JOB-____-___') el.textContent = proj[f]; }
+        });
+      });
+    } catch(e2) {}
+
+    // Mettre à jour le lien Google Review depuis le Place ID configuré
+    try {
+      var placeId = ISQ.getWebhooks().google_place_id || '';
+      var glnk = document.getElementById('googleReviewLink');
+      if (glnk) {
+        if (placeId) {
+          glnk.href = 'https://g.page/r/' + encodeURIComponent(placeId) + '/review';
+          glnk.style.opacity = '';
+          glnk.style.pointerEvents = '';
+          glnk.title = '';
+        } else {
+          glnk.href = '#';
+          glnk.style.opacity = '0.45';
+          glnk.style.pointerEvents = 'none';
+          glnk.title = 'Google Place ID non configuré — voir Accueil > Webhooks';
+        }
+      }
+    } catch(eg) {}
+  } catch(e){}
+})();
+
+function saveDocData() {
+  try {
+    var data = {};
+    document.querySelectorAll('[data-jobber-field]').forEach(function(el) {
+      var f = el.getAttribute('data-jobber-field');
+      if (!f) return;
+      if (el.type === 'checkbox') data[f] = el.checked ? 'Oui' : 'Non';
+      else if (el.type === 'radio') { if (el.checked) data[f] = el.value; }
+      else data[f] = el.value || '';
+    });
+
+    // Sauvegarder les groupes radio de notation (étoiles sans data-jobber-field)
+    ['rating_quality','rating_cleanliness','rating_punctuality','rating_communication','rating_value','rating_durability','rating_overall'].forEach(function(name) {
+      var checked = document.querySelector('input[name="' + name + '"]:checked');
+      data['_radio_' + name] = checked ? checked.value : '';
+    });
+
+    var json = JSON.stringify(data);
+    var jobNum = data.job_number || (JSON.parse(ISQStore.getItem('isq_projet')||'{}').job_number) || '';
+    if (jobNum) ISQStore.setItem('isq_satisfaction_' + jobNum, json);
+    ISQStore.setItem('isq_satisfaction_courant', json);
+    // Synchroniser les champs partages dans isq_projet
+    try {
+      var projSync = JSON.parse(ISQStore.getItem('isq_projet') || '{}');
+      ['job_number','client_name','client_phone','job_address','foreman_name','start_date'].forEach(function(sf) {
+        if (data[sf]) projSync[sf] = data[sf];
+      });
+      ISQStore.setItem('isq_projet', JSON.stringify(projSync));
+    } catch(ep) {}
+  } catch(e) {}
+}
+document.addEventListener('input', function() { saveDocData(); });
+document.addEventListener('change', function() { saveDocData(); });
+window.addEventListener('beforeunload', function() {
+  saveDocData();
+  if (window.ISQSavesDB) {
+    var _d = {}; document.querySelectorAll('[data-jobber-field]').forEach(function(el){var f=el.getAttribute('data-jobber-field');if(el.type==='checkbox')_d[f]=el.checked?'Oui':'Non';else if(el.type==='radio'){if(el.checked)_d[f]=el.value;}else _d[f]=el.value||'';});
+    var _jn = _d.job_number || (JSON.parse(ISQStore.getItem('isq_projet')||'{}').job_number)||'';
+    ISQSavesDB.logSave('satisfaction', _jn, 'fermeture', _d);
+  }
+});
+</script>
+
+</body>
+</html>

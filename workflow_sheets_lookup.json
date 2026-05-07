@@ -1,0 +1,262 @@
+{
+  "name": "InnovaSpray — Lookup Projet Google Sheets",
+  "nodes": [
+    {
+      "id": "wh-sheets-get",
+      "name": "🔍 Webhook — Lookup projet",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        200,
+        300
+      ],
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "sheets-lookup",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "webhookId": "innovaspray-sheets-001"
+    },
+    {
+      "id": "code-clean-numero",
+      "name": "Nettoyer le numéro de projet",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        300
+      ],
+      "parameters": {
+        "jsCode": "const raw = ($json.query && $json.query.numero ? $json.query.numero : '').toString().trim();\n\nif (!raw) {\n  throw new Error('Numero de projet manquant. Utilisation: ?numero=1234');\n}\n\nconst numeroChiffres = raw.replace(/[^0-9]/g, '');\nconst numeroNorm = raw.toUpperCase().replace(/\\s+/g, '');\n\nreturn [{ json: { numero_brut: raw, numero: numeroChiffres, numero_norm: numeroNorm } }];"
+      }
+    },
+    {
+      "id": "sheets-read",
+      "name": "Google Sheets — Lire les projets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        680,
+        300
+      ],
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "1qNwZxZt2JY-DemewUobC812HLnsdMGY01fiDpV4awQ4",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "id"
+        },
+        "options": {
+          "valueRenderMode": "UNFORMATTED_VALUE"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "VOTRE_CREDENTIAL_ID",
+          "name": "Google Sheets — InnovaSpray"
+        }
+      }
+    },
+    {
+      "id": "code-find-row",
+      "name": "Trouver la ligne du projet",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        920,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const numero = $('Nettoyer le numéro de projet').first().json.numero;\nconst allRows = $input.all();\n\nif (!allRows.length) {\n  return [{ json: { _found: false, debug: 'Google Sheets vide ou inaccessible' } }];\n}\n\n// Normaliser un nom de colonne : retire accents, ponctuation, espaces multiples\nfunction normCol(s) {\n  return String(s).toLowerCase()\n    .replace(/[àâä]/g, 'a')\n    .replace(/[éèêë]/g, 'e')\n    .replace(/[îï]/g, 'i')\n    .replace(/[ôö]/g, 'o')\n    .replace(/[ùûü]/g, 'u')\n    .replace(/ç/g, 'c')\n    .replace(/[^a-z0-9]/g, ' ')\n    .replace(/\\s+/g, ' ')\n    .trim();\n}\n\n// Noms normalises acceptes pour la colonne identifiant du projet / devis\nconst projColNorms = [\n  'numero de projet', 'no de projet', 'n de projet', 'no projet',\n  'numero devis', 'no devis', 'n devis', 'numero de devis', 'no de devis',\n  'numero de soumission', 'no soumission', 'no de soumission',\n  'devis', 'projet', 'numero', 'no', 'id'\n];\n\n// Valeur brute saisie (ex: \"826\", \"D-826\", \"826-A\")\nconst numeroBrut = $('Nettoyer le numéro de projet').first().json.numero_brut || numero;\n\n// Teste si une valeur de cellule correspond au numero recherche\nfunction matchesNumero(val) {\n  const s = String(val || '').trim();\n  if (!s) return false;\n  // Correspondance exacte\n  if (s === numeroBrut) return true;\n  // Correspondance sur les chiffres uniquement\n  const digitsOnly = s.replace(/[^0-9]/g, '');\n  if (digitsOnly && digitsOnly === numero) return true;\n  // Correspondance insensible a la casse sans espaces\n  if (s.toUpperCase().replace(/\\s+/g,'') === numeroBrut.toUpperCase().replace(/\\s+/g,'')) return true;\n  return false;\n}\n\nconst firstRow = allRows[0].json;\nconst allKeys = Object.keys(firstRow);\n\n// 1. Chercher d'abord par nom de colonne reconnu\nlet projKey = allKeys.find(function(k) {\n  return projColNorms.indexOf(normCol(k)) !== -1;\n});\n\nlet match = null;\n\nif (projKey) {\n  match = allRows.find(function(item) {\n    return matchesNumero(item.json[projKey]);\n  });\n}\n\n// 2. Fallback : si colonne non trouvee ou pas de match,\n//    scanner TOUTES les colonnes a la recherche d'une valeur correspondante\nif (!match) {\n  for (let ki = 0; ki < allKeys.length; ki++) {\n    const k = allKeys[ki];\n    const found = allRows.find(function(item) {\n      return matchesNumero(item.json[k]);\n    });\n    if (found) {\n      match = found;\n      projKey = k;\n      break;\n    }\n  }\n}\n\nif (!match) {\n  return [{ json: { _found: false, debug: 'Projet ' + numero + ' introuvable. Colonnes disponibles: ' + allKeys.join(', ') } }];\n}\n\n// Retourner toutes les colonnes de la ligne trouvee\nconst result = { _found: true };\nObject.keys(match.json).forEach(function(k) {\n  result[k] = match.json[k];\n});\nreturn [{ json: result }];"
+      }
+    },
+    {
+      "id": "if-found",
+      "name": "Projet trouvé ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1160,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false
+          },
+          "conditions": [
+            {
+              "id": "cond-found",
+              "leftValue": "={{ $json._found }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "code-transform",
+      "name": "Transformer → Champs documents",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1400,
+        200
+      ],
+      "parameters": {
+        "jsCode": "const r = $input.first().json;\nconst allKeys = Object.keys(r);\n\n// ─── Helpers ─────────────────────────────────────────────────────\nfunction normStr(s) {\n  return String(s || '').toLowerCase()\n    .replace(/[àâä]/g,'a').replace(/[éèêë]/g,'e')\n    .replace(/[îï]/g,'i').replace(/[ôö]/g,'o')\n    .replace(/[ùûü]/g,'u').replace(/ç/g,'c')\n    .replace(/[^a-z0-9]/g,' ').replace(/\\s+/g,' ').trim();\n}\n\n// Trouver la clé de colonne par mots-clés dans son en-tête\nfunction findKey(keywords) {\n  const normKws = keywords.map(normStr);\n  return allKeys.find(function(k) {\n    const nk = normStr(k);\n    return normKws.some(function(kw) { return nk === kw || nk.indexOf(kw) !== -1; });\n  }) || null;\n}\n\n// Lire une valeur : chercher par nom de colonne, puis fallback positionnel si valeur vide\nfunction get(keywords, fallbackCol) {\n  const key = findKey(keywords);\n  let v = key ? r[key] : undefined;\n  // Si la colonne trouvée par keyword est vide, essayer le fallback positionnel\n  if ((v === undefined || v === null || String(v).trim() === '') && fallbackCol) {\n    v = r[fallbackCol];\n  }\n  return (v !== undefined && v !== null && String(v).trim() !== '') ? String(v).trim() : '';\n}\n\n// Porte de garage : cherche explicitement 'porte de garage' ou 'garage'\n// (doit matcher AVANT 'porte' seul pour éviter la confusion)\nfunction getGarageDoors(fallbackCol) {\n  const key = allKeys.find(function(k) {\n    const nk = normStr(k);\n    return nk.indexOf('porte de garage') !== -1 || nk.indexOf('porte garage') !== -1 || nk === 'garage';\n  });\n  let v = key ? r[key] : undefined;\n  if ((v === undefined || v === null || String(v).trim() === '') && fallbackCol) {\n    v = r[fallbackCol];\n  }\n  return (v !== undefined && v !== null && String(v).trim() !== '') ? String(v).trim() : '';\n}\n\n// Portes (entrées) : cherche 'porte' ou 'chassis' MAIS PAS 'porte de garage'\nfunction getDoors(fallbackCol) {\n  const key = allKeys.find(function(k) {\n    const nk = normStr(k);\n    return (nk.indexOf('porte') !== -1 || nk.indexOf('chassis') !== -1)\n      && nk.indexOf('garage') === -1;\n  });\n  let v = key ? r[key] : undefined;\n  if ((v === undefined || v === null || String(v).trim() === '') && fallbackCol) {\n    v = r[fallbackCol];\n  }\n  return (v !== undefined && v !== null && String(v).trim() !== '') ? String(v).trim() : '';\n}\n\nconst fmtCAD = function(n) {\n  const num = parseFloat(String(n||0).replace(/[^0-9.]/g,''));\n  if (isNaN(num)||num===0) return '';\n  return new Intl.NumberFormat('fr-CA',{style:'currency',currency:'CAD'}).format(num);\n};\n\nconst fmtDate = function(d) {\n  if (!d) return '';\n  const parts = String(d).match(/^(\\d{1,2})[\\/\\-](\\d{1,2})[\\/\\-](\\d{4})$/);\n  if (parts) {\n    const date = new Date(parseInt(parts[3]), parseInt(parts[2])-1, parseInt(parts[1]));\n    return date.toLocaleDateString('fr-CA');\n  }\n  const date = new Date(d);\n  if (isNaN(date)) return String(d);\n  return date.toLocaleDateString('fr-CA');\n};\n\n// ─── Lecture du numéro de projet ────────────────────────────────\nconst jobNumBrut = get(['numero de devis','no de devis','numero de projet','no projet','devis','numero'], 'col_1');\nconst jobNum = jobNumBrut.replace(/[^0-9]/g,'') || jobNumBrut;\n\nconst subtotalRaw = parseFloat(get(['sous-total','subtotal','montant ht'], 'col_18')) || 0;\nconst acompteRaw  = parseFloat(get(['acompte','depot','versement'], 'col_19')) || 0;\nconst tps   = subtotalRaw * 0.05;\nconst tvq   = subtotalRaw * 0.09975;\nconst total = subtotalRaw + tps + tvq;\nconst solde = total - acompteRaw;\n\nreturn [{\n  json: {\n    // Identification\n    job_number:           jobNum,\n    quote_number:         jobNum,\n    // Client\n    client_name:          get(['nom du client','nom client','client','nom'], 'col_2'),\n    client_company:       get(['compagnie','entreprise','organisation'], 'col_23'),\n    client_phone:         get(['telephone client','tel client','telephone','tel','phone'], 'col_3'),\n    client_email:         get(['courriel client','courriel','email'], 'col_22'),\n    // Chantier\n    job_address:          get(['adresse du chantier','adresse chantier','adresse'], 'col_4'),\n    end_date:             fmtDate(get(['date de fin','fin prevue'], 'col_21')),\n    job_completion_date:  fmtDate(get(['date de fin','fin prevue'], 'col_21')),\n    duration_days:        get(['duree prevue','duree','jours'], 'col_15'),\n    // Travaux\n    work_type:            get(['type de travaux','type travaux','travaux','service'], null),\n    surfaces_raw:         get(['surfaces a peindre','surfaces','surface'], 'col_5'),\n    surface_type:         get(['type de revetement','type revetement','revetement','materiau','materiaux'], 'col_6'),\n    total_sqft:           get(['superficie','pi2','m2','pieds carres'], 'col_7'),\n    doors_count:          getDoors('col_8'),\n    floors_count:         get(['nb d etages','nombre d etages','etages a peindre','etages','etage','niveau'], 'col_13'),\n    windows_count:        get(['fenetres','fenetre','nb de fenetres','vitres','fenetres a peindre','chassis fenetres','quantite fenetres','nb fenetres','nombre de fenetres'], 'col_10'),\n    roofing:              get(['toiture en pi2','toiture','toit','surface toit'], 'col_11'),\n    gouttieres_sqft:      get(['gouttieres soffites fascias','gouttieres','soffit','fascia','gouttiere'], 'col_12'),\n    garage_doors_count:   getGarageDoors('col_9'),\n    sanding_sqft:         get(['sablage'], 'col_14'),\n    // Couleurs & instructions\n    colors_raw:           get(['couleurs zones','couleurs','couleur'], 'col_16'),\n    special_instructions: get(['instructions notes','instructions','notes','note'], 'col_17'),\n    attention_points:     '',\n    notes:                get(['notes additionnelles','notes add'], 'col_29'),\n    // Contacts bureau\n    office_contact_name:  get(['contact bureau','contact'], 'col_24'),\n    office_contact_phone: get(['tel bureau','telephone bureau'], 'col_25'),\n    supplier_name:        get(['fournisseur'], 'col_28'),\n    // Finances\n    subtotal:             fmtCAD(subtotalRaw),\n    tps_amount:           fmtCAD(tps),\n    tvq_amount:           fmtCAD(tvq),\n    total_ttc:            fmtCAD(total),\n    acompte_amount:       fmtCAD(acompteRaw),\n    solde_amount:         fmtCAD(solde)\n  }\n}];"
+      }
+    },
+    {
+      "id": "resp-json",
+      "name": "Répondre — JSON vers le document",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1640,
+        200
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "GET, OPTIONS"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "resp-error",
+      "name": "Répondre — Erreur projet introuvable",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1400,
+        420
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseCode": 404,
+        "responseBody": "={{ JSON.stringify({ erreur: 'Projet introuvable dans le Google Sheets. Verifiez le numero.', debug: $json.debug || '' }) }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "connections": {
+    "🔍 Webhook — Lookup projet": {
+      "main": [
+        [
+          {
+            "node": "Nettoyer le numéro de projet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Nettoyer le numéro de projet": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets — Lire les projets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets — Lire les projets": {
+      "main": [
+        [
+          {
+            "node": "Trouver la ligne du projet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trouver la ligne du projet": {
+      "main": [
+        [
+          {
+            "node": "Projet trouvé ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Projet trouvé ?": {
+      "main": [
+        [
+          {
+            "node": "Transformer → Champs documents",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Répondre — Erreur projet introuvable",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transformer → Champs documents": {
+      "main": [
+        [
+          {
+            "node": "Répondre — JSON vers le document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "errorWorkflow": ""
+  },
+  "meta": {
+    "instanceId": "innovaspray-sheets-lookup"
+  }
+}

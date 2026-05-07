@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Workflow n8n — Google Sheets Lookup — InnovaSpray</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bleu:        #0170B9;
+      --bleu-clair:  #1A8FD1;
+      --bleu-light:  #E3F2FD;
+      --orange:      #FF6600;
+      --orange-bg:   #FFF3E0;
+      --gris:        #F4F6F9;
+      --bordure:     #D0D7E3;
+      --texte:       #1A1A2E;
+      --vert:        #2E7D32;
+      --vert-bg:     #E8F5E9;
+      --violet:      #6A1B9A;
+      --violet-bg:   #F3E5F5;
+      --rouge:       #C62828;
+      --rouge-bg:    #FFEBEE;
+      --sheets:      #0F7238;
+      --n8n:         #EA4B71;
+      --dark:        #1A1A2E;
+    }
+
+    body {
+      font-family: 'Montserrat', 'Segoe UI', Arial, sans-serif;
+      background: #F0F4F8;
+      color: var(--texte);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .btn-print {
+      display: block;
+      margin: 18px auto;
+      padding: 10px 30px;
+      background: var(--orange);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .2s;
+    }
+    .btn-print:hover { background: #cc5200; }
+
+    .page {
+      max-width: 1040px;
+      margin: 0 auto 40px;
+      background: #fff;
+      box-shadow: 0 4px 24px rgba(1,112,185,.13);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    /* HEADER */
+    .header {
+      background: linear-gradient(135deg, #0F7238 0%, #0170B9 100%);
+      color: #fff;
+      padding: 28px 36px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+    .header-left { display: flex; align-items: center; gap: 18px; }
+    .header h1 { font-size: 20px; font-weight: 800; letter-spacing: .4px; }
+    .header .subtitle {
+      display: inline-block;
+      background: var(--orange);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 12px;
+      border-radius: 4px;
+      margin-top: 6px;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+    }
+    .header-tools { display: flex; gap: 10px; align-items: center; }
+    .tool-badge {
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      text-align: center;
+    }
+    .tool-badge.n8n     { background: var(--n8n); color: #fff; }
+    .tool-badge.sheets  { background: #fff; color: var(--sheets); }
+    .tool-badge.docs    { background: rgba(255,255,255,.15); color: #fff; border: 1px solid rgba(255,255,255,.4); }
+
+    /* BODY */
+    .body { padding: 30px 36px; }
+
+    /* SECTION TITLE */
+    .section-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--bleu);
+      margin: 32px 0 16px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid var(--bleu);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section-title:first-of-type { margin-top: 0; }
+
+    /* CALLOUT */
+    .callout {
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin: 14px 0;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+    .callout .ci { font-size: 20px; flex-shrink: 0; }
+    .callout p, .callout li { font-size: 13px; line-height: 1.65; }
+    .callout ul { padding-left: 16px; }
+    .callout.info    { background: var(--bleu-light);  border: 1px solid #90CAF9; }
+    .callout.warning { background: var(--orange-bg);   border: 1px solid #FFCC80; }
+    .callout.tip     { background: var(--vert-bg);     border: 1px solid #A5D6A7; }
+    .callout.violet  { background: var(--violet-bg);   border: 1px solid #CE93D8; }
+
+    /* FLOW VISUAL */
+    .flow-visual {
+      display: flex;
+      align-items: stretch;
+      gap: 0;
+      margin: 20px 0;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+    .fv-step {
+      flex: 1;
+      min-width: 110px;
+      padding: 14px 10px;
+      text-align: center;
+      position: relative;
+      border: 1px solid var(--bordure);
+      background: var(--gris);
+    }
+    .fv-step:first-child { border-radius: 10px 0 0 10px; }
+    .fv-step:last-child  { border-radius: 0 10px 10px 0; }
+    .fv-step::after {
+      content: '▶';
+      position: absolute;
+      right: -12px; top: 50%;
+      transform: translateY(-50%);
+      color: var(--bleu-clair);
+      font-size: 13px;
+      z-index: 2;
+      background: #fff;
+      width: 20px; height: 20px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 50%;
+      border: 1px solid var(--bordure);
+    }
+    .fv-step:last-child::after { display: none; }
+    .fv-step .fv-icon  { font-size: 22px; display: block; margin-bottom: 5px; }
+    .fv-step .fv-num   { position: absolute; top: 6px; left: 8px; width: 18px; height: 18px; background: var(--orange); color: #fff; border-radius: 50%; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+    .fv-step .fv-type  { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: #888; margin-bottom: 3px; }
+    .fv-step .fv-label { font-size: 10.5px; font-weight: 700; color: var(--bleu); line-height: 1.3; }
+    .fv-step.trigger-s { background: #E8F4FD; border-color: #90CAF9; }
+    .fv-step.sheets-s  { background: #E8F5E9; border-color: #A5D6A7; }
+    .fv-step.code-s    { background: var(--violet-bg); border-color: #CE93D8; }
+    .fv-step.output-s  { background: var(--orange-bg); border-color: #FFCC80; }
+
+    /* NODE CARDS */
+    .node-card {
+      border: 1px solid var(--bordure);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 22px;
+      box-shadow: 0 2px 8px rgba(1,112,185,.07);
+    }
+    .node-header {
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      color: #fff;
+    }
+    .node-header .nh-num {
+      width: 36px; height: 36px;
+      background: rgba(255,255,255,.25);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; font-weight: 700;
+      flex-shrink: 0;
+    }
+    .node-header .nh-icon { font-size: 26px; flex-shrink: 0; }
+    .node-header h3 { font-size: 16px; font-weight: 700; }
+    .node-header .nh-type { font-size: 11px; opacity: .85; margin-top: 2px; font-weight: 600; letter-spacing: .3px; }
+
+    .nh-webhook  { background: linear-gradient(90deg, #0170B9, #1A8FD1); }
+    .nh-code     { background: linear-gradient(90deg, #6A1B9A, #8E24AA); }
+    .nh-sheets   { background: linear-gradient(90deg, #0F7238, #1E8E3E); }
+    .nh-respond  { background: linear-gradient(90deg, #E65100, #FF6600); }
+    .nh-error    { background: linear-gradient(90deg, #C62828, #E53935); }
+
+    .node-body { padding: 20px; }
+
+    /* NODE DETAILS GRID */
+    .nd-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+    @media(max-width: 700px) { .nd-grid { grid-template-columns: 1fr; } }
+    .nd-box {
+      border-radius: 8px;
+      padding: 13px 14px;
+      border: 1px solid var(--bordure);
+    }
+    .nd-box .ndb-title {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      margin-bottom: 7px;
+      display: flex; align-items: center; gap: 5px;
+    }
+    .nd-box ul { padding-left: 14px; }
+    .nd-box li { font-size: 12px; margin-bottom: 4px; line-height: 1.45; }
+    .nd-box p  { font-size: 12px; line-height: 1.6; }
+
+    .nd-box.role-box     { background: var(--bleu-light);  border-color: #90CAF9; }
+    .nd-box.role-box .ndb-title { color: #1565C0; }
+    .nd-box.param-box    { background: var(--violet-bg);   border-color: #CE93D8; }
+    .nd-box.param-box .ndb-title { color: var(--violet); }
+    .nd-box.io-box       { background: var(--orange-bg);   border-color: #FFCC80; }
+    .nd-box.io-box .ndb-title { color: var(--orange); }
+    .nd-box.code-explain { background: var(--gris);        border-color: var(--bordure); }
+    .nd-box.code-explain .ndb-title { color: var(--texte); }
+
+    /* CODE BLOCK */
+    .code-block {
+      background: var(--dark);
+      color: #ACE;
+      padding: 14px 16px;
+      border-radius: 8px;
+      font-family: 'Courier New', monospace;
+      font-size: 11.5px;
+      line-height: 1.75;
+      overflow-x: auto;
+      margin: 10px 0;
+      white-space: pre;
+    }
+    .code-block .key     { color: #58E6D9; }
+    .code-block .val     { color: #FFD54F; }
+    .code-block .comment { color: #78909C; }
+    .code-block .str     { color: #A5D6A7; }
+    .code-block .num     { color: #FF8A65; }
+
+    /* COPY BUTTON */
+    .code-wrapper { position: relative; margin: 10px 0; }
+    .copy-btn {
+      position: absolute;
+      top: 8px; right: 8px;
+      background: rgba(255,255,255,.1);
+      color: rgba(255,255,255,.8);
+      border: 1px solid rgba(255,255,255,.2);
+      border-radius: 5px;
+      padding: 4px 10px;
+      font-size: 11px;
+      font-family: inherit;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .15s;
+    }
+    .copy-btn:hover { background: rgba(255,255,255,.22); }
+
+    /* TABLE SHEETS */
+    .sheets-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      margin: 12px 0;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .sheets-table thead tr { background: var(--sheets); color: #fff; }
+    .sheets-table thead th { padding: 9px 12px; text-align: left; font-size: 11px; font-weight: 700; }
+    .sheets-table tbody tr:nth-child(even) { background: #F6FBF7; }
+    .sheets-table tbody td { padding: 8px 12px; border-bottom: 1px solid #cce5d0; vertical-align: top; }
+    .sheets-table tbody td:first-child { font-weight: 700; color: var(--sheets); font-family: monospace; font-size: 12px; }
+    .tag-req  { background: #FFEBEE; color: var(--rouge); border: 1px solid #EF9A9A; border-radius: 4px; padding: 1px 7px; font-size: 10px; font-weight: 700; }
+    .tag-opt  { background: var(--gris); color: #666; border: 1px solid var(--bordure); border-radius: 4px; padding: 1px 7px; font-size: 10px; font-weight: 600; }
+
+    /* SETUP STEPS */
+    .setup-steps { counter-reset: ss; }
+    .setup-step { display: flex; gap: 16px; margin-bottom: 18px; align-items: flex-start; }
+    .ss-num {
+      counter-increment: ss;
+      width: 32px; height: 32px;
+      background: var(--bleu); color: #fff;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 700;
+      flex-shrink: 0;
+    }
+    .ss-content h4 { font-size: 14px; font-weight: 700; color: var(--bleu); margin-bottom: 4px; }
+    .ss-content p  { font-size: 13px; color: #444; line-height: 1.6; }
+    .ss-content code {
+      background: var(--dark); color: #58E6D9;
+      padding: 2px 8px; border-radius: 4px;
+      font-family: 'Courier New', monospace; font-size: 11px;
+    }
+
+    /* FOOTER */
+    .doc-footer {
+      background: var(--bleu); color: rgba(255,255,255,.8);
+      text-align: center; padding: 12px; font-size: 11px;
+    }
+
+    @media print {
+      body { background: #fff; }
+      .btn-print { display: none !important; }
+      .page { box-shadow: none; border-radius: 0; max-width: 100%; margin: 0; }
+      .body { padding: 20px 28px; }
+      .copy-btn { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<button class="btn-print no-print" onclick="window.print()">🖨 Imprimer / Sauvegarder PDF</button>
+
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-left">
+      <img src="https://innovaspray.com/wp-content/uploads/2025/09/organization_logo_par.jpg"
+           width="68" height="68"
+           style="border-radius:8px;object-fit:contain;background:white;padding:4px;"
+           alt="InnovaSpray Québec">
+      <div>
+        <h1>INNOVASPRAY QUÉBEC</h1>
+        <div class="subtitle">Workflow n8n — Lookup Google Sheets → Documents</div>
+      </div>
+    </div>
+    <div class="header-tools">
+      <div class="tool-badge n8n">n8n</div>
+      <span style="color:rgba(255,255,255,.6);font-size:22px;">+</span>
+      <div class="tool-badge sheets">Google Sheets</div>
+      <span style="color:rgba(255,255,255,.6);font-size:22px;">→</span>
+      <div class="tool-badge docs">Documents</div>
+    </div>
+  </div>
+
+  <div class="body">
+
+    <!-- INTRO -->
+    <div class="callout info">
+      <span class="ci">📋</span>
+      <div>
+        <p><strong>Comment ça fonctionne :</strong> L'employé entre un numéro de projet dans n'importe quel document HTML (Fiche de chantier, Soumission, etc.). Le document envoie ce numéro au workflow n8n, qui cherche la ligne correspondante dans le Google Sheets <em>«&nbsp;Projets&nbsp;»</em>, puis retourne toutes les informations directement dans les champs du document — automatiquement, en quelques secondes.</p>
+      </div>
+    </div>
+
+    <!-- FLUX VISUEL -->
+    <div class="section-title">📊 Vue d'ensemble du workflow</div>
+
+    <div class="flow-visual">
+      <div class="fv-step trigger-s">
+        <div class="fv-num">1</div>
+        <span class="fv-icon">🔗</span>
+        <div class="fv-type">Webhook</div>
+        <div class="fv-label">Reçoit le n° de projet</div>
+      </div>
+      <div class="fv-step code-s">
+        <div class="fv-num">2</div>
+        <span class="fv-icon">🧹</span>
+        <div class="fv-type">Code</div>
+        <div class="fv-label">Nettoyer &amp; valider le n°</div>
+      </div>
+      <div class="fv-step sheets-s">
+        <div class="fv-num">3</div>
+        <span class="fv-icon">📊</span>
+        <div class="fv-type">Google Sheets</div>
+        <div class="fv-label">Lire toutes les lignes</div>
+      </div>
+      <div class="fv-step code-s">
+        <div class="fv-num">4</div>
+        <span class="fv-icon">🔎</span>
+        <div class="fv-type">Code</div>
+        <div class="fv-label">Trouver la ligne exacte</div>
+      </div>
+      <div class="fv-step code-s">
+        <div class="fv-num">5</div>
+        <span class="fv-icon">⚙️</span>
+        <div class="fv-type">Code</div>
+        <div class="fv-label">Transformer → champs</div>
+      </div>
+      <div class="fv-step output-s">
+        <div class="fv-num">6</div>
+        <span class="fv-icon">✅</span>
+        <div class="fv-type">Respond</div>
+        <div class="fv-label">Envoyer JSON au document</div>
+      </div>
+    </div>
+
+    <div class="callout warning">
+      <span class="ci">⚠️</span>
+      <p>Un nœud <strong>«&nbsp;Répondre — Erreur&nbsp;»</strong> (nœud 7) se déclenche si le numéro de projet n'existe pas dans le Sheets. Il retourne un message d'erreur clair au document.</p>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- NODE 1 — WEBHOOK -->
+    <!-- ============================================================ -->
+    <div class="section-title">🔩 Explication de chaque nœud</div>
+
+    <div class="node-card">
+      <div class="node-header nh-webhook">
+        <div class="nh-num">1</div>
+        <span class="nh-icon">🔗</span>
+        <div>
+          <h3>Webhook — Lookup projet</h3>
+          <div class="nh-type">n8n-nodes-base.webhook — Méthode : GET</div>
+        </div>
+      </div>
+      <div class="node-body">
+        <div class="nd-grid">
+          <div class="nd-box role-box">
+            <div class="ndb-title">🎯 Rôle</div>
+            <p>C'est la <strong>porte d'entrée</strong> du workflow. Il crée une URL publique que les documents HTML peuvent appeler. Dès qu'une requête arrive, il démarre l'exécution.</p>
+          </div>
+          <div class="nd-box param-box">
+            <div class="ndb-title">⚙️ Paramètres clés</div>
+            <ul>
+              <li><strong>Méthode :</strong> GET</li>
+              <li><strong>Chemin :</strong> <code style="font-size:11px;background:#eee;padding:1px 5px;border-radius:3px;">sheets-lookup</code></li>
+              <li><strong>Mode réponse :</strong> responseNode (répond plus tard)</li>
+              <li><strong>CORS :</strong> autorisé depuis tous les domaines (<code style="font-size:11px;background:#eee;padding:1px 5px;border-radius:3px;">*</code>)</li>
+            </ul>
+          </div>
+          <div class="nd-box io-box">
+            <div class="ndb-title">📤 Sortie</div>
+            <ul>
+              <li><strong>query.numero</strong> — le n° entré par l'employé</li>
+              <li>Ex: <code style="font-size:11px;background:#eee;padding:1px 5px;border-radius:3px;">?numero=1042</code></li>
+              <li>URL complète : <code style="font-size:11px;background:#eee;padding:1px 5px;border-radius:3px;">/webhook/sheets-lookup?numero=1042</code></li>
+            </ul>
+          </div>
+        </div>
+        <div class="callout tip">
+          <span class="ci">💡</span>
+          <p>L'URL du webhook change selon que le workflow est en <strong>test</strong> (<code>/webhook-test/sheets-lookup</code>) ou en <strong>production</strong> (<code>/webhook/sheets-lookup</code>). Les documents HTML doivent pointer vers l'URL de production une fois le workflow activé.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- NODE 2 — CODE NETTOYER -->
+    <!-- ============================================================ -->
+    <div class="node-card">
+      <div class="node-header nh-code">
+        <div class="nh-num">2</div>
+        <span class="nh-icon">🧹</span>
+        <div>
+          <h3>Nettoyer le numéro de projet</h3>
+          <div class="nh-type">n8n-nodes-base.code — JavaScript</div>
+        </div>
+      </div>
+      <div class="node-body">
+        <div class="nd-grid">
+          <div class="nd-box role-box">
+            <div class="ndb-title">🎯 Rôle</div>
+            <p>Normalise le numéro entré par l'employé pour éviter les erreurs. Peu importe le format saisi, on extrait les chiffres et on standardise la valeur pour la recherche.</p>
+          </div>
+          <div class="nd-box param-box">
+            <div class="ndb-title">⚙️ Formats acceptés</div>
+            <ul>
+              <li><strong>1042</strong> → numéro brut</li>
+              <li><strong>#PRJ-1042</strong> → avec préfixe</li>
+              <li><strong>PRJ 1042</strong> → avec espace</li>
+              <li><strong>  1042  </strong> → avec espaces</li>
+            </ul>
+          </div>
+          <div class="nd-box io-box">
+            <div class="ndb-title">📤 Sortie produite</div>
+            <ul>
+              <li><strong>numero_brut</strong> — valeur originale</li>
+              <li><strong>numero</strong> — chiffres seulement</li>
+              <li><strong>numero_norm</strong> — majuscules, sans espaces</li>
+            </ul>
+          </div>
+        </div>
+        <div class="nd-box code-explain" style="margin-top:0;">
+          <div class="ndb-title">💻 Ce que fait le code</div>
+          <div class="code-block"><span class="comment">// Entrée: "  #PRJ-1042  "</span>
+<span class="key">const</span> raw = ($json.query?.<span class="val">numero</span> || <span class="str">''</span>).toString().trim();
+<span class="comment">// → "1042" (chiffres extraits pour comparaison)</span>
+<span class="key">const</span> numeroChiffres = raw.replace(<span class="str">/[^0-9]/g</span>, <span class="str">''</span>);
+<span class="comment">// → "PRJ-1042" (normalisé pour comparaison exacte)</span>
+<span class="key">const</span> numeroNorm = raw.toUpperCase().replace(<span class="str">/\s+/g</span>, <span class="str">''</span>);
+
+<span class="comment">// Si vide → erreur immédiate avec message clair</span>
+<span class="key">if</span> (!raw) throw <span class="key">new</span> Error(<span class="str">'Numéro de projet manquant'</span>);</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- NODE 3 — GOOGLE SHEETS -->
+    <!-- ============================================================ -->
+    <div class="node-card">
+      <div class="node-header nh-sheets">
+        <div class="nh-num">3</div>
+        <span class="nh-icon">📊</span>
+        <div>
+          <h3>Google Sheets — Lire les projets</h3>
+          <div class="nh-type">n8n-nodes-base.googleSheets v4.5 — Opération : Read</div>
+        </div>
+      </div>
+      <div class="node-body">
+        <div class="nd-grid">
+          <div class="nd-box role-box">
+            <div class="ndb-title">🎯 Rôle</div>
+            <p>Se connecte à votre Google Sheets <em>«&nbsp;Projets&nbsp;»</em> et <strong>lit toutes les lignes</strong>. Chaque ligne devient un item séparé dans n8n. La première ligne du Sheets doit contenir les en-têtes de colonnes.</p>
+          </div>
+          <div class="nd-box param-box">
+            <div class="ndb-title">⚙️ Paramètres à configurer</div>
+            <ul>
+              <li><strong>Credential :</strong> Google Sheets OAuth2 (à créer dans n8n)</li>
+              <li><strong>Document ID :</strong> ID du Google Sheets (dans l'URL)</li>
+              <li><strong>Sheet Name :</strong> Nom de l'onglet (ex: <em>Projets</em>)</li>
+              <li><strong>Value Render :</strong> UNFORMATTED_VALUE</li>
+            </ul>
+          </div>
+          <div class="nd-box io-box">
+            <div class="ndb-title">📤 Sortie</div>
+            <p>Chaque ligne du Sheets = 1 item. Les colonnes deviennent des propriétés JSON portant le nom de l'en-tête :</p>
+            <ul>
+              <li><strong>Numéro de projet</strong></li>
+              <li><strong>Nom du client</strong></li>
+              <li><strong>Sous-total</strong>, etc.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="callout warning">
+          <span class="ci">🔑</span>
+          <p><strong>Comment trouver l'ID du Sheets :</strong> Ouvrez votre Google Sheets. Dans l'URL, copiez la partie entre <code>/d/</code> et <code>/edit</code>. Ex: <code>https://docs.google.com/spreadsheets/d/<strong>1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms</strong>/edit</code></p>
+        </div>
+        <div class="callout tip">
+          <span class="ci">✅</span>
+          <p><strong>Connexion Google :</strong> Dans n8n → Settings → Credentials → New → Google Sheets OAuth2. Suivez le guide d'autorisation Google. Une fois créé, sélectionnez-le dans ce nœud.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- NODE 4 — CODE TROUVER LA LIGNE -->
+    <!-- ============================================================ -->
+    <div class="node-card">
+      <div class="node-header nh-code">
+        <div class="nh-num">4</div>
+        <span class="nh-icon">🔎</span>
+        <div>
+          <h3>Trouver la ligne du projet</h3>
+          <div class="nh-type">n8n-nodes-base.code — Mode : Run Once For All Items</div>
+        </div>
+      </div>
+      <div class="node-body">
+        <div class="nd-grid">
+          <div class="nd-box role-box">
+            <div class="ndb-title">🎯 Rôle</div>
+            <p>Parcourt <strong>toutes les lignes</strong> retournées par Google Sheets et trouve celle dont le numéro de projet correspond exactement à ce que l'employé a entré. Compare de deux façons pour être flexible.</p>
+          </div>
+          <div class="nd-box param-box">
+            <div class="ndb-title">⚙️ Logique de recherche</div>
+            <ul>
+              <li>Compare les <strong>chiffres</strong> seulement (robuste)</li>
+              <li>OU compare le <strong>texte normalisé</strong> (exact)</li>
+              <li>Si aucune correspondance → erreur 404 avec message</li>
+              <li>Mode <strong>runOnceForAllItems</strong> = traite tout d'un coup</li>
+            </ul>
+          </div>
+          <div class="nd-box io-box">
+            <div class="ndb-title">📤 Sortie</div>
+            <p>Retourne <strong>1 seul item</strong> : la ligne du projet trouvé avec toutes ses colonnes.</p>
+            <ul>
+              <li>Si trouvé → données du projet</li>
+              <li>Si non trouvé → erreur capturée par le nœud 7</li>
+            </ul>
+          </div>
+        </div>
+        <div class="nd-box code-explain" style="margin-top:0;">
+          <div class="ndb-title">💻 Ce que fait le code</div>
+          <div class="code-block"><span class="comment">// Récupérer le numéro nettoyé depuis le nœud 2</span>
+<span class="key">const</span> numero = $(<span class="str">'Nettoyer le numéro de projet'</span>).first().json.numero;
+
+<span class="comment">// Comparer chaque ligne du Sheets</span>
+<span class="key">const</span> match = allRows.<span class="val">find</span>(item => {
+  <span class="key">const</span> val = item.json[<span class="str">'Numéro de projet'</span>];
+  <span class="key">return</span> valChiffres === numero <span class="comment">// ex: "1042" === "1042"</span>
+      || valNorm === numeroNorm; <span class="comment">// ex: "PRJ-1042" === "PRJ-1042"</span>
+});
+
+<span class="key">if</span> (!match) throw <span class="key">new</span> Error(<span class="str">'Projet introuvable dans le Sheets'</span>);</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- NODE 5 — CODE TRANSFORMER -->
+    <!-- ============================================================ -->
+    <div class="node-card">
+      <div class="node-header nh-code">
+        <div class="nh-num">5</div>
+        <span class="nh-icon">⚙️</span>
+        <div>
+          <h3>Transformer → Champs documents</h3>
+          <div class="nh-type">n8n-nodes-base.code — Mapping colonnes → champs HTML</div>
+        </div>
+      </div>
+      <div class="node-body">
+        <div class="nd-grid">
+          <div class="nd-box role-box">
+            <div class="ndb-title">🎯 Rôle</div>
+            <p>Convertit les noms de colonnes du Sheets vers les <strong>noms de champs standardisés</strong> attendus par les documents HTML. Calcule aussi les taxes et formatte les montants en dollars CAD.</p>
+          </div>
+          <div class="nd-box param-box">
+            <div class="ndb-title">⚙️ Calculs automatiques</div>
+            <ul>
+              <li><strong>TPS (5%):</strong> sous-total × 0,05</li>
+              <li><strong>TVQ (9,975%):</strong> sous-total × 0,09975</li>
+              <li><strong>Total TTC:</strong> sous-total + TPS + TVQ</li>
+              <li><strong>Solde dû:</strong> Total − Acompte</li>
+              <li>Formatage dates en <strong>AAAA-MM-JJ</strong></li>
+            </ul>
+          </div>
+          <div class="nd-box io-box">
+            <div class="ndb-title">📤 Champs produits</div>
+            <ul>
+              <li>job_number, client_name, client_company</li>
+              <li>client_phone, client_email, job_address</li>
+              <li>start_date, work_type, notes</li>
+              <li>foreman_name, duration_days, crew_size</li>
+              <li>subtotal, tps_amount, tvq_amount</li>
+              <li>total_ttc, acompte_amount, solde_amount</li>
+            </ul>
+          </div>
+        </div>
+        <div class="callout tip">
+          <span class="ci">🔗</span>
+          <p>Ces noms de champs (<code>job_number</code>, <code>client_name</code>, etc.) correspondent exactement aux attributs <code>data-jobber-field</code> dans les documents HTML. C'est ce qui permet le remplissage automatique des formulaires.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- NODE 6 — RÉPONDRE SUCCESS -->
+    <!-- ============================================================ -->
+    <div class="node-card">
+      <div class="node-header nh-respond">
+        <div class="nh-num">6</div>
+        <span class="nh-icon">✅</span>
+        <div>
+          <h3>Répondre — JSON vers le document</h3>
+          <div class="nh-type">n8n-nodes-base.respondToWebhook — Code 200</div>
+        </div>
+      </div>
+      <div class="node-body">
+        <div class="nd-grid">
+          <div class="nd-box role-box">
+            <div class="ndb-title">🎯 Rôle</div>
+            <p>Envoie la réponse <strong>JSON au document HTML</strong> qui avait fait la requête. Le document reçoit les données et remplit automatiquement tous les champs correspondants.</p>
+          </div>
+          <div class="nd-box param-box">
+            <div class="ndb-title">⚙️ Paramètres</div>
+            <ul>
+              <li><strong>respondWith :</strong> json</li>
+              <li><strong>responseBody :</strong> <code style="font-size:10px;background:#eee;padding:1px 4px;">={{ $json }}</code></li>
+              <li><strong>CORS :</strong> Access-Control-Allow-Origin: *</li>
+              <li><strong>Code HTTP :</strong> 200 (succès)</li>
+            </ul>
+          </div>
+          <div class="nd-box io-box">
+            <div class="ndb-title">📤 Format de réponse</div>
+            <div class="code-block" style="font-size:10.5px;">{
+  <span class="key">"job_number"</span>: <span class="str">"1042"</span>,
+  <span class="key">"client_name"</span>: <span class="str">"Jean Tremblay"</span>,
+  <span class="key">"job_address"</span>: <span class="str">"123 rue St-Paul"</span>,
+  <span class="key">"total_ttc"</span>: <span class="str">"2 345,67 $"</span>,
+  <span class="comment">// ... tous les autres champs</span>
+}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- NODE 7 — ERREUR -->
+    <!-- ============================================================ -->
+    <div class="node-card">
+      <div class="node-header nh-error">
+        <div class="nh-num">7</div>
+        <span class="nh-icon">❌</span>
+        <div>
+          <h3>Répondre — Erreur projet introuvable</h3>
+          <div class="nh-type">n8n-nodes-base.respondToWebhook — Code 404</div>
+        </div>
+      </div>
+      <div class="node-body">
+        <div class="nd-grid">
+          <div class="nd-box role-box">
+            <div class="ndb-title">🎯 Rôle</div>
+            <p>Se déclenche si le numéro de projet <strong>n'existe pas</strong> dans le Google Sheets, ou si le numéro entré est invalide. Retourne un message d'erreur clair au document HTML.</p>
+          </div>
+          <div class="nd-box param-box">
+            <div class="ndb-title">⚙️ Paramètres</div>
+            <ul>
+              <li><strong>Code HTTP :</strong> 404</li>
+              <li><strong>Message :</strong> «&nbsp;Projet introuvable dans le Google Sheets&nbsp;»</li>
+              <li>Le document HTML affichera ce message à l'employé</li>
+            </ul>
+          </div>
+          <div class="nd-box io-box">
+            <div class="ndb-title">📤 Réponse retournée</div>
+            <div class="code-block" style="font-size:11px;">{
+  <span class="key">"erreur"</span>: <span class="str">"Projet introuvable dans le
+  Google Sheets. Vérifiez le numéro."</span>
+}</div>
+          </div>
+        </div>
+        <div class="callout warning">
+          <span class="ci">⚠️</span>
+          <p><strong>À configurer dans n8n :</strong> Dans les connexions du workflow, reliez le chemin d'erreur (branche rouge) du nœud 4 vers ce nœud 7. Ainsi, quand un projet est introuvable, l'erreur est capturée et retournée proprement.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- STRUCTURE DU GOOGLE SHEETS -->
+    <!-- ============================================================ -->
+    <div class="section-title">📊 Structure du Google Sheets « Projets »</div>
+
+    <div class="callout info">
+      <span class="ci">ℹ️</span>
+      <p>La <strong>première ligne</strong> du Sheets doit contenir exactement ces en-têtes de colonnes. Le workflow les utilise pour identifier chaque champ. Les colonnes marquées <span class="tag-req">Requis</span> sont obligatoires pour que le remplissage fonctionne.</p>
+    </div>
+
+    <table class="sheets-table">
+      <thead>
+        <tr>
+          <th>Colonne (en-tête)</th>
+          <th>Champ document</th>
+          <th>Exemple de valeur</th>
+          <th>Statut</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Numéro de projet</td>
+          <td>job_number</td>
+          <td>1042 ou PRJ-1042</td>
+          <td><span class="tag-req">Requis</span></td>
+        </tr>
+        <tr>
+          <td>Nom du client</td>
+          <td>client_name</td>
+          <td>Jean Tremblay</td>
+          <td><span class="tag-req">Requis</span></td>
+        </tr>
+        <tr>
+          <td>Compagnie</td>
+          <td>client_company</td>
+          <td>Construction ABC inc.</td>
+          <td><span class="tag-opt">Optionnel</span></td>
+        </tr>
+        <tr>
+          <td>Téléphone</td>
+          <td>client_phone</td>
+          <td>418-555-0123</td>
+          <td><span class="tag-req">Requis</span></td>
+        </tr>
+        <tr>
+          <td>Courriel</td>
+          <td>client_email</td>
+          <td>jean@exemple.com</td>
+          <td><span class="tag-opt">Optionnel</span></td>
+        </tr>
+        <tr>
+          <td>Adresse du chantier</td>
+          <td>job_address</td>
+          <td>123 rue St-Paul, Québec, QC, G1K 3W4</td>
+          <td><span class="tag-req">Requis</span></td>
+        </tr>
+        <tr>
+          <td>Date de début</td>
+          <td>start_date</td>
+          <td>2026-04-15</td>
+          <td><span class="tag-req">Requis</span></td>
+        </tr>
+        <tr>
+          <td>Type de travaux</td>
+          <td>work_type</td>
+          <td>Isolation polyuréthane, Ignifuge</td>
+          <td><span class="tag-req">Requis</span></td>
+        </tr>
+        <tr>
+          <td>Contremaître</td>
+          <td>foreman_name</td>
+          <td>Marc Gagnon</td>
+          <td><span class="tag-opt">Optionnel</span></td>
+        </tr>
+        <tr>
+          <td>Durée (jours)</td>
+          <td>duration_days</td>
+          <td>3</td>
+          <td><span class="tag-opt">Optionnel</span></td>
+        </tr>
+        <tr>
+          <td>Taille équipe</td>
+          <td>crew_size</td>
+          <td>4</td>
+          <td><span class="tag-opt">Optionnel</span></td>
+        </tr>
+        <tr>
+          <td>Accès au site</td>
+          <td>site_access</td>
+          <td>Code: 4521, porte arrière</td>
+          <td><span class="tag-opt">Optionnel</span></td>
+        </tr>
+        <tr>
+          <td>Stationnement</td>
+          <td>parking</td>
+          <td>Côté nord du bâtiment</td>
+          <td><span class="tag-opt">Optionnel</span></td>
+        </tr>
+        <tr>
+          <td>Client sur site</td>
+          <td>client_onsite</td>
+          <td>Oui / Non / À confirmer</td>
+          <td><span class="tag-opt">Optionnel</span></td>
+        </tr>
+        <tr>
+          <td>Sous-total</td>
+          <td>subtotal</td>
+          <td>2000 (chiffre sans $)</td>
+          <td><span class="tag-req">Requis</span></td>
+        </tr>
+        <tr>
+          <td>Acompte</td>
+          <td>acompte_amount</td>
+          <td>500 (chiffre sans $)</td>
+          <td><span class="tag-opt">Optionnel</span></td>
+        </tr>
+        <tr>
+          <td>Date soumission</td>
+          <td>quote_date</td>
+          <td>2026-03-20</td>
+          <td><span class="tag-opt">Optionnel</span></td>
+        </tr>
+        <tr>
+          <td>Valide jusqu'au</td>
+          <td>valid_until</td>
+          <td>2026-04-20</td>
+          <td><span class="tag-opt">Optionnel</span></td>
+        </tr>
+        <tr>
+          <td>Notes</td>
+          <td>notes</td>
+          <td>Client préfère les matins.</td>
+          <td><span class="tag-opt">Optionnel</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- ============================================================ -->
+    <!-- WORKFLOW JSON À COPIER -->
+    <!-- ============================================================ -->
+    <div class="section-title">📥 Workflow JSON — Coller dans n8n</div>
+
+    <div class="callout info">
+      <span class="ci">📋</span>
+      <p>Copiez le JSON ci-dessous. Dans n8n, allez dans <strong>Workflows → Import from JSON</strong> (ou Ctrl+Shift+I) et collez-le. Vous n'avez ensuite qu'à <strong>remplacer l'ID du Sheets</strong> et configurer les credentials Google.</p>
+    </div>
+
+    <div class="code-wrapper">
+      <div class="code-block" id="json-workflow" style="max-height:380px;overflow-y:auto;font-size:10.5px;">{
+  <span class="key">"name"</span>: <span class="str">"InnovaSpray — Lookup Projet Google Sheets"</span>,
+
+  <span class="comment">/* ─── NODE 1 : WEBHOOK ─── */</span>
+  <span class="comment">/* Reçoit GET /webhook/sheets-lookup?numero=1042 */</span>
+  <span class="comment">/* Créé l'URL d'entrée que les documents HTML appelleront */</span>
+
+  <span class="comment">/* ─── NODE 2 : CODE — NETTOYER ─── */</span>
+  <span class="comment">/* Extrait les chiffres du numéro entré par l'employé */</span>
+  <span class="comment">/* Accepte: "1042", "#PRJ-1042", "PRJ 1042" → normalise tout */</span>
+
+  <span class="comment">/* ─── NODE 3 : GOOGLE SHEETS — READ ─── */</span>
+  <span class="comment">/* Lit TOUTES les lignes de l'onglet "Projets" */</span>
+  <span class="comment">/* ⚠️  Remplacez VOTRE_SHEET_ID_ICI par l'ID réel */</span>
+
+  <span class="comment">/* ─── NODE 4 : CODE — TROUVER LA LIGNE ─── */</span>
+  <span class="comment">/* Cherche la ligne dont le numéro correspond */</span>
+  <span class="comment">/* Lève une erreur si introuvable (→ Node 7) */</span>
+
+  <span class="comment">/* ─── NODE 5 : CODE — TRANSFORMER ─── */</span>
+  <span class="comment">/* Mappe colonnes Sheets → champs HTML */</span>
+  <span class="comment">/* Calcule TPS (5%), TVQ (9.975%), Total TTC, Solde */</span>
+
+  <span class="comment">/* ─── NODE 6 : RESPOND — SUCCÈS ─── */</span>
+  <span class="comment">/* Retourne le JSON au document HTML (HTTP 200) */</span>
+
+  <span class="comment">/* ─── NODE 7 : RESPOND — ERREUR ─── */</span>
+  <span class="comment">/* Retourne une erreur 404 si le projet est introuvable */</span>
+}</div>
+      <button class="copy-btn" onclick="copyJSON()">📋 Copier le JSON</button>
+    </div>
+
+    <div class="callout tip" style="margin-top:12px;">
+      <span class="ci">📁</span>
+      <p>Le fichier <strong>workflow_sheets_lookup.json</strong> (dans le même dossier que ce guide) contient le JSON complet prêt à importer. Ouvrez-le avec un éditeur de texte, copiez tout le contenu, puis importez-le dans n8n.</p>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- ÉTAPES DE CONFIGURATION -->
+    <!-- ============================================================ -->
+    <div class="section-title">🚀 Étapes de mise en place</div>
+
+    <div class="setup-steps">
+      <div class="setup-step">
+        <div class="ss-num">1</div>
+        <div class="ss-content">
+          <h4>Préparer le Google Sheets</h4>
+          <p>Créez ou ouvrez votre Google Sheets. Renommez l'onglet en <strong>Projets</strong>. Ajoutez les en-têtes de colonnes exactement comme dans le tableau ci-dessus. Entrez vos projets, une ligne par projet.</p>
+        </div>
+      </div>
+      <div class="setup-step">
+        <div class="ss-num">2</div>
+        <div class="ss-content">
+          <h4>Copier l'ID du Sheets</h4>
+          <p>Dans l'URL du Sheets, copiez la valeur entre <code>/d/</code> et <code>/edit</code>. Exemple : <code>1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms</code>. Vous en aurez besoin à l'étape 4.</p>
+        </div>
+      </div>
+      <div class="setup-step">
+        <div class="ss-num">3</div>
+        <div class="ss-content">
+          <h4>Créer le credential Google Sheets dans n8n</h4>
+          <p>Dans n8n → <strong>Settings → Credentials → New → Google Sheets OAuth2</strong>. Suivez l'assistant d'autorisation. Une fois créé, notez son nom exact.</p>
+        </div>
+      </div>
+      <div class="setup-step">
+        <div class="ss-num">4</div>
+        <div class="ss-content">
+          <h4>Importer le workflow et le configurer</h4>
+          <p>Dans n8n → <strong>Workflows → Import from JSON</strong> → collez le contenu de <code>workflow_sheets_lookup.json</code>. Ouvrez le nœud <em>Google Sheets — Lire les projets</em> et remplacez <code>VOTRE_SHEET_ID_ICI</code> par votre vrai ID. Sélectionnez votre credential Google.</p>
+        </div>
+      </div>
+      <div class="setup-step">
+        <div class="ss-num">5</div>
+        <div class="ss-content">
+          <h4>Connecter le nœud d'erreur</h4>
+          <p>Dans le canvas n8n, reliez le chemin <strong>d'erreur</strong> (point rouge) du nœud <em>Trouver la ligne du projet</em> vers le nœud <em>Répondre — Erreur</em>. Faites la même chose pour le nœud <em>Nettoyer le numéro</em>.</p>
+        </div>
+      </div>
+      <div class="setup-step">
+        <div class="ss-num">6</div>
+        <div class="ss-content">
+          <h4>Tester avec un numéro réel</h4>
+          <p>Activez d'abord le workflow en mode test. Ouvrez un document HTML (ex: Fiche de Chantier), entrez un numéro de projet existant dans votre Sheets, et cliquez sur le bouton de recherche. Les champs devraient se remplir automatiquement.</p>
+        </div>
+      </div>
+      <div class="setup-step">
+        <div class="ss-num">7</div>
+        <div class="ss-content">
+          <h4>Mettre en production</h4>
+          <p>Dans n8n, <strong>activez le workflow</strong> (toggle en haut à droite). L'URL de production devient : <code>https://VOTRE-N8N.com/webhook/sheets-lookup</code>. Mettez à jour cette URL dans le code JavaScript de chaque document HTML.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- CALLOUT FINAL -->
+    <div class="callout violet" style="margin-top:24px;">
+      <span class="ci">🔗</span>
+      <div>
+        <p><strong>Source unique de données :</strong> Ce workflow Google Sheets est la source principale de tous vos projets. Les documents HTML lisent les données directement depuis votre tableur PRODUCTION via ce workflow n8n.</p>
+      </div>
+    </div>
+
+  </div><!-- /body -->
+
+  <div class="doc-footer">
+    InnovaSpray Québec — Workflow n8n × Google Sheets — Généré le 2026-03-24
+  </div>
+
+</div><!-- /page -->
+
+<script>
+  function copyJSON() {
+    fetch('workflow_sheets_lookup.json')
+      .then(r => r.text())
+      .then(text => {
+        navigator.clipboard.writeText(text).then(() => {
+          const btn = document.querySelector('.copy-btn');
+          btn.textContent = '✅ Copié !';
+          setTimeout(() => btn.textContent = '📋 Copier le JSON', 2000);
+        });
+      })
+      .catch(() => {
+        alert('Ouvrez workflow_sheets_lookup.json avec un éditeur de texte et copiez son contenu.');
+      });
+  }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Connexion — InnovaSpray Québec</title>
+  <script src="webhooks.config.js"></script>
+  <script src="isq-storage.js"></script>
+  <script src="isq-auth.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bleu:   #0170B9;
+      --orange: #FF6600;
+      --gris:   #F4F6F9;
+      --bordure:#D0D7E3;
+      --texte:  #1A1A2E;
+    }
+    body {
+      font-family: 'Montserrat', 'Segoe UI', Arial, sans-serif;
+      background: linear-gradient(135deg, #0170B9 0%, #014d82 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+      color: var(--texte);
+    }
+
+    .login-card {
+      background: #fff;
+      border-radius: 18px;
+      box-shadow: 0 12px 48px rgba(0,0,0,.25);
+      width: 100%;
+      max-width: 420px;
+      overflow: hidden;
+    }
+
+    .login-header {
+      background: linear-gradient(135deg, #0170B9 0%, #014d82 100%);
+      padding: 28px 28px 22px;
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+    .login-header img {
+      border-radius: 10px;
+      object-fit: contain;
+      background: #fff;
+      padding: 4px;
+      flex-shrink: 0;
+    }
+    .login-header-text h1 {
+      font-size: 18px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: .5px;
+    }
+    .login-header-text p {
+      font-size: 12px;
+      color: rgba(255,255,255,.8);
+      margin-top: 2px;
+    }
+
+    .login-body { padding: 28px; }
+
+    .login-title {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--texte);
+      margin-bottom: 6px;
+    }
+    .login-subtitle {
+      font-size: 13px;
+      color: #777;
+      margin-bottom: 24px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      margin-bottom: 16px;
+    }
+    .form-group label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      color: #666;
+    }
+    .form-group input {
+      border: 1.5px solid var(--bordure);
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-family: inherit;
+      font-size: 15px;
+      color: var(--texte);
+      background: var(--gris);
+      transition: border-color .2s, background .2s;
+      min-height: 48px;
+    }
+    .form-group input:focus {
+      outline: none;
+      border-color: var(--bleu);
+      background: #fff;
+    }
+
+    .btn-login {
+      display: block;
+      width: 100%;
+      margin-top: 8px;
+      padding: 15px;
+      background: var(--orange);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: .3px;
+      transition: background .2s, transform .1s;
+      min-height: 52px;
+    }
+    .btn-login:hover { background: #cc5200; }
+    .btn-login:active { transform: scale(.98); }
+    .btn-login:disabled { background: #ccc; cursor: default; transform: none; }
+
+    .login-error {
+      background: #fdf3f2;
+      border: 1.5px solid #e74c3c;
+      border-radius: 7px;
+      padding: 10px 14px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #c0392b;
+      margin-top: 14px;
+      display: none;
+    }
+    .login-error.show { display: block; }
+
+    .first-run-notice {
+      background: #e8f4fd;
+      border: 1.5px solid #b3d9f5;
+      border-radius: 7px;
+      padding: 10px 14px;
+      font-size: 12px;
+      color: #1a5276;
+      margin-bottom: 20px;
+      display: none;
+    }
+    .first-run-notice.show { display: block; }
+    .first-run-notice strong { font-weight: 800; }
+
+    .login-footer {
+      text-align: center;
+      padding: 14px;
+      font-size: 11px;
+      color: #aaa;
+      border-top: 1px solid var(--bordure);
+    }
+  </style>
+</head>
+<body>
+
+<div class="login-card">
+
+  <div class="login-header">
+    <img src="https://innovaspray.com/wp-content/uploads/2025/09/organization_logo_par.jpg"
+         width="72" height="72" alt="InnovaSpray Québec">
+    <div class="login-header-text">
+      <h1>INNOVASPRAY QUÉBEC</h1>
+      <p>Gestion de chantier</p>
+    </div>
+  </div>
+
+  <div class="login-body">
+    <div class="login-title">Connexion</div>
+    <div class="login-subtitle">Entrez vos identifiants pour accéder à l'application.</div>
+
+    <div class="first-run-notice" id="firstRunNotice">
+      Première utilisation détectée. Un compte administrateur par défaut a été créé :<br>
+      <strong>Utilisateur :</strong> admin &nbsp;|&nbsp; <strong>Mot de passe :</strong> admin123<br>
+      Changez ce mot de passe dès la première connexion.
+    </div>
+
+    <form id="loginForm" onsubmit="handleLogin(event)">
+      <div class="form-group">
+        <label for="inputUsername">Nom d'utilisateur</label>
+        <input type="text" id="inputUsername" autocomplete="username"
+               placeholder="ex: admin" required>
+      </div>
+      <div class="form-group">
+        <label for="inputPassword">Mot de passe</label>
+        <input type="password" id="inputPassword" autocomplete="current-password"
+               placeholder="••••••••" required>
+      </div>
+
+      <button class="btn-login" type="submit" id="btnLogin">Se connecter</button>
+      <div class="login-error" id="loginError">Nom d'utilisateur ou mot de passe incorrect.</div>
+    </form>
+  </div>
+
+  <div class="login-footer">InnovaSpray Québec &mdash; innovaspray.ca</div>
+
+</div>
+
+<script>
+(async function () {
+  // Si déjà connecté, rediriger vers l'accueil
+  if (ISQAuth.getSession()) {
+    window.location.replace('index.html');
+    return;
+  }
+
+  // Créer l'admin par défaut si aucun utilisateur
+  var wasEmpty = ISQAuth.getUsers().length === 0;
+  await ISQAuth.initDefaultAdmin();
+  if (wasEmpty && ISQAuth.getUsers().length > 0) {
+    document.getElementById('firstRunNotice').classList.add('show');
+  }
+})();
+
+async function handleLogin(e) {
+  e.preventDefault();
+  var btn      = document.getElementById('btnLogin');
+  var errEl    = document.getElementById('loginError');
+  var username = document.getElementById('inputUsername').value;
+  var password = document.getElementById('inputPassword').value;
+
+  btn.disabled    = true;
+  btn.textContent = 'Connexion…';
+  errEl.classList.remove('show');
+
+  var ok = await ISQAuth.login(username, password);
+
+  if (ok) {
+    window.location.replace('index.html');
+  } else {
+    errEl.classList.add('show');
+    btn.disabled    = false;
+    btn.textContent = 'Se connecter';
+    document.getElementById('inputPassword').value = '';
+    document.getElementById('inputPassword').focus();
+  }
+}
+</script>
+
+</body>
+</html>

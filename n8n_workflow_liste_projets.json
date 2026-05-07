@@ -1,0 +1,93 @@
+{
+  "name": "ISQ — Liste des projets (Gestion Chantier)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "liste-projets",
+        "responseMode": "responseNode",
+        "options": { "allowedOrigins": "*" }
+      },
+      "id": "93f3b73a-48be-4ea0-b8e9-e9ebe1c15c92",
+      "name": "Webhook — Liste projets",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "liste-projets-isq"
+    },
+    {
+      "parameters": {
+        "documentId": { "__rl": true, "value": "1qNwZxZt2JY-DemewUobC812HLnsdMGY01fiDpV4awQ4", "mode": "id" },
+        "sheetName": { "__rl": true, "value": 869702418, "mode": "list", "cachedResultName": "Liste de contrat 2025", "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1qNwZxZt2JY-DemewUobC812HLnsdMGY01fiDpV4awQ4/edit#gid=869702418" },
+        "options": {}
+      },
+      "id": "fbf24462-e5d4-4d3f-a082-7bb41c19ad8a",
+      "name": "Google Sheets — Lire PRODUCTION",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [480, 300],
+      "credentials": { "googleSheetsOAuth2Api": { "id": "JImWyq0YJeOz2zPy", "name": "InnovaSpray" } }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Normalise : minuscules + sans accents\nfunction norm(s) {\n  return String(s || '').toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').trim();\n}\n\nconst allItems = $input.all();\nif (!allItems.length) return [];\n\n// Étape 1 — Trouver la ligne d'en-tête (celle où col_1 = \"Projet\")\nlet headerIdx = -1;\nlet colKeyMap = {};\n\nfor (let i = 0; i < allItems.length; i++) {\n  const row = allItems[i].json;\n  if (norm(String(row.col_1 || '')) === 'projet') {\n    headerIdx = i;\n    for (const [key, val] of Object.entries(row)) {\n      if (key === 'row_number') continue;\n      const v = String(val || '').trim();\n      if (v && v !== 'empty') colKeyMap[norm(v)] = key;\n    }\n    break;\n  }\n}\n\nif (headerIdx === -1) {\n  return [{ json: {\n    _debug: true,\n    _message: 'Ligne d\\'en-tête introuvable — col_1 doit contenir \"Projet\".',\n    _premiere_ligne: allItems[0].json\n  }}];\n}\n\n// Étape 2 — Mapping champs app → col_X\nconst ALIASES = {\n  job_number:           ['projet'],\n  client_name:          ['nom du client'],\n  client_phone:         ['numero de telephone', 'telephone'],\n  client_email:         ['courriel client', 'email'],\n  job_address:          ['adresse'],\n  work_type:            ['surface(s)', 'surfaces'],\n  surface_type:         ['type de revetement'],\n  total_sqft:           ['superficie approximative', 'superficie'],\n  doors_count:          ['portes'],\n  garage_doors_count:   ['porte garage', 'portes de garage'],\n  windows_count:        ['fenetres'],\n  floors_count:         ['nb d\\'etages', 'etages'],\n  duration_days:        ['duree prevue', 'duree'],\n  colors_raw:           ['couleurs'],\n  special_instructions: ['notes'],\n  subtotal:             ['prix avant tx'],\n  acompte_amount:       ['depot recu'],\n  quote_date:           ['date du depot']\n};\n\nconst resolved = {};\nfor (const [appField, aliases] of Object.entries(ALIASES)) {\n  for (const alias of aliases) {\n    if (colKeyMap[alias]) { resolved[appField] = colKeyMap[alias]; break; }\n  }\n}\n\nif (!resolved.job_number) {\n  return [{ json: {\n    _debug: true,\n    _message: 'Colonne \"Projet\" non trouvée dans les en-têtes détectés.',\n    _entetes_detectes: colKeyMap\n  }}];\n}\n\n// Étape 3 — Mapper les lignes de données (après la ligne d'en-tête)\nconst results = [];\nfor (let i = headerIdx + 1; i < allItems.length; i++) {\n  const row = allItems[i].json;\n  const jobNum = String(row[resolved.job_number] || '').trim();\n  if (!jobNum || jobNum === 'empty') continue;\n\n  const mapped = {};\n  for (const [appField, colKey] of Object.entries(resolved)) {\n    const val = String(row[colKey] || '').trim();\n    if (val && val !== 'empty') mapped[appField] = val;\n  }\n  results.push({ json: mapped });\n}\n\nif (!results.length) {\n  return [{ json: {\n    _debug: true,\n    _message: 'En-têtes trouvés mais aucune ligne avec un numéro de projet valide.',\n    _resolved: resolved\n  }}];\n}\n\nreturn results;"
+      },
+      "id": "31b18604-1e44-4f06-b0b3-7d54e5e9f200",
+      "name": "Code — Mapping colonnes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [720, 300]
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "projets",
+        "options": {}
+      },
+      "id": "6619c881-cf7a-425e-9f71-28867cede2d2",
+      "name": "Aggregate — Tableau JSON",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [960, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json.projets }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              { "name": "Content-Type", "value": "application/json" },
+              { "name": "Access-Control-Allow-Origin", "value": "*" }
+            ]
+          }
+        }
+      },
+      "id": "5078c300-ef79-4a25-8ef8-2431372af8f2",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1200, 300]
+    }
+  ],
+  "connections": {
+    "Webhook — Liste projets": { "main": [[{ "node": "Google Sheets — Lire PRODUCTION", "type": "main", "index": 0 }]] },
+    "Google Sheets — Lire PRODUCTION": { "main": [[{ "node": "Code — Mapping colonnes", "type": "main", "index": 0 }]] },
+    "Code — Mapping colonnes": { "main": [[{ "node": "Aggregate — Tableau JSON", "type": "main", "index": 0 }]] },
+    "Aggregate — Tableau JSON": { "main": [[{ "node": "Respond to Webhook", "type": "main", "index": 0 }]] }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": ""
+  },
+  "staticData": null,
+  "tags": [
+    { "name": "InnovaSpray", "createdAt": "2026-04-18T00:00:00.000Z", "updatedAt": "2026-04-18T00:00:00.000Z" },
+    { "name": "Gestion Chantier", "createdAt": "2026-04-18T00:00:00.000Z", "updatedAt": "2026-04-18T00:00:00.000Z" }
+  ],
+  "triggerCount": 1,
+  "updatedAt": "2026-04-19T00:00:00.000Z",
+  "id": "isq-liste-projets"
+}

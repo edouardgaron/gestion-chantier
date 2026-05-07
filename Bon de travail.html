@@ -1,0 +1,2791 @@
+﻿<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bon de travail — InnovaSpray Québec</title>
+  <script src="webhooks.config.js"></script>
+  <script src="isq-storage.js"></script>
+  <script src="isq-auth.js"></script>
+  <script>ISQAuth.requireLogin();</script>
+  <script src="isq-core.js"></script>
+  <script src="isq-saves-db.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bleu:       #0170B9;
+      --bleu-clair: #1A8FD1;
+      --orange:     #FF6600;
+      --vert:       #2E7D32;
+      --vert-bg:    #E8F5E9;
+      --gris:       #F4F6F9;
+      --bordure:    #D0D7E3;
+      --texte:      #1A1A2E;
+    }
+    body {
+      font-family: 'Montserrat', 'Segoe UI', Arial, sans-serif;
+      background: #F0F4F8;
+      color: var(--texte);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    /* BOUTONS HAUT */
+    .btn-home {
+      display: inline-block;
+      padding: 10px 18px;
+      background: #fff;
+      color: var(--bleu);
+      border: 2px solid var(--bleu);
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background .2s, color .2s;
+    }
+    .btn-home:hover { background: var(--bleu); color: #fff; }
+    .btn-print {
+      display: inline-block;
+      padding: 10px 24px;
+      background: var(--orange);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .2s;
+    }
+    .btn-print:hover { background: #cc5200; }
+
+    /* PAGE */
+    .page {
+      max-width: 900px;
+      margin: 0 auto 40px;
+      background: #fff;
+      box-shadow: 0 4px 24px rgba(1,112,185,.13);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    /* HEADER */
+    .header {
+      background: var(--bleu);
+      color: #fff;
+      padding: 24px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+    .company-info h1 { font-size: 22px; font-weight: 800; letter-spacing: .5px; }
+    .company-info p  { font-size: 12px; opacity: .85; margin-top: 2px; }
+    .doc-label {
+      text-align: right;
+      flex-shrink: 0;
+    }
+    .doc-label .titre {
+      font-size: 20px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--orange);
+    }
+    .doc-label .sous-titre {
+      font-size: 11px;
+      opacity: .85;
+      margin-top: 3px;
+    }
+    .doc-label .num {
+      font-size: 16px;
+      font-weight: 700;
+      margin-top: 4px;
+      color: #fff;
+    }
+
+    /* BANDEAU CHEF */
+    .chef-band {
+      background: var(--orange);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0;
+    }
+    .chef-cell {
+      flex: 1;
+      min-width: 180px;
+      padding: 10px 20px;
+      border-right: 1px solid rgba(255,255,255,.25);
+    }
+    .chef-cell:last-child { border-right: none; }
+    .chef-cell .lbl { font-size: 10px; text-transform: uppercase; letter-spacing: .6px; opacity: .85; }
+    .chef-cell .val-in {
+      font-size: 14px;
+      font-weight: 700;
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid rgba(255,255,255,.5);
+      color: #fff;
+      font-family: inherit;
+      width: 100%;
+      padding: 2px 0;
+    }
+    .chef-cell .val-in::placeholder { color: rgba(255,255,255,.6); }
+    .chef-cell .val-in:focus { outline: none; border-bottom-color: #fff; }
+
+    /* BODY */
+    .body { padding: 28px 32px; }
+
+    /* SECTION TITLE */
+    .section-title {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--bleu);
+      border-bottom: 2px solid var(--bleu);
+      padding-bottom: 5px;
+      margin: 24px 0 14px;
+    }
+    .section-title:first-child { margin-top: 0; }
+
+    /* INFO GRID */
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 4px;
+    }
+    .info-block {
+      background: var(--gris);
+      border-radius: 8px;
+      padding: 14px 16px;
+    }
+    .info-block .block-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--bleu);
+      margin-bottom: 10px;
+      letter-spacing: .5px;
+    }
+    .field-row { display: flex; gap: 6px; margin-bottom: 7px; align-items: baseline; }
+    .field-label { font-weight: 600; color: #555; min-width: 100px; font-size: 12px; flex-shrink: 0; }
+    .field-val {
+      flex: 1;
+      border: none;
+      border-bottom: 1px solid var(--bordure);
+      background: transparent;
+      font-family: inherit;
+      font-size: 13px;
+      color: var(--texte);
+      padding: 1px 4px;
+      min-height: 22px;
+      width: 100%;
+    }
+    .field-val:focus { outline: none; border-bottom-color: var(--bleu); }
+    textarea.field-val { resize: vertical; overflow: hidden; line-height: 1.4; }
+
+    /* PROJET CARDS */
+    .projet-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 4px;
+    }
+    .projet-card {
+      background: var(--gris);
+      border-left: 4px solid var(--bleu-clair);
+      padding: 10px 12px;
+      border-radius: 0 6px 6px 0;
+    }
+    .projet-card .plbl { font-size: 10px; text-transform: uppercase; font-weight: 700; color: #666; letter-spacing: .4px; }
+    .projet-card .pval {
+      font-size: 13px;
+      font-weight: 700;
+      margin-top: 4px;
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid var(--bordure);
+      font-family: inherit;
+      color: var(--texte);
+      width: 100%;
+      padding: 2px 0;
+    }
+    .projet-card .pval:focus { outline: none; border-bottom-color: var(--bleu); }
+    .projet-card.highlight { border-left-color: var(--orange); }
+    .projet-card.highlight .plbl { color: var(--orange); }
+
+    /* TRAVAUX TABLE */
+    .travaux-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      margin-bottom: 4px;
+    }
+    .travaux-table thead tr { background: var(--bleu); color: #fff; }
+    .travaux-table thead th { padding: 9px 12px; text-align: left; font-size: 11px; font-weight: 700; letter-spacing: .4px; }
+    .travaux-table thead th.c { text-align: center; }
+    .travaux-table tbody tr:nth-child(even) { background: var(--gris); }
+    .travaux-table tbody td { padding: 8px 12px; border-bottom: 1px solid var(--bordure); vertical-align: middle; }
+    .travaux-table tbody td.c { text-align: center; }
+    .travaux-table .cat-row td {
+      background: var(--bleu-clair) !important;
+      color: #fff;
+      font-weight: 700;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      padding: 7px 12px;
+    }
+    .travaux-table td input[type="text"] {
+      background: transparent;
+      border: none;
+      font-family: inherit;
+      font-size: 13px;
+      color: var(--texte);
+      width: 100%;
+      padding: 0;
+    }
+    .travaux-table td input[type="text"]:focus { outline: none; background: #eaf4ff; border-radius: 3px; }
+
+    /* CHECKBOX TÂCHES */
+    .check-ok {
+      width: 20px; height: 20px;
+      accent-color: var(--vert);
+      cursor: pointer;
+    }
+
+    /* COULEURS PICKER */
+    .couleurs-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+    }
+    .cp-card {
+      border: 2px solid var(--bordure);
+      border-radius: 10px;
+      overflow: hidden;
+      transition: border-color .2s;
+    }
+    .cp-card:focus-within { border-color: var(--bleu); }
+    .cp-top {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      background: var(--gris);
+    }
+    .cp-swatch {
+      width: 52px;
+      height: 52px;
+      border-radius: 8px;
+      border: 2px solid rgba(0,0,0,.12);
+      flex-shrink: 0;
+      transition: background .3s;
+    }
+    .cp-meta { flex: 1; min-width: 0; }
+    .cp-zone { font-size: 10px; text-transform: uppercase; font-weight: 700; color: #888; letter-spacing: .5px; }
+    .cp-selected {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--texte);
+      margin-top: 3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .cp-source { font-size: 10px; color: #aaa; margin-top: 2px; }
+    .cp-clear { display: none; }
+    .cp-search-wrap { padding: 8px 12px; border-top: 1px solid var(--bordure); background: #fff; }
+    .cp-search {
+      width: 100%;
+      border: 1px solid var(--bordure);
+      border-radius: 6px;
+      padding: 7px 10px;
+      font-family: inherit;
+      font-size: 13px;
+      background: var(--gris);
+    }
+    .cp-search:focus { outline: none; border-color: var(--bleu); background: #fff; }
+    .cp-dropdown {
+      display: none;
+      max-height: 220px;
+      overflow-y: auto;
+      border-top: 1px solid var(--bordure);
+    }
+    .cp-dropdown.open { display: block; }
+    .cp-group-lbl {
+      padding: 5px 12px 3px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      color: #fff;
+      background: var(--bleu-clair);
+      position: sticky;
+      top: 0;
+    }
+    .cp-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 12px;
+      cursor: pointer;
+      transition: background .15s;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .cp-item:hover { background: #eaf0fb; }
+    .cp-item-sw {
+      width: 28px;
+      height: 28px;
+      border-radius: 5px;
+      border: 1px solid rgba(0,0,0,.12);
+      flex-shrink: 0;
+    }
+    .cp-item-info { flex: 1; min-width: 0; }
+    .cp-item-name { font-size: 12px; font-weight: 600; }
+    .cp-item-code { font-size: 10px; color: #888; }
+
+    /* NOTES */
+    .notes-box {
+      width: 100%;
+      border: 1px solid var(--bordure);
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-family: inherit;
+      font-size: 13px;
+      color: var(--texte);
+      background: var(--gris);
+      resize: vertical;
+      min-height: 90px;
+    }
+    .notes-box:focus { outline: none; border-color: var(--bleu); background: #fff; }
+
+    /* CONTACTS */
+    .contacts-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .contact-card {
+      background: var(--gris);
+      border-radius: 8px;
+      padding: 12px 14px;
+      border-left: 4px solid var(--bleu);
+    }
+    .contact-card .c-titre { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--bleu); margin-bottom: 8px; }
+    .contact-card input {
+      display: block;
+      font-family: inherit;
+      font-size: 13px;
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid var(--bordure);
+      width: 100%;
+      padding: 2px 4px;
+      margin-bottom: 5px;
+      color: var(--texte);
+    }
+    .contact-card input:focus { outline: none; border-bottom-color: var(--bleu); }
+
+    /* STATUT BADGE */
+    .statut-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 4px;
+    }
+    .statut-btn {
+      padding: 8px 18px;
+      border-radius: 99px;
+      border: 2px solid var(--bordure);
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      background: #fff;
+      color: #888;
+      transition: all .2s;
+    }
+    .statut-btn.active-vert  { background: var(--vert-bg); color: var(--vert); border-color: var(--vert); }
+    .statut-btn.active-orange { background: #FFF3E0; color: var(--orange); border-color: var(--orange); }
+    .statut-btn.active-rouge { background: #FFEBEE; color: #C62828; border-color: #C62828; }
+
+    /* DOC FOOTER */
+    .doc-footer {
+      background: var(--bleu);
+      color: rgba(255,255,255,.8);
+      text-align: center;
+      padding: 10px;
+      font-size: 11px;
+    }
+
+    /* PRINT */
+    @media print {
+      body { background: #fff; font-size: 12px; }
+      .no-print, .btn-home, .btn-print { display: none !important; }
+      .page { box-shadow: none; border-radius: 0; margin: 0; max-width: 100%; }
+      .body { padding: 18px 24px; }
+      input, textarea { background: transparent !important; }
+      .statut-btn { border: 1px solid #ccc; }
+    }
+
+    /* MOBILE */
+    @media (max-width: 600px) {
+      .info-grid, .contacts-grid, .couleurs-grid { grid-template-columns: 1fr; }
+      .projet-grid { grid-template-columns: 1fr 1fr; }
+      .chef-cell { min-width: 140px; padding: 8px 14px; }
+      .body { padding: 14px; }
+      .btn-home, .btn-print { width: calc(100% - 32px); display: block; text-align: center; margin: 6px 16px; min-height: 44px; font-size: 15px; padding: 12px; }
+      /* Header responsive */
+      .header { flex-wrap: wrap; padding: 14px 16px; gap: 10px; }
+      .doc-label { flex-shrink: 1; min-width: 0; max-width: 100%; }
+      .doc-label .titre { font-size: 15px; letter-spacing: 1px; }
+      .company-info h1 { font-size: 16px; }
+      /* Tables défilables */
+      .data-table, table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      /* Boutons tactiles ≥ 44px */
+      button { min-height: 44px !important; }
+      .btn-submit { min-height: 44px; font-size: 15px; }
+      /* Texte minimum 12px */
+      .chef-cell .lbl, .plbl, .cp-zone, .cp-source, .cp-item-code { font-size: 12px !important; }
+      .travaux-table thead th { font-size: 12px !important; }
+      .contact-card .c-titre { font-size: 12px !important; }
+      .block-title { font-size: 12px !important; }
+      .sous-titre { font-size: 13px !important; }
+      .doc-footer { font-size: 12px !important; }
+      td { font-size: 12px !important; }
+      th { font-size: 12px !important; }
+      small, span { font-size: 12px !important; }
+      /* Inputs */
+      input[type="text"], input[type="tel"], input[type="number"], select, textarea {
+        font-size: 16px !important;
+        min-height: 44px;
+        padding: 10px 8px;
+      }
+      input[type="checkbox"] { width: 22px; height: 22px; min-width: 22px; }
+    }
+
+    .btn-submit {
+      display: inline-block;
+      padding: 10px 22px;
+      background: #2E7D32;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background .2s;
+      min-height: 44px;
+    }
+    .btn-submit:hover { background: #1b5e20; }
+    .btn-submit:disabled { background: #aaa; cursor: default; }
+    .submit-status {
+      font-size: 13px;
+      font-weight: 700;
+      padding: 4px 0;
+    }
+  </style>
+</head>
+<body>
+
+<div style="display:flex;flex-wrap:wrap;gap:10px;padding:16px 16px 0;align-items:center;" class="no-print">
+  <a class="btn-home" href="index.html" onclick="event.preventDefault();saveJobData();window.location.href='index.html';">← Accueil</a>
+  <button class="btn-print" onclick="window.print()">🖨 Imprimer / PDF</button>
+  <button class="btn-submit" id="btnLoadSheets" onclick="loadFromSheets()" style="background:#1A8FD1;">📥 Charger depuis Sheets</button>
+  <button class="btn-submit" id="btnSubmit" onclick="submitToOffice()">📤 Envoyer au bureau</button>
+  <span class="submit-status no-print" id="submitStatus"></span>
+</div>
+
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="header">
+    <img src="https://innovaspray.com/wp-content/uploads/2025/09/organization_logo_par.jpg" width="80" height="80" style="border-radius:8px;object-fit:contain;background:#fff;padding:4px;flex-shrink:0;" alt="InnovaSpray Québec">
+    <div class="company-info">
+      <h1>INNOVASPRAY QUÉBEC</h1>
+      <p>info@innovaspray.ca &nbsp;|&nbsp; innovaspray.ca</p>
+
+    </div>
+    <div class="doc-label">
+      <div class="titre">Bon de travail</div>
+      <div class="sous-titre">Instructions pour chef d'équipe</div>
+      <div class="num" data-jobber-field="job_number">#JOB-____-___</div>
+    </div>
+  </div>
+
+  <!-- BANDEAU CHEF D'ÉQUIPE -->
+  <div class="chef-band">
+    <div class="chef-cell">
+      <div class="lbl">Chef d'équipe</div>
+      <input class="val-in" type="text" data-jobber-field="foreman_name" placeholder="Nom du chef">
+    </div>
+    <div class="chef-cell">
+      <div class="lbl">Date de début</div>
+      <input class="val-in" type="text" data-jobber-field="start_date" placeholder="AAAA-MM-JJ">
+    </div>
+    <div class="chef-cell">
+      <div class="lbl">Durée prévue</div>
+      <input class="val-in" type="text" data-jobber-field="duration_days" placeholder="ex: 3 jours">
+    </div>
+    <div class="chef-cell">
+      <div class="lbl">Nb d'employés</div>
+      <input class="val-in" type="text" data-jobber-field="crew_size" placeholder="ex: 3">
+    </div>
+  </div>
+
+  <div class="body">
+
+    <!-- INFOS CLIENT & CHANTIER -->
+    <div class="section-title">📍 Informations du chantier</div>
+    <div class="info-grid">
+      <div class="info-block">
+        <div class="block-title">Client</div>
+        <div class="field-row">
+          <span class="field-label">Nom :</span>
+          <input class="field-val" type="text" data-jobber-field="client_name" placeholder="—">
+        </div>
+        <div class="field-row">
+          <span class="field-label">Téléphone :</span>
+          <input class="field-val" type="text" data-jobber-field="client_phone" placeholder="—">
+        </div>
+        <div class="field-row">
+          <span class="field-label">Présent sur place :</span>
+          <input class="field-val" type="text" data-jobber-field="client_onsite" placeholder="Oui / Non / À confirmer">
+        </div>
+      </div>
+      <div class="info-block">
+        <div class="block-title">Adresse du chantier</div>
+        <div class="field-row">
+          <span class="field-label">Adresse :</span>
+          <textarea class="field-val" data-jobber-field="job_address" placeholder="—" rows="2"></textarea>
+        </div>
+        <div class="field-row">
+          <span class="field-label">Accès :</span>
+          <input class="field-val" type="text" data-jobber-field="site_access" placeholder="Code, clé, portail…">
+        </div>
+        <div class="field-row">
+          <span class="field-label">Stationnement :</span>
+          <input class="field-val" type="text" data-jobber-field="parking" placeholder="Rue, entrée, allée…">
+        </div>
+      </div>
+    </div>
+
+    <!-- DESCRIPTION DU PROJET -->
+    <div class="section-title">🏗️ Description du projet</div>
+    <div class="projet-grid">
+      <div class="projet-card">
+        <div class="plbl">Type de travaux</div>
+        <input class="pval" type="text" data-jobber-field="work_type" placeholder="Peinture extérieure">
+      </div>
+      <div class="projet-card">
+        <div class="plbl">Type de revêtement</div>
+        <input class="pval" type="text" data-jobber-field="surface_type" placeholder="Bois, vinyle, stucco…">
+      </div>
+      <div class="projet-card">
+        <div class="plbl">Étages à peindre</div>
+        <input class="pval" type="text" data-jobber-field="floors_count" placeholder="0 étages">
+      </div>
+      <div class="projet-card">
+        <div class="plbl">Superficie approximative</div>
+        <input class="pval" type="text" data-jobber-field="total_sqft" placeholder="0 m²">
+      </div>
+
+      <div class="projet-card">
+        <div class="plbl">Sablage</div>
+        <input class="pval" type="text" data-jobber-field="sanding_sqft" placeholder="0 m²">
+      </div>
+      <div class="projet-card">
+        <div class="plbl">Portes</div>
+        <input class="pval" type="text" data-jobber-field="doors_count" placeholder="0">
+      </div>
+      <div class="projet-card">
+        <div class="plbl">Porte de garage</div>
+        <input class="pval" type="text" data-jobber-field="garage_doors_count" placeholder="0">
+      </div>
+      <div class="projet-card">
+        <div class="plbl">Fenêtres</div>
+        <input class="pval" type="text" data-jobber-field="windows_count" placeholder="0">
+      </div>
+      <div class="projet-card">
+        <div class="plbl">Toiture en Pi2</div>
+        <input class="pval" type="text" data-jobber-field="roofing" placeholder="0">
+      </div>
+      <div class="projet-card">
+        <div class="plbl">Gouttières / Soffites / Fascias Pi2</div>
+        <input class="pval" type="text" data-jobber-field="gouttieres_sqft" placeholder="0">
+      </div>
+      <div class="projet-card highlight">
+        <div class="plbl">⚠️ Points d'attention</div>
+        <input class="pval" type="text" data-jobber-field="attention_points" placeholder="Bois pourri, accès difficile…">
+      </div>
+    </div>
+
+    <!-- COULEURS APPROUVÉES -->
+    <div class="section-title">🎨 Couleurs approuvées par le client</div>
+    <div class="couleurs-grid" id="couleursGrid">
+      <div class="cp-card" data-field="color_body">
+        <div class="cp-top">
+          <div class="cp-swatch" style="background:#F4F2EC;"></div>
+          <div class="cp-meta">
+            <div class="cp-zone">Revêtement externe</div>
+            <div class="cp-selected">Aucune sélection</div>
+            <div class="cp-source"></div>
+          </div>
+        </div>
+        <div class="cp-search-wrap">
+          <input class="cp-search" type="text" placeholder="🔍 Rechercher une couleur…">
+        </div>
+        <div class="cp-dropdown"></div>
+      </div>
+      <div class="cp-card" data-field="color_trim">
+        <div class="cp-top">
+          <div class="cp-swatch" style="background:#F4F2EC;"></div>
+          <div class="cp-meta">
+            <div class="cp-zone">Garnitures / boiseries</div>
+            <div class="cp-selected">Aucune sélection</div>
+            <div class="cp-source"></div>
+          </div>
+        </div>
+        <div class="cp-search-wrap">
+          <input class="cp-search" type="text" placeholder="🔍 Rechercher une couleur…">
+        </div>
+        <div class="cp-dropdown"></div>
+      </div>
+      <div class="cp-card" data-field="color_soffit">
+        <div class="cp-top">
+          <div class="cp-swatch" style="background:#F4F2EC;"></div>
+          <div class="cp-meta">
+            <div class="cp-zone">Soffit / fascia</div>
+            <div class="cp-selected">Aucune sélection</div>
+            <div class="cp-source"></div>
+          </div>
+        </div>
+        <div class="cp-search-wrap">
+          <input class="cp-search" type="text" placeholder="🔍 Rechercher une couleur…">
+        </div>
+        <div class="cp-dropdown"></div>
+      </div>
+      <div class="cp-card" data-field="color_door">
+        <div class="cp-top">
+          <div class="cp-swatch" style="background:#F4F2EC;"></div>
+          <div class="cp-meta">
+            <div class="cp-zone">Portes</div>
+            <div class="cp-selected">Aucune sélection</div>
+            <div class="cp-source"></div>
+          </div>
+        </div>
+        <div class="cp-search-wrap">
+          <input class="cp-search" type="text" placeholder="🔍 Rechercher une couleur…">
+        </div>
+        <div class="cp-dropdown"></div>
+      </div>
+      <div class="cp-card" data-field="color_windows">
+        <div class="cp-top">
+          <div class="cp-swatch" style="background:#F4F2EC;"></div>
+          <div class="cp-meta">
+            <div class="cp-zone">Fenêtres</div>
+            <div class="cp-selected">Aucune sélection</div>
+            <div class="cp-source"></div>
+          </div>
+        </div>
+        <div class="cp-search-wrap">
+          <input class="cp-search" type="text" placeholder="🔍 Rechercher une couleur…">
+        </div>
+        <div class="cp-dropdown"></div>
+      </div>
+      <div class="cp-card" data-field="color_roof">
+        <div class="cp-top">
+          <div class="cp-swatch" style="background:#F4F2EC;"></div>
+          <div class="cp-meta">
+            <div class="cp-zone">Toiture</div>
+            <div class="cp-selected">Aucune sélection</div>
+            <div class="cp-source"></div>
+          </div>
+        </div>
+        <div class="cp-search-wrap">
+          <input class="cp-search" type="text" placeholder="🔍 Rechercher une couleur…">
+        </div>
+        <div class="cp-dropdown"></div>
+      </div>
+    </div>
+
+    <!-- TÂCHES À EFFECTUER -->
+    <div class="section-title">✅ Travaux à effectuer</div>
+    <table class="travaux-table">
+      <thead>
+        <tr>
+          <th style="width:36px;" class="c">✓</th>
+          <th>Tâche</th>
+          <th style="width:100px;">Secteur / Zone</th>
+          <th style="width:80px;" class="c">Quantité</th>
+          <th style="width:65px;" class="c" title="Durée estimée selon normes de production (MOYEN)">Durée</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="cat-row"><td colspan="5">PRÉPARATION</td></tr>
+        <tr>
+          <td class="c"><input type="checkbox" class="check-ok" data-jobber-field="task_1_done"></td>
+          <td>Lavage à pression — façades, soffit, fascia</td>
+          <td><input type="text" placeholder="Tout" data-jobber-field="task_1_zone"></td>
+          <td class="c"><input type="text" value="0" data-jobber-field="task_1_qty" style="width:40px;text-align:center;"></td>
+          <td class="c"><input type="text" readonly data-jobber-field="task_1_hours" placeholder="—" style="width:55px;text-align:center;font-size:11px;color:#1a6fb5;"></td>
+        </tr>
+        <tr>
+          <td class="c"><input type="checkbox" class="check-ok" data-jobber-field="task_2_done"></td>
+          <td>Grattage et décapage peinture écaillée</td>
+          <td><input type="text" placeholder="—" data-jobber-field="task_2_zone"></td>
+          <td class="c"><input type="text" value="0" data-jobber-field="task_2_qty" style="width:40px;text-align:center;"></td>
+          <td class="c"><input type="text" readonly data-jobber-field="task_2_hours" placeholder="—" style="width:55px;text-align:center;font-size:11px;color:#1a6fb5;"></td>
+        </tr>
+        <tr>
+          <td class="c"><input type="checkbox" class="check-ok" data-jobber-field="task_3_done"></td>
+          <td>Sablage des arêtes vives et transitions</td>
+          <td><input type="text" placeholder="—" data-jobber-field="task_3_zone"></td>
+          <td class="c"><input type="text" value="0" data-jobber-field="task_3_qty" style="width:40px;text-align:center;"></td>
+          <td class="c"><input type="text" readonly data-jobber-field="task_3_hours" placeholder="—" style="width:55px;text-align:center;font-size:11px;color:#1a6fb5;"></td>
+        </tr>
+        <tr>
+          <td class="c"><input type="checkbox" class="check-ok" data-jobber-field="task_4_done"></td>
+          <td>Calfeutrage — fenêtres, portes, joints</td>
+          <td><input type="text" placeholder="—" data-jobber-field="task_4_zone"></td>
+          <td class="c"><input type="text" value="0" data-jobber-field="task_4_qty" style="width:40px;text-align:center;"></td>
+          <td class="c"><input type="text" readonly data-jobber-field="task_4_hours" placeholder="—" style="width:55px;text-align:center;font-size:11px;color:#1a6fb5;"></td>
+        </tr>
+        <tr>
+          <td class="c"><input type="checkbox" class="check-ok" data-jobber-field="task_5_done"></td>
+          <td>Réparation fissures et trous</td>
+          <td><input type="text" placeholder="—" data-jobber-field="task_5_zone"></td>
+          <td class="c"><input type="text" value="0" data-jobber-field="task_5_qty" style="width:40px;text-align:center;"></td>
+          <td class="c"><input type="text" readonly data-jobber-field="task_5_hours" placeholder="—" style="width:55px;text-align:center;font-size:11px;color:#1a6fb5;"></td>
+        </tr>
+        <tr>
+          <td class="c"><input type="checkbox" class="check-ok" data-jobber-field="task_6_done"></td>
+          <td>Masquage fenêtres, luminaires, végétation</td>
+          <td><input type="text" placeholder="Tout" data-jobber-field="task_6_zone"></td>
+          <td class="c"><input type="text" value="0" data-jobber-field="task_6_qty" style="width:40px;text-align:center;"></td>
+          <td class="c"><input type="text" readonly data-jobber-field="task_6_hours" placeholder="—" style="width:55px;text-align:center;font-size:11px;color:#1a6fb5;"></td>
+        </tr>
+        <tr class="cat-row"><td colspan="5">APPLICATION</td></tr>
+        <tr>
+          <td class="c"><input type="checkbox" class="check-ok" data-jobber-field="task_7_done"></td>
+          <td>Apprêt extérieur — zones nues et réparations</td>
+          <td><input type="text" placeholder="—" data-jobber-field="task_7_zone"></td>
+          <td class="c"><input type="text" value="0" data-jobber-field="task_7_qty" style="width:40px;text-align:center;"></td>
+          <td class="c"><input type="text" readonly data-jobber-field="task_7_hours" placeholder="—" style="width:55px;text-align:center;font-size:11px;color:#1a6fb5;"></td>
+        </tr>
+        <tr>
+          <td class="c"><input type="checkbox" class="check-ok" data-jobber-field="task_8_done"></td>
+          <td>1ère couche peinture corps — haut vers le bas</td>
+          <td><input type="text" placeholder="Façades" data-jobber-field="task_8_zone"></td>
+          <td class="c"><input type="text" value="0" data-jobber-field="task_8_qty" style="width:40px;text-align:center;"></td>
+          <td class="c"><input type="text" readonly data-jobber-field="task_8_hours" placeholder="—" style="width:55px;text-align:center;font-size:11px;color:#1a6fb5;"></td>
+        </tr>
+        <tr>
+          <td class="c"><input type="checkbox" class="check-ok" data-jobber-field="task_9_done"></td>
+          <td>2e couche peinture corps</td>
+          <td><input type="text" placeholder="Façades" data-jobber-field="task_9_zone"></td>
+          <td class="c"><input type="text" value="0" data-jobber-field="task_9_qty" style="width:40px;text-align:center;"></td>
+          <td class="c"><input type="text" readonly data-jobber-field="task_9_hours" placeholder="—" style="width:55px;text-align:center;font-size:11px;color:#1a6fb5;"></td>
+        </tr>
+        <tr>
+          <td class="c"><input type="checkbox" class="check-ok" data-jobber-field="task_10_done"></td>
+          <td>Peinture soffit et fascia</td>
+          <td><input type="text" placeholder="—" data-jobber-field="task_10_zone"></td>
+          <td class="c"><input type="text" value="0" data-jobber-field="task_10_qty" style="width:40px;text-align:center;"></td>
+          <td class="c"><input type="text" readonly data-jobber-field="task_10_hours" placeholder="—" style="width:55px;text-align:center;font-size:11px;color:#1a6fb5;"></td>
+        </tr>
+        <tr>
+          <td class="c"><input type="checkbox" class="check-ok" data-jobber-field="task_11_done"></td>
+          <td>Peinture garnitures / boiseries / cadres fenêtres</td>
+          <td><input type="text" placeholder="—" data-jobber-field="task_11_zone"></td>
+          <td class="c"><input type="text" value="0" data-jobber-field="task_11_qty" style="width:40px;text-align:center;"></td>
+          <td class="c"><input type="text" readonly data-jobber-field="task_11_hours" placeholder="—" style="width:55px;text-align:center;font-size:11px;color:#1a6fb5;"></td>
+        </tr>
+        <tr>
+          <td class="c"><input type="checkbox" class="check-ok" data-jobber-field="task_12_done"></td>
+          <td>Peinture portes extérieures</td>
+          <td><input type="text" placeholder="—" data-jobber-field="task_12_zone"></td>
+          <td class="c"><input type="text" value="0" data-jobber-field="task_12_qty" style="width:40px;text-align:center;"></td>
+          <td class="c"><input type="text" readonly data-jobber-field="task_12_hours" placeholder="—" style="width:55px;text-align:center;font-size:11px;color:#1a6fb5;"></td>
+        </tr>
+        <tr>
+          <td class="c"><input type="checkbox" class="check-ok" data-jobber-field="task_13_done"></td>
+          <td>Peinture cadres et chassis de fenêtres</td>
+          <td><input type="text" placeholder="—" data-jobber-field="task_13_zone"></td>
+          <td class="c"><input type="text" value="0" data-jobber-field="task_13_qty" style="width:40px;text-align:center;"></td>
+          <td class="c"><input type="text" readonly data-jobber-field="task_13_hours" placeholder="—" style="width:55px;text-align:center;font-size:11px;color:#1a6fb5;"></td>
+        </tr>
+        <tr>
+          <td class="c"><input type="checkbox" class="check-ok" data-jobber-field="task_14_done"></td>
+          <td>Peinture / traitement toiture</td>
+          <td><input type="text" placeholder="—" data-jobber-field="task_14_zone"></td>
+          <td class="c"><input type="text" value="0" data-jobber-field="task_14_qty" style="width:40px;text-align:center;"></td>
+          <td class="c"><input type="text" readonly data-jobber-field="task_14_hours" placeholder="—" style="width:55px;text-align:center;font-size:11px;color:#1a6fb5;"></td>
+        </tr>
+        <tr class="cat-row"><td colspan="5">FINITION & NETTOYAGE</td></tr>
+        <tr>
+          <td class="c"><input type="checkbox" class="check-ok" data-jobber-field="task_15_done"></td>
+          <td>Retouches finales — zones identifiées</td>
+          <td><input type="text" placeholder="—" data-jobber-field="task_15_zone"></td>
+          <td class="c"><input type="text" value="0" data-jobber-field="task_15_qty" style="width:40px;text-align:center;"></td>
+          <td class="c"><input type="text" readonly data-jobber-field="task_15_hours" placeholder="—" style="width:55px;text-align:center;font-size:11px;color:#1a6fb5;"></td>
+        </tr>
+        <tr>
+          <td class="c"><input type="checkbox" class="check-ok" data-jobber-field="task_16_done"></td>
+          <td>Retrait du ruban de masquage</td>
+          <td><input type="text" placeholder="Tout" data-jobber-field="task_16_zone"></td>
+          <td class="c"><input type="text" value="0" data-jobber-field="task_16_qty" style="width:40px;text-align:center;"></td>
+          <td class="c"><input type="text" readonly data-jobber-field="task_16_hours" placeholder="—" style="width:55px;text-align:center;font-size:11px;color:#1a6fb5;"></td>
+        </tr>
+        <tr>
+          <td class="c"><input type="checkbox" class="check-ok" data-jobber-field="task_17_done"></td>
+          <td>Démontage échafaudage et chargement</td>
+          <td><input type="text" placeholder="—" data-jobber-field="task_17_zone"></td>
+          <td class="c"><input type="text" value="0" data-jobber-field="task_17_qty" style="width:40px;text-align:center;"></td>
+          <td class="c"><input type="text" readonly data-jobber-field="task_17_hours" placeholder="—" style="width:55px;text-align:center;font-size:11px;color:#1a6fb5;"></td>
+        </tr>
+        <tr>
+          <td class="c"><input type="checkbox" class="check-ok" data-jobber-field="task_18_done"></td>
+          <td>Nettoyage périmètre, pelouse et terrasse</td>
+          <td><input type="text" placeholder="Tout" data-jobber-field="task_18_zone"></td>
+          <td class="c"><input type="text" value="0" data-jobber-field="task_18_qty" style="width:40px;text-align:center;"></td>
+          <td class="c"><input type="text" readonly data-jobber-field="task_18_hours" placeholder="—" style="width:55px;text-align:center;font-size:11px;color:#1a6fb5;"></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- MATÉRIAUX SPÉCIFIÉS -->
+    <div class="section-title">🎨 Matériaux spécifiés</div>
+    <table class="travaux-table">
+      <thead>
+        <tr>
+          <th>Produit / Marque</th>
+          <th style="width:120px;" class="c">Pi² / Surface</th>
+          <th style="width:60px;" class="c">Qté <span style="font-weight:400;font-size:10px;opacity:.7;">(gal)</span></th>
+          <th style="width:140px;">Usage</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><input type="text" placeholder="Peinture" data-jobber-field="mat_1_nom"></td>
+          <td class="c"><input type="text" placeholder="ex: 1300" data-jobber-field="mat_1_pi2" style="width:90px;text-align:center;" oninput="syncMat1()"></td>
+          <td class="c"><input type="text" placeholder="—" style="width:40px;text-align:center;background:#fffbe6;" data-jobber-field="mat_1_qty" title="Calculé automatiquement : pi² ÷ 150 (arrondi supérieur)"></td>
+          <td><input type="text" placeholder="Corps façades" data-jobber-field="mat_1_usage"></td>
+        </tr>
+        <tr>
+          <td><input type="text" placeholder="Apprêt / marque" data-jobber-field="mat_2_nom"></td>
+          <td class="c"><input type="text" placeholder="—" data-jobber-field="mat_2_pi2" style="width:90px;text-align:center;"></td>
+          <td class="c"><input type="text" placeholder="—" style="width:40px;text-align:center;" data-jobber-field="mat_2_qty"></td>
+          <td><input type="text" placeholder="Apprêt" data-jobber-field="mat_2_usage"></td>
+        </tr>
+        <tr>
+          <td><input type="text" placeholder="Peinture garnitures" data-jobber-field="mat_3_nom"></td>
+          <td class="c"><input type="text" placeholder="—" data-jobber-field="mat_3_pi2" style="width:90px;text-align:center;"></td>
+          <td class="c"><input type="text" placeholder="—" style="width:40px;text-align:center;" data-jobber-field="mat_3_qty"></td>
+          <td><input type="text" placeholder="Garnitures" data-jobber-field="mat_3_usage"></td>
+        </tr>
+        <tr>
+          <td><input type="text" placeholder="Produit supplémentaire" data-jobber-field="mat_4_nom"></td>
+          <td class="c"><input type="text" placeholder="—" data-jobber-field="mat_4_pi2" style="width:90px;text-align:center;"></td>
+          <td class="c"><input type="text" placeholder="—" style="width:40px;text-align:center;" data-jobber-field="mat_4_qty"></td>
+          <td><input type="text" placeholder="—" data-jobber-field="mat_4_usage"></td>
+        </tr>
+        <tr>
+          <td><input type="text" placeholder="Peinture fenêtre / portes / gouttière" data-jobber-field="mat_5_nom"></td>
+          <td class="c"><input type="text" placeholder="—" data-jobber-field="mat_5_pi2" style="width:90px;text-align:center;"></td>
+          <td class="c"><input type="text" placeholder="—" style="width:40px;text-align:center;" data-jobber-field="mat_5_qty"></td>
+          <td><input type="text" placeholder="Fenêtres / Portes / Gouttières" data-jobber-field="mat_5_usage"></td>
+        </tr>
+        <tr>
+          <td><input type="text" value="Tape 3M" data-jobber-field="mat_6_nom"></td>
+          <td class="c" style="font-size:10px;color:#888;text-align:center;line-height:1.3;">1 rlx/5 gal<br>+ 0,5/rlx poly</td>
+          <td class="c"><input type="text" placeholder="—" style="width:40px;text-align:center;background:#fffbe6;" data-jobber-field="mat_6_qty" readonly title="Auto : (gallons peinture ÷ 5) + (rouleaux polythène × 0,5), arrondi supérieur"></td>
+          <td><input type="text" placeholder="Masquage" data-jobber-field="mat_6_usage"></td>
+        </tr>
+        <tr>
+          <td><input type="text" value="Polythène" data-jobber-field="mat_7_nom"></td>
+          <td class="c" style="font-size:10px;color:#888;text-align:center;">1 rlx / 5 fenêtres</td>
+          <td class="c"><input type="text" placeholder="—" style="width:40px;text-align:center;background:#fffbe6;" data-jobber-field="mat_7_qty" readonly title="Auto : nb fenêtres ÷ 5, arrondi supérieur"></td>
+          <td><input type="text" placeholder="Protection fenêtres" data-jobber-field="mat_7_usage"></td>
+        </tr>
+        <tr>
+          <td><input type="text" value="Rouleaux papier" data-jobber-field="mat_8_nom"></td>
+          <td class="c" style="font-size:10px;color:#888;text-align:center;">1 rlx / 8 gal</td>
+          <td class="c"><input type="text" placeholder="—" style="width:40px;text-align:center;background:#fffbe6;" data-jobber-field="mat_8_qty" readonly title="Auto : gallons peinture ÷ 8, arrondi supérieur"></td>
+          <td><input type="text" placeholder="Masquage sol / bords" data-jobber-field="mat_8_usage"></td>
+        </tr>
+        <tr>
+          <td><input type="text" value="Disque à sabler" data-jobber-field="mat_9_nom"></td>
+          <td class="c" style="font-size:10px;color:#888;text-align:center;">1 disque / 100 pi²</td>
+          <td class="c"><input type="text" placeholder="—" style="width:40px;text-align:center;background:#fffbe6;" data-jobber-field="mat_9_qty" readonly title="Auto : sablage (pi²) ÷ 100, arrondi supérieur"></td>
+          <td><input type="text" placeholder="Sablage" data-jobber-field="mat_9_usage"></td>
+        </tr>
+      </tbody>
+    </table>
+    <!-- STATUT DU MANDAT -->
+    <div class="section-title">📊 Statut du mandat</div>
+    <div class="statut-row" id="statutRow">
+      <button class="statut-btn" onclick="setStatut(this,'active-orange')">🟠 En cours de préparation</button>
+      <button class="statut-btn active-vert" onclick="setStatut(this,'active-vert')">🟢 Chantier actif</button>
+      <button class="statut-btn" onclick="setStatut(this,'active-rouge')">🔴 Reporté — météo</button>
+      <button class="statut-btn" onclick="setStatut(this,'active-orange')">⚠️ En attente matériaux</button>
+      <button class="statut-btn" onclick="setStatut(this,'active-vert')">✅ Travaux complétés</button>
+    </div>
+
+    <!-- CONTACTS -->
+    <div class="section-title">📞 Contacts importants</div>
+    <div class="contacts-grid">
+      <div class="contact-card">
+        <div class="c-titre">Bureau / Coordination</div>
+        <input type="text" placeholder="Nom" data-jobber-field="office_contact_name" value="Édouard Garon">
+        <input type="text" placeholder="Téléphone" data-jobber-field="office_contact_phone" value="581-998-1480">
+      </div>
+      <div class="contact-card">
+        <div class="c-titre">Client — urgences chantier</div>
+        <input type="text" data-jobber-field="client_name" placeholder="Nom client">
+        <input type="text" placeholder="Téléphone" data-jobber-field="client_phone">
+      </div>
+      <div class="contact-card">
+        <div class="c-titre">Fournisseur matériaux</div>
+        <input type="text" placeholder="ex: Bétonel — Ste-Foy" data-jobber-field="supplier_name">
+        <input type="text" placeholder="Téléphone" data-jobber-field="supplier_phone">
+      </div>
+    </div>
+
+    <!-- NOTES DU BUREAU -->
+    <div class="section-title">📝 Notes et instructions spéciales du bureau</div>
+    <textarea class="notes-box" data-jobber-field="special_instructions" placeholder="Instructions spécifiques, demandes particulières du client, zones à éviter, accès restreints, animaux, alarme…"></textarea>
+
+  </div><!-- /body -->
+
+  <div class="doc-footer">
+    InnovaSpray Québec &nbsp;|&nbsp; innovaspray.ca &nbsp;|&nbsp; info@innovaspray.ca &nbsp;|&nbsp; Document à usage interne — chefs d'équipe seulement
+  </div>
+
+</div><!-- /page -->
+
+
+
+<script>
+// ================================================================
+// BASE DE DONNÉES COULEURS — Gentek 2020 + Adseal
+// ================================================================
+var COULEURS = [
+  // GENTEK STANDARDS
+  {code:'#525-15', nom:'Noir',                 hex:'#1C1C1A', source:'Gentek Standard'},
+  {code:'#K-7390', nom:'Brun Commercial',       hex:'#6B3B2A', source:'Gentek Standard'},
+  {code:'#298',    nom:'Blanc 298',             hex:'#F4F2EC', source:'Gentek Standard'},
+  {code:'#322',    nom:'Rouge Vif',             hex:'#BE202A', source:'Gentek Standard'},
+  {code:'#415',    nom:'Bronze Fenêtre',        hex:'#9E8170', source:'Gentek Standard'},
+  {code:'#502',    nom:'Ivoire',                hex:'#F2EDD8', source:'Gentek Standard'},
+  {code:'#506',    nom:'Vent de Fumée',         hex:'#5E6B68', source:'Gentek Standard'},
+  {code:'#510',    nom:'Argile',                hex:'#C2BAB0', source:'Gentek Standard'},
+  {code:'#523',    nom:'Gris Charbon',          hex:'#606870', source:'Gentek Standard'},
+  {code:'#527',    nom:'Cèdre XL',              hex:'#A06830', source:'Gentek Standard'},
+  {code:'#532',    nom:'Amande',                hex:'#EDE8DC', source:'Gentek Standard'},
+  {code:'#535',    nom:'Bleu Wedgewood',        hex:'#4A6A8E', source:'Gentek Standard'},
+  {code:'#536',    nom:'Gris Granite',          hex:'#BEC8CC', source:'Gentek Standard'},
+  {code:'#539',    nom:'Rouge Vénitien',        hex:'#7A3028', source:'Gentek Standard'},
+  {code:'#542',    nom:'Bleu Océan',            hex:'#2A3C52', source:'Gentek Standard'},
+  {code:'#554',    nom:'Marron',                hex:'#3C1C12', source:'Gentek Standard'},
+  {code:'#559',    nom:'Kaki',                  hex:'#7A7A50', source:'Gentek Standard'},
+  {code:'#580',    nom:'Génévrier',             hex:'#8A9060', source:'Gentek Standard'},
+  {code:'#5P1',    nom:'Buisson de Montagne',   hex:'#5A7042', source:'Gentek Standard'},
+  {code:'#5P4',    nom:'Silver Métallique',     hex:'#A2A8A8', source:'Gentek Standard'},
+  {code:'#5P6',    nom:'Minerai de Fer',        hex:'#3C4038', source:'Gentek Standard'},
+  // GENTEK NON-STANDARDS
+  {code:'#11',     nom:'Sable L/G',             hex:'#B0A898', source:'Gentek Non-Standard'},
+  {code:'#265',    nom:'Brun Antique',          hex:'#201810', source:'Gentek Non-Standard'},
+  {code:'#403',    nom:'Argile 403',            hex:'#9A9080', source:'Gentek Non-Standard'},
+  {code:'#411',    nom:'Sable 411',             hex:'#B8B0A0', source:'Gentek Non-Standard'},
+  {code:'#492',    nom:'Crème Mat',             hex:'#E8E0C8', source:'Gentek Non-Standard'},
+  {code:'#501',    nom:'Beige Lambeth',         hex:'#C8C0B0', source:'Gentek Non-Standard'},
+  {code:'#507',    nom:'Tan',                   hex:'#B89868', source:'Gentek Non-Standard'},
+  {code:'#508',    nom:'Sable',                 hex:'#C0B8A8', source:'Gentek Non-Standard'},
+  {code:'#509',    nom:'Vague de Minuit',       hex:'#607080', source:'Gentek Non-Standard'},
+  {code:'#513',    nom:'Poussière de Lune',     hex:'#708068', source:'Gentek Non-Standard'},
+  {code:'#514',    nom:'Cachemire',             hex:'#D0C8B8', source:'Gentek Non-Standard'},
+  {code:'#516',    nom:'Ambre',                 hex:'#C8A850', source:'Gentek Non-Standard'},
+  {code:'#517',    nom:'Sauge',                 hex:'#A0A888', source:'Gentek Non-Standard'},
+  {code:'#522',    nom:'Ardoise',               hex:'#708090', source:'Gentek Non-Standard'},
+  {code:'#533',    nom:'Chamois',               hex:'#D8C898', source:'Gentek Non-Standard'},
+  {code:'#534',    nom:'Gris Colombe',          hex:'#C8CCC8', source:'Gentek Non-Standard'},
+  {code:'#538',    nom:'Café',                  hex:'#907858', source:'Gentek Non-Standard'},
+  {code:'#540',    nom:'Vanille',               hex:'#F0EDD8', source:'Gentek Non-Standard'},
+  {code:'#541',    nom:'Kaki XL',               hex:'#908858', source:'Gentek Non-Standard'},
+  {code:'#543',    nom:'Blé Mûr',               hex:'#C0A050', source:'Gentek Non-Standard'},
+  {code:'#545',    nom:'Vert Hollandais XL',    hex:'#1A1C18', source:'Gentek Non-Standard'},
+  {code:'#547',    nom:'Sablon',                hex:'#706050', source:'Gentek Non-Standard'},
+  {code:'#551',    nom:'Rouge Champagne XL',    hex:'#602030', source:'Gentek Non-Standard'},
+  {code:'#555',    nom:'Pierre de Rivière XL',  hex:'#A0A098', source:'Gentek Non-Standard'},
+  {code:'#556',    nom:'Vert Forêt',            hex:'#204030', source:'Gentek Non-Standard'},
+  {code:'#557',    nom:'Bois d\'Épave',         hex:'#785840', source:'Gentek Non-Standard'},
+  {code:'#562',    nom:'Brun Commercial',       hex:'#604838', source:'Gentek Non-Standard'},
+  {code:'#567',    nom:'Bourgogne',             hex:'#601828', source:'Gentek Non-Standard'},
+  {code:'#568',    nom:'Brun Muscade',          hex:'#804030', source:'Gentek Non-Standard'},
+  {code:'#569',    nom:'Brun Fauve',            hex:'#907060', source:'Gentek Non-Standard'},
+  {code:'#570',    nom:'Gris Orageux',          hex:'#808888', source:'Gentek Non-Standard'},
+  {code:'#571',    nom:'Beige Antique',         hex:'#C0B898', source:'Gentek Non-Standard'},
+  {code:'#572',    nom:'Acadia XL',             hex:'#707868', source:'Gentek Non-Standard'},
+  {code:'#573',    nom:'Yellowstone',           hex:'#906040', source:'Gentek Non-Standard'},
+  {code:'#575',    nom:'Cuivre Aluminium',      hex:'#906828', source:'Gentek Non-Standard'},
+  {code:'#576',    nom:'Gris Brume XL',         hex:'#808090', source:'Gentek Non-Standard'},
+  {code:'#577',    nom:'Sierra XL',             hex:'#786048', source:'Gentek Non-Standard'},
+  {code:'#583',    nom:'Bleu d\'Écosse XL',     hex:'#708090', source:'Gentek Non-Standard'},
+  {code:'#586',    nom:'Forêt de Pin XL',       hex:'#506048', source:'Gentek Non-Standard'},
+  {code:'#587',    nom:'Sable XL',              hex:'#B0A888', source:'Gentek Non-Standard'},
+  {code:'#591',    nom:'Ambre d\'Automne XL',   hex:'#B08830', source:'Gentek Non-Standard'},
+  {code:'#593',    nom:'Noyer XL',              hex:'#504030', source:'Gentek Non-Standard'},
+  {code:'#598',    nom:'Vert 598',              hex:'#1A2018', source:'Gentek Non-Standard'},
+  {code:'#5P2',    nom:'Bleu Rockwell',         hex:'#607888', source:'Gentek Non-Standard'},
+  {code:'#5P3',    nom:'Espresso',              hex:'#605048', source:'Gentek Non-Standard'},
+  {code:'#5P5',    nom:'Graphite',              hex:'#505848', source:'Gentek Non-Standard'},
+  {code:'#5P8',    nom:'Sable de Monterey',     hex:'#D0C8A8', source:'Gentek Non-Standard'},
+  {code:'#5P9',    nom:'Bleu Littoral',         hex:'#385870', source:'Gentek Non-Standard'},
+  {code:'#P31',    nom:'Bleu Minuit XL',        hex:'#101820', source:'Gentek Non-Standard'},
+  {code:'#P32',    nom:'Crème XL',              hex:'#E8E0C0', source:'Gentek Non-Standard'},
+  // ADSEAL (Adfast)
+  {code:'5081078', nom:'Noir',                  hex:'#1A1A1A', source:'Adseal'},
+  {code:'5081050', nom:'Blanc',                 hex:'#F5F5F5', source:'Adseal'},
+  {code:'5081065', nom:'Blanc Arctique',        hex:'#EEF0EC', source:'Adseal'},
+  {code:'5081045', nom:'Sable / Beige Grès',   hex:'#C0B090', source:'Adseal'},
+  {code:'5081046', nom:'Yellowstone',           hex:'#906040', source:'Adseal'},
+  {code:'5081047', nom:'Barista',               hex:'#A07850', source:'Adseal'},
+  {code:'5081048', nom:'Kaki / Brun Kaki / Taupe', hex:'#908058', source:'Adseal'},
+  {code:'5081049', nom:'Falaise',               hex:'#8A7060', source:'Adseal'},
+  {code:'5081051', nom:'Renard Roux',           hex:'#904030', source:'Adseal'},
+  {code:'5081052', nom:'Granite / Gris Fer / Gris Canac', hex:'#706060', source:'Adseal'},
+  {code:'5081053', nom:'Écorce',                hex:'#806040', source:'Adseal'},
+  {code:'5081054', nom:'Taupe Monterey',        hex:'#B0A890', source:'Adseal'},
+  {code:'5081055', nom:'Beige Navajo',          hex:'#D0C8A8', source:'Adseal'},
+  {code:'5081056', nom:'Noisette',              hex:'#806050', source:'Adseal'},
+  {code:'5081057', nom:'Pierre des Champs',     hex:'#C0B8A8', source:'Adseal'},
+  {code:'5081058', nom:'Brun Rustique',         hex:'#705040', source:'Adseal'},
+  {code:'5081059', nom:'Étain',                 hex:'#B0B8C0', source:'Adseal'},
+  {code:'5081060', nom:'Gris Nocturne',         hex:'#404848', source:'Adseal'},
+  {code:'5081061', nom:'Muskoka Urbain / Brun Muskoka', hex:'#605848', source:'Adseal'},
+  {code:'5081062', nom:'Charbon',               hex:'#383028', source:'Adseal'},
+  {code:'5081063', nom:'Noyer',                 hex:'#503830', source:'Adseal'},
+  {code:'5081064', nom:'Espresso',              hex:'#302018', source:'Adseal'},
+  {code:'5081066', nom:'Rouge Campagne',        hex:'#804838', source:'Adseal'},
+  {code:'5081067', nom:'Bleu de Minuit',        hex:'#203050', source:'Adseal'},
+  {code:'5081068', nom:'Cèdre / Ambre Algonquin', hex:'#906040', source:'Adseal'},
+  {code:'5081069', nom:'Sierra',                hex:'#786048', source:'Adseal'},
+  {code:'5081070', nom:'Acadia',                hex:'#707868', source:'Adseal'},
+  {code:'5081071', nom:'Gris Brume',            hex:'#909898', source:'Adseal'},
+  {code:'5081083', nom:'Bois de Grange',        hex:'#806858', source:'Adseal'},
+  {code:'5081084', nom:'Loup Gris',             hex:'#909098', source:'Adseal'},
+  // BÉTONEL DIAMANT EXTÉRIEUR
+  {code:'DLX1001-1', nom:'Blanc Délicat',            hex:'#F1F2EE', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1001-2', nom:'Aria',                     hex:'#E3E4E2', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1001-3', nom:'Thin Ice',                 hex:'#D9DCDB', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1001-4', nom:'Flagstone',                hex:'#ACADAD', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1001-5', nom:'Dover Gray',               hex:'#848585', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1001-6', nom:'Knight\'s Armor',          hex:'#5C5D5D', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1001-7', nom:'Black Magic',              hex:'#414040', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1003-1', nom:'Fall Chill',               hex:'#E1DDDB', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1003-2', nom:'Balanced',                 hex:'#D7D2D1', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1004-1', nom:'Go To Gray',               hex:'#DCD8D7', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1004-3', nom:'Hush',                     hex:'#C4BDBA', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1004-4', nom:'Silver Service',           hex:'#B2AAAA', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1004-5', nom:'Pewter Mug',               hex:'#8B8283', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1004-6', nom:'Phantom Hue',              hex:'#645D5E', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1005-6', nom:'Oswego Tea',               hex:'#665D59', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1007-2', nom:'Swirling Smoke',           hex:'#CECAC1', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1007-3', nom:'Ghost Writer',             hex:'#BCB7AD', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1007-5', nom:'Lazy Afternoon',           hex:'#97928B', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1009-1', nom:'Tundra Frost',             hex:'#E1E1DB', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1009-2', nom:'Tornado',                  hex:'#D1D3CF', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1009-3', nom:'Solitary State',           hex:'#C4C7C4', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1009-4', nom:'Gray Stone',               hex:'#B7B9B5', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1009-5', nom:'Phoenix Fossil',           hex:'#8E908D', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1009-6', nom:'Armory',                   hex:'#6A6B65', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1009-7', nom:'Licorice',                 hex:'#4E4F48', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1010-1', nom:'Pegasus',                  hex:'#E8E9E4', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1010-2', nom:'Fog',                      hex:'#D6D7D2', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1010-3', nom:'Solstice',                 hex:'#BABDB8', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1010-4', nom:'Stepping Stone',           hex:'#A4A7A4', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1010-5', nom:'Downpour',                 hex:'#898A86', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1010-6', nom:'Up In Smoke',              hex:'#6E706D', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1010-7', nom:'Zombie',                   hex:'#595A5C', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1011-1', nom:'Pacific Pearl',            hex:'#E8EAE6', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1011-2', nom:'Elemental',                hex:'#D0D3D3', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1011-3', nom:'Stargazer',                hex:'#AFB4B6', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1011-4', nom:'UFO',                      hex:'#989FA3', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1011-7', nom:'Onyx',                     hex:'#464544', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1013-1', nom:'Mineral Gray',             hex:'#E5E7E6', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1013-2', nom:'Spring Thaw',              hex:'#D9DCDD', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1013-3', nom:'Whirlwind',                hex:'#BEC0C2', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1013-4', nom:'Silver Charm',             hex:'#ADB0B4', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1013-5', nom:'Victorian Pewter',         hex:'#828388', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1013-6', nom:'Gray Flannel',             hex:'#585960', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1013-7', nom:'Napoleon',                 hex:'#404149', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1014-2', nom:'Gray Whisper',             hex:'#E6E4E4', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1017-3', nom:'Fond Memory',              hex:'#C8BCB7', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1017-4', nom:'Riveter Rose',             hex:'#B7A9A2', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1017-5', nom:'Cinnamon Toast',           hex:'#8D7D77', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1017-6', nom:'Bold Brandy',              hex:'#796660', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1017-7', nom:'Chocolate Pretzel',        hex:'#60504B', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1018-7', nom:'Sarsaparilla',             hex:'#5B4C44', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1019-1', nom:'Toasted Marshmallow',      hex:'#EAE1D6', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1019-2', nom:'In The Buff',              hex:'#D6CBBF', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1019-3', nom:'Legendary',                hex:'#C6BAAF', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1019-4', nom:'Simmering Smoke',          hex:'#A99F96', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1019-5', nom:'Wild Wilderness',          hex:'#918D7C', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1019-6', nom:'Tattle Tail',              hex:'#80736A', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1019-7', nom:'Intrigue',                 hex:'#635951', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1020-3', nom:'Whippet',                  hex:'#CEC1B5', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1020-4', nom:'El Capitan',               hex:'#B7A696', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1021-2', nom:'Synchronicity',            hex:'#CFC5B6', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1021-3', nom:'Discover',                 hex:'#BDB0A0', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1021-4', nom:'Diversion',                hex:'#A99A89', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1021-6', nom:'Curlew',                   hex:'#766859', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1022-2', nom:'Intuitive',                hex:'#CFC6BC', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1022-3', nom:'Silver Dollar',            hex:'#BDB6AE', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1022-4', nom:'Rock Slide',               hex:'#A1968C', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1023-3', nom:'Ashen',                    hex:'#C9BFB2', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1023-4', nom:'Desert Dune',              hex:'#B5AB9C', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1024-3', nom:'Crushed Silk',             hex:'#D8CFBE', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1024-4', nom:'Moth Gray',                hex:'#D1C9BA', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1024-5', nom:'Stonehenge Greige',        hex:'#A79D8D', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1025-4', nom:'Sharkskin',                hex:'#B1AA9C', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1025-5', nom:'Dark Ash',                 hex:'#8C8475', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1026-1', nom:'Namaste',                  hex:'#E1D8BB', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1026-2', nom:'Sanctuary',                hex:'#D4C9A6', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1026-3', nom:'Easy',                     hex:'#BEB394', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1026-4', nom:'Karma',                    hex:'#B2A484', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1026-5', nom:'Gristmill',                hex:'#A29371', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1026-6', nom:'Bronze Statue',            hex:'#8E8062', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1026-7', nom:'Hip Waders',               hex:'#746A51', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1027-1', nom:'Cocoon',                   hex:'#DEDBCC', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1027-2', nom:'Skipping Stone',           hex:'#D0CBB6', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1027-3', nom:'Heavy Hammock',            hex:'#BEB9A2', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1027-4', nom:'Olive Gray',               hex:'#AFA78D', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1027-5', nom:'Rattan Palm',              hex:'#8F876B', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1027-6', nom:'Conservation',             hex:'#796E54', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1027-7', nom:'Grapevine',                hex:'#5F563F', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1029-1', nom:'Silvery Moon',             hex:'#E6E5DC', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1029-2', nom:'Veil Of Dusk',             hex:'#DAD8C9', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1029-3', nom:'French Gray Linen',        hex:'#CAC8B6', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1029-4', nom:'Photo Gray',               hex:'#AEAD96', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1029-5', nom:'Meander',                  hex:'#8F8C79', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1029-6', nom:'Organic',                  hex:'#747261', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1029-7', nom:'Plunge Pool',              hex:'#656457', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1031-2', nom:'Misty Meadow',             hex:'#BEC0B0', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1031-3', nom:'Wandering Willow',         hex:'#A6A897', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1031-4', nom:'Restoration',              hex:'#939581', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1031-6', nom:'Nevergreen',               hex:'#666556', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1032-1', nom:'Metallic Mist',            hex:'#CDCCBE', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1033-7', nom:'Charcoal Smoke',           hex:'#474F43', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1036-1', nom:'Gray Glimpse',             hex:'#E0E4E2', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1038-4', nom:'Smoke Screen',             hex:'#ADB6B9', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1038-6', nom:'Lava Gray',                hex:'#5E686D', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1039-1', nom:'Ghost Whisperer',          hex:'#CBD1D0', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1039-2', nom:'Maiden Mist',              hex:'#B9C0C0', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1039-3', nom:'Mirror Mirror',            hex:'#A8B0B2', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1039-4', nom:'Pachyderm',                hex:'#8F989D', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1039-5', nom:'Garrison Gray',            hex:'#7B8588', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1039-6', nom:'In The Shadows',           hex:'#656E72', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1039-7', nom:'High Salute',              hex:'#445056', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1040-2', nom:'Keepsakes',                hex:'#C0CED6', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1040-3', nom:'Ocean Drive',              hex:'#B0BEC5', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1040-4', nom:'Set In Stone',             hex:'#A0AEB8', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1040-6', nom:'Freedom Found',            hex:'#657682', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1040-7', nom:'Goblin',                   hex:'#525E68', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1041-6', nom:'Sheffield Gray',           hex:'#6B7680', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1041-7', nom:'Cavalry',                  hex:'#3F4C5A', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1042-2', nom:'Winter Haven',             hex:'#E1E6EB', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1043-1', nom:'Snowbank',                 hex:'#E8E9E9', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1073-7', nom:'Fudge',                    hex:'#63493E', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1074-5', nom:'Peppered Pecan',           hex:'#957D6F', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1076-3', nom:'Gotta Have It',            hex:'#D0C2B4', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1076-4', nom:'Cuppa Coffee',             hex:'#B09F8F', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1076-5', nom:'Locomotion',               hex:'#988171', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1076-6', nom:'Warrior',                  hex:'#7D685B', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1076-7', nom:'Ground Coffee',            hex:'#63554B', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1085-3', nom:'Seriously Sand',           hex:'#DCCCB4', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1085-5', nom:'Sauteed Mushroom',         hex:'#AB9378', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1085-6', nom:'Hat Box Brown',            hex:'#8F775D', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1085-7', nom:'Fig Branches',             hex:'#7A634D', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1086-4', nom:'Pony Tail',                hex:'#D2BC9B', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1095-4', nom:'Golden Ecru',              hex:'#D8C39F', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1097-4', nom:'Dusty Trail',              hex:'#C9BBA3', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1098-2', nom:'Heavy Cream',              hex:'#E8DCC6', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1098-4', nom:'Spiced Vinegar',           hex:'#CDBA99', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1101-1', nom:'China White',              hex:'#EAE6D9', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1101-2', nom:'Sugar Cookie',             hex:'#E5DDC8', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1101-3', nom:'Stylish',                  hex:'#CEC1A5', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1101-4', nom:'Rock Cliffs',              hex:'#C0AF92', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1101-5', nom:'Bear Hug',                 hex:'#AC9877', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1101-6', nom:'Leather Loafers',          hex:'#867354', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1101-7', nom:'Lemur',                    hex:'#695F4F', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1102-2', nom:'Fossil Stone',             hex:'#E3DDCC', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1102-3', nom:'Dancing Dolphin',          hex:'#C4BAA1', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1102-4', nom:'Prairie Dust',             hex:'#B9AB8F', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1102-5', nom:'Saddle Soap',              hex:'#9F906E', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1102-6', nom:'Woodbridge',               hex:'#847451', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1102-7', nom:'Pine Cone',                hex:'#665C46', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1103-1', nom:'Ivory Tower',              hex:'#F0EADA', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1103-2', nom:'Almond Paste',             hex:'#E5DBC5', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1103-3', nom:'Soft Suede',               hex:'#D8CBAD', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1103-4', nom:'Earthy Cane',              hex:'#C5B28B', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1103-5', nom:'Rattan',                   hex:'#A58E61', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1103-6', nom:'Wool Tweed',               hex:'#917747', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1103-7', nom:'Twig Basket',              hex:'#77623A', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1104-3', nom:'Deserted Beach',           hex:'#E7DBBF', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1104-4', nom:'Sandy Pail',               hex:'#D2C098', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1104-5', nom:'Cool Camel',               hex:'#AE996B', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1104-6', nom:'Rustic Ranch',             hex:'#8D794F', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1104-7', nom:'Outrigger',                hex:'#82714D', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1111-4', nom:'Nettle',                   hex:'#BBAC7D', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1113-1', nom:'I Miss You',               hex:'#DDDBC5', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1113-3', nom:'Northern Landscape',       hex:'#C5C1A3', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1113-4', nom:'Green Gray Mist',          hex:'#AFA984', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1113-6', nom:'Green Briar',              hex:'#7A744D', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1113-7', nom:'Olive Green',              hex:'#5D583E', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1122-4', nom:'Bahia Grass',              hex:'#B9BD97', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1127-6', nom:'Winning Ticket',           hex:'#636653', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1128-1', nom:'Anonymous',                hex:'#DADCD3', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1149-2', nom:'High Sierra',              hex:'#CEDEE2', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1149-3', nom:'Scandinavian Sky',         hex:'#C2D3D6', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1149-4', nom:'Mountain Stream',          hex:'#96AFB7', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1149-5', nom:'Baritone',                 hex:'#708E95', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1149-6', nom:'Azalea Leaf',              hex:'#4A6871', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1149-7', nom:'Blue Bayberry',            hex:'#2D5360', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1153-1', nom:'Ice Castles',              hex:'#E8EFEC', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1153-2', nom:'Artemesia',                hex:'#E3EBEA', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1153-3', nom:'Blue Smoke',               hex:'#D7E0E2', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1153-4', nom:'Chambray',                 hex:'#ADBFC8', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1153-5', nom:'Chalky Blue',              hex:'#7B8F99', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1153-6', nom:'Silent Night',             hex:'#526771', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1153-7', nom:'Sailor\'s Coat',           hex:'#334B58', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1154-1', nom:'Shooting Star',            hex:'#ECF0EB', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1154-2', nom:'Aloof',                    hex:'#D4E2E6', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1154-3', nom:'Dartmoor Mist',            hex:'#CDDCE3', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1154-4', nom:'Twinkle',                  hex:'#ADC6D3', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1154-5', nom:'Serene Stream',            hex:'#819DAA', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1154-6', nom:'Prussian Blue',            hex:'#5D7B89', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1154-7', nom:'Regatta Bay',              hex:'#2D5367', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1155-1', nom:'Summer Shower',            hex:'#E1EAEC', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1155-2', nom:'Prelude',                  hex:'#DFEBEE', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1155-3', nom:'Simply Elegant',           hex:'#CEDDE7', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1155-4', nom:'Constellation',            hex:'#BCCEDB', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1155-5', nom:'Dresden Dream',            hex:'#8EA7B9', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1155-6', nom:'Canyon Blue',              hex:'#607B8E', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1155-7', nom:'Blue Lava',                hex:'#2E5169', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1157-1', nom:'Glassine',                 hex:'#D7E2E5', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1157-2', nom:'Blue Pearl',               hex:'#C5D9E3', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1157-3', nom:'Sonata',                   hex:'#ABC8D8', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1157-4', nom:'Arabella',                 hex:'#82ACC4', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1157-5', nom:'Vanity',                   hex:'#5692B2', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1157-6', nom:'Cosmic Dust',              hex:'#347699', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1157-7', nom:'Blue Flame',               hex:'#005E88', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1164-3', nom:'Blustery Day',             hex:'#D6DFE7', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1164-4', nom:'Dreamy',                   hex:'#AEBBD0', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1164-5', nom:'Blueberry Muffin',         hex:'#8290A6', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1164-6', nom:'Blue Cloud',               hex:'#627188', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1164-7', nom:'Annapolis Blue',           hex:'#384A66', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1165-7', nom:'Victory Blue',             hex:'#3A405A', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1186-1', nom:'Lover\'s Knot',            hex:'#F2DBDB', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1199-7', nom:'Fragrant Cloves',          hex:'#AC5E3A', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1200-5', nom:'Georgian Leather',         hex:'#CF875E', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1208-3', nom:'Belgian Waffle',           hex:'#F3DFB6', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1231-2', nom:'Swan Lake',                hex:'#C5E5E2', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1231-3', nom:'Minerva',                  hex:'#B5DEDA', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1231-5', nom:'Artesian Well',            hex:'#5EB2AA', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1231-6', nom:'Azure Tide',               hex:'#2B9890', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1237-2', nom:'Diamond Blue',             hex:'#CFE4EE', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1237-3', nom:'Ariel',                    hex:'#AED7EA', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1237-4', nom:'Horizon Haze',             hex:'#80C1E2', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1237-5', nom:'Mystic Blue',              hex:'#48A8D0', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1237-6', nom:'Bellflower',               hex:'#1993BE', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1237-7', nom:'Neptune',                  hex:'#007DAC', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1238-1', nom:'Airy',                     hex:'#DAE6E9', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1238-2', nom:'Goddess',                  hex:'#D0E1E8', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1238-3', nom:'Flemish Blue',             hex:'#ADD0E0', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1238-4', nom:'Harbor Sky',               hex:'#7EB6D0', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1238-5', nom:'Hush-A-Bye',               hex:'#5397B7', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1238-6', nom:'Blue Paisley',             hex:'#2282A8', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1238-7', nom:'Port Au Prince',           hex:'#006A93', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1239-1', nom:'Wavecrest',                hex:'#D6E1E4', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1239-2', nom:'Duck\'s Egg Blue',         hex:'#CCDFE8', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1239-3', nom:'Windsor Way',              hex:'#9FC9E4', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1239-4', nom:'Salem Blue',               hex:'#66A9D3', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1239-5', nom:'Quiet Night',              hex:'#3E8FBC', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1239-6', nom:'North Sea',                hex:'#1D78AB', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1239-7', nom:'Rave Regatta',             hex:'#00619D', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1240-1', nom:'Ocean Breeze',             hex:'#D3E5EB', source:'Bétonel Diamant Ext.'},
+  {code:'DLX1240-2', nom:'Niagara Falls',            hex:'#CBE3EE', source:'Bétonel Diamant Ext.'},
+  // Couleurs Bétonel ajoutées depuis Google Sheets
+  {code:'DLX1151-3', nom:'Rêve d\'été / Midsummer\'s Dream', hex:'#BAC4D6', source:'Bétonel Diamant Ext.'},
+];
+
+// ================================================================
+// HELPER — Recherche couleur dans COULEURS par code ou nom (GS → DB)
+// Ordre : code exact → code 2 mots → nom exact normalisé → nom partiel normalisé
+// ================================================================
+function normCouleur(s) {
+  return (s || '').toLowerCase()
+    .replace(/[àâä]/g,'a').replace(/[éèêë]/g,'e')
+    .replace(/[îï]/g,'i').replace(/[ôö]/g,'o')
+    .replace(/[ùûü]/g,'u').replace(/ç/g,'c')
+    .replace(/\s+/g,' ').trim();
+}
+
+// Marques reconnues : retourne les sources DB + texte nettoyé du nom de marque
+// detect = détecte la marque; remove = ce qu'on retire du texte (NE PAS retirer le préfixe de code)
+var BRAND_MAP = [
+  { detect: /gentek/i,                    remove: /gentek/i,                    sources: ['Gentek Standard', 'Gentek Non-Standard'], label: 'Gentek'          },
+  { detect: /b[eé]tonel|dlx\d/i,         remove: /\bb[eé]tonel\b\s*/i,         sources: ['Bétonel Diamant Ext.', 'Bétonel'],        label: 'Bétonel'         },
+  { detect: /adseal|adfast/i,             remove: /adseal|adfast/i,             sources: ['Adseal'],                                 label: 'Adseal'          },
+  { detect: /sherwin(\s*williams)?/i,     remove: /sherwin(\s*williams)?\s*/i,  sources: ['Sherwin Williams'],                       label: 'Sherwin Williams'},
+];
+function parseBrandFromGS(raw) {
+  for (var i = 0; i < BRAND_MAP.length; i++) {
+    if (BRAND_MAP[i].detect.test(raw)) {
+      var cleanRaw = raw.replace(BRAND_MAP[i].remove, '').replace(/\s+/g,' ').trim();
+      // Si rien n'a été retiré (ex: "DLX1039-7" sans mot "bétonel"), garder le raw intact
+      if (cleanRaw === raw.trim()) cleanRaw = raw.trim();
+      return { brandSources: BRAND_MAP[i].sources, brandLabel: BRAND_MAP[i].label, cleanRaw: cleanRaw };
+    }
+  }
+  return { brandSources: null, brandLabel: null, cleanRaw: raw };
+}
+
+function matchCouleur(raw, brandSources) {
+  if (!raw) return null;
+  raw = raw.trim();
+  var pool = (brandSources && brandSources.length)
+    ? COULEURS.filter(function(c){ return brandSources.indexOf(c.source) !== -1; })
+    : COULEURS;
+  var codeA = raw.split(/[\s(]/)[0];                        // 1er mot = code court
+  var codeB = raw.split(/\s+/).slice(0,2).join(' ');        // 2 premiers mots
+  var nomInput = normCouleur(raw.split('(')[0]);
+
+  for (var i = 0; i < pool.length; i++) {
+    if (pool[i].code.toLowerCase() === codeA.toLowerCase()) return pool[i];
+  }
+  if (codeB !== codeA) {
+    for (var i = 0; i < pool.length; i++) {
+      if (pool[i].code.toLowerCase() === codeB.toLowerCase()) return pool[i];
+    }
+  }
+  for (var i = 0; i < pool.length; i++) {
+    if (normCouleur(pool[i].nom) === nomInput) return pool[i];
+  }
+  for (var i = 0; i < pool.length; i++) {
+    var dbNom = normCouleur(pool[i].nom);
+    if (nomInput.length >= 3 && (dbNom.indexOf(nomInput) !== -1 || nomInput.indexOf(dbNom) !== -1)) return pool[i];
+  }
+  return null;
+}
+function applyColorToCard(card, couleur) {
+  if (!card || !couleur) return;
+  var alreadyConfirmed = card.classList.contains('has-color') && !!card.dataset.selectedHex;
+  if (alreadyConfirmed) return;
+  var parsed = parseBrandFromGS(couleur);
+  var found  = matchCouleur(parsed.cleanRaw, parsed.brandSources);
+  if (found) {
+    card.querySelector('.cp-swatch').style.background = found.hex;
+    card.querySelector('.cp-selected').textContent    = found.nom;
+    card.querySelector('.cp-source').textContent      = found.source + ' — ' + found.code;
+    card.querySelector('.cp-search').value            = found.nom + ' (' + found.code + ')';
+    card.dataset.selectedCode   = found.code;
+    card.dataset.selectedNom    = found.nom;
+    card.dataset.selectedHex    = found.hex;
+    card.dataset.selectedSource = found.source;
+  } else {
+    var rawStr  = parsed.cleanRaw;
+    var codeExt = rawStr.split(/[\s(]/)[0];
+    var nameExt = (rawStr.match(/\(([^)]+)\)/) || [])[1]
+                  || rawStr.replace(codeExt, '').replace(/[()]/g,'').trim()
+                  || rawStr;
+    var srcExt  = parsed.brandLabel || 'Google Sheets';
+    if (!parsed.brandLabel) {
+      if (/^DLX/i.test(codeExt))          srcExt = 'Bétonel Diamant Ext.';
+      else if (/^508\d{4}/.test(codeExt)) srcExt = 'Adseal';
+      else if (/^[#]?\d{2,4}$|^[#]?[0-9A-Z]{2,4}$/.test(codeExt)) srcExt = 'Gentek';
+    }
+    var displayNom = nameExt || codeExt;
+    card.querySelector('.cp-selected').textContent = displayNom;
+    card.querySelector('.cp-source').textContent   = srcExt + ' — ' + codeExt + ' ⚠ non confirmé';
+    card.querySelector('.cp-search').value         = displayNom + (codeExt && codeExt !== displayNom ? ' (' + codeExt + ')' : '');
+    card.dataset.selectedNom  = displayNom;
+    card.dataset.selectedCode = codeExt;
+  }
+  card.classList.add('has-color');
+}
+
+// ================================================================
+// COLOUR PICKER
+// ================================================================
+(function(){
+  var GROUP_ORDER = ['Gentek', 'Adseal', 'Bétonel', 'Sherwin Williams'];
+  function getDisplayGroup(source) {
+    if (source === 'Gentek Standard' || source === 'Gentek Non-Standard') return 'Gentek';
+    if (source === 'Bétonel Diamant Ext.' || source === 'Bétonel') return 'Bétonel';
+    return source;
+  }
+  function getGroups(list) {
+    var groups = {};
+    list.forEach(function(c) {
+      var grp = getDisplayGroup(c.source);
+      if (!groups[grp]) groups[grp] = [];
+      groups[grp].push(c);
+    });
+    var ordered = {};
+    GROUP_ORDER.forEach(function(k) { if (groups[k]) ordered[k] = groups[k]; });
+    Object.keys(groups).forEach(function(k) { if (!ordered[k]) ordered[k] = groups[k]; });
+    return ordered;
+  }
+
+  function buildDropdown(dd, list) {
+    dd.innerHTML = '';
+    // Option "Aucune couleur" toujours en tête
+    var none = document.createElement('div');
+    none.className = 'cp-item cp-item-none';
+    none.innerHTML =
+      '<div class="cp-item-sw" style="background:#fff;border:2px dashed #ccc;"></div>' +
+      '<div class="cp-item-info">' +
+        '<div class="cp-item-name" style="color:#888;">— Aucune couleur</div>' +
+        '<div class="cp-item-code">Non applicable</div>' +
+      '</div>';
+    none.addEventListener('mousedown', function(e) {
+      e.preventDefault();
+      resetColor(none.closest('.cp-card'));
+    });
+    dd.appendChild(none);
+    if (!list.length) return;
+    var groups = getGroups(list);
+    Object.keys(groups).forEach(function(src) {
+      var lbl = document.createElement('div');
+      lbl.className = 'cp-group-lbl';
+      lbl.textContent = src;
+      dd.appendChild(lbl);
+      groups[src].forEach(function(c) {
+        var item = document.createElement('div');
+        item.className = 'cp-item';
+        item.innerHTML =
+          '<div class="cp-item-sw" style="background:' + c.hex + ';"></div>' +
+          '<div class="cp-item-info">' +
+            '<div class="cp-item-name">' + c.nom + '</div>' +
+            '<div class="cp-item-code">' + c.code + '</div>' +
+          '</div>';
+        item.addEventListener('mousedown', function(e) {
+          e.preventDefault();
+          selectColor(item.closest('.cp-card'), c);
+        });
+        dd.appendChild(item);
+      });
+    });
+  }
+
+  function resetColor(card) {
+    card.querySelector('.cp-swatch').style.background = '#F4F2EC';
+    card.querySelector('.cp-selected').textContent = 'Aucune sélection';
+    card.querySelector('.cp-source').textContent = '';
+    card.querySelector('.cp-search').value = '';
+    card.querySelector('.cp-dropdown').classList.remove('open');
+    card.dataset.selectedCode = '';
+    card.dataset.selectedNom = '';
+    card.dataset.selectedHex = '';
+    card.dataset.selectedSource = '';
+    card.classList.remove('has-color');
+    saveJobData();
+  }
+
+  function selectColor(card, c) {
+    card.querySelector('.cp-swatch').style.background = c.hex;
+    card.querySelector('.cp-selected').textContent = c.nom;
+    card.querySelector('.cp-source').textContent = c.source + ' — ' + c.code;
+    card.querySelector('.cp-search').value = c.nom + ' (' + c.code + ')';
+    card.querySelector('.cp-dropdown').classList.remove('open');
+    card.dataset.selectedCode = c.code;
+    card.dataset.selectedNom = c.nom;
+    card.dataset.selectedHex = c.hex;
+    card.dataset.selectedSource = c.source;
+    card.classList.add('has-color');
+    saveJobData();
+    if (card.dataset.field === 'color_body') syncMat1();
+  }
+
+  document.querySelectorAll('.cp-card').forEach(function(card) {
+    var search = card.querySelector('.cp-search');
+    var dd = card.querySelector('.cp-dropdown');
+
+    search.addEventListener('focus', function() {
+      search.select();
+      buildDropdown(dd, COULEURS);
+      dd.classList.add('open');
+    });
+
+    search.addEventListener('input', function() {
+      var val = search.value.toLowerCase().trim();
+      var list = COULEURS.filter(function(c) {
+        return !val || c.nom.toLowerCase().includes(val) || c.code.toLowerCase().includes(val) || c.source.toLowerCase().includes(val);
+      });
+      buildDropdown(dd, list);
+      dd.classList.add('open');
+      // Prévisualiser la première couleur correspondante dans le carré
+      var swatch = card.querySelector('.cp-swatch');
+      if (val && list.length > 0) {
+        swatch.style.background = list[0].hex;
+      } else if (!val) {
+        swatch.style.background = card.dataset.selectedHex || '#F4F2EC';
+      }
+    });
+
+    search.addEventListener('blur', function() {
+      setTimeout(function() {
+        dd.classList.remove('open');
+        // Remettre le nom affiché et le carré à la couleur sélectionnée
+        var nom  = card.dataset.selectedNom  || '';
+        var code = card.dataset.selectedCode || '';
+        var hex  = card.dataset.selectedHex  || '#F4F2EC';
+        search.value = nom ? nom + (code ? ' (' + code + ')' : '') : '';
+        card.querySelector('.cp-swatch').style.background = hex;
+      }, 150);
+    });
+  });
+})();
+
+// ================================================================
+// FORMULE MATÉRIAUX — calcul automatique selon normes de production
+// ================================================================
+function syncMat1() {
+  function getNum(f) {
+    var el = document.querySelector('[data-jobber-field="' + f + '"]');
+    return el ? (parseFloat((el.value || '').replace(/[^\d.,]/g, '').replace(',', '.')) || 0) : 0;
+  }
+  function getStr(f) {
+    var el = document.querySelector('[data-jobber-field="' + f + '"]');
+    return el ? (el.value || '').trim() : '';
+  }
+  function setQty(f, v) {
+    var el = document.querySelector('[data-jobber-field="' + f + '"]');
+    if (!el) return;
+    el.value = v > 0 ? v : '';
+    el.style.background = v > 0 ? '#fffbe6' : '';
+  }
+  function autoPi2(f, v) {
+    var el = document.querySelector('[data-jobber-field="' + f + '"]');
+    // Met à jour si vide OU si jamais modifié manuellement (pas de flag override)
+    if (el && (!el.value || !el.dataset.override)) el.value = v;
+  }
+  function autoNom(f, v) {
+    var el = document.querySelector('[data-jobber-field="' + f + '"]');
+    if (el && !el.value) el.value = v;
+  }
+  function readPi2(f, fallback) {
+    var el = document.querySelector('[data-jobber-field="' + f + '"]');
+    var v = el ? (parseFloat((el.value || '').replace(/[^\d.,]/g, '').replace(',', '.')) || 0) : 0;
+    return v || fallback || 0;
+  }
+
+  // Lire les champs Description du projet
+  var sqft    = getNum('total_sqft');
+  var sablage = getNum('sanding_sqft');
+  var fenetres = getNum('windows_count');
+  var portes  = getNum('doors_count');
+  var garages = getNum('garage_doors_count');
+  var toiture = getNum('roofing');
+  var gout    = getNum('gouttieres_sqft');
+  var surface = getStr('surface_type').toLowerCase()
+    .replace(/[àâä]/g,'a').replace(/[éèê]/g,'e')
+    .replace(/[îï]/g,'i').replace(/[ôö]/g,'o')
+    .replace(/[ùû]/g,'u').replace(/ç/g,'c');
+
+  // ── mat_1 — Peinture corps façades ──
+  var C = window.CFG || CFG_DEFAULTS;
+  var IS_MACON = /stuc|brique|agregat|beton|macon|pierre/.test(surface);
+  var pi2PerGal = IS_MACON ? C.rev_macon_pi2_gal : C.rev_std_pi2_gal;
+
+  var card  = document.querySelector('.cp-card[data-field="color_body"]');
+  var nomEl = document.querySelector('[data-jobber-field="mat_1_nom"]');
+  var pi2El = document.querySelector('[data-jobber-field="mat_1_pi2"]');
+  var qtyEl = document.querySelector('[data-jobber-field="mat_1_qty"]');
+  if (card && nomEl && !nomEl.value) {
+    var code = card.dataset.selectedCode || '';
+    var nom  = card.dataset.selectedNom  || '';
+    var src  = card.dataset.selectedSource || '';
+    if (src.indexOf('Bétonel Diamant Ext') !== -1 && code)
+      nomEl.value = 'Bétonel Diamant Ext. — ' + code + ' (' + nom + ')';
+  }
+  if (pi2El && !pi2El.value && sqft > 0) pi2El.value = sqft;
+  var pi2_corps = readPi2('mat_1_pi2', sqft);
+  if (pi2_corps > 0 && qtyEl) {
+    qtyEl.value = Math.ceil(pi2_corps / pi2PerGal);
+    qtyEl.style.background = '#fffbe6';
+  }
+
+  // ── mat_2 — Apprêt (1 couche) — seulement si sablage saisi ──
+  if (sablage > 0) {
+    autoNom('mat_2_nom', 'Apprêt tout usage');
+    autoPi2('mat_2_pi2', sablage);
+    setQty('mat_2_qty', Math.ceil(readPi2('mat_2_pi2', sablage) / C.apret_pi2_gal));
+  } else {
+    setQty('mat_2_qty', 0);
+  }
+
+  // ── mat_3 — Peinture garnitures / gouttières ──
+  if (gout > 0) {
+    autoNom('mat_3_nom', 'Peinture garnitures');
+    var el3 = document.querySelector('[data-jobber-field="mat_3_pi2"]');
+    if (el3 && !el3.value) el3.value = gout + ' pi li.';
+    setQty('mat_3_qty', Math.ceil(gout / C.gout_pi_li_gal));
+  } else {
+    setQty('mat_3_qty', 0);
+  }
+
+  // ── mat_4 — Peinture toiture ──
+  if (toiture > 0) {
+    autoNom('mat_4_nom', 'Peinture toiture');
+    autoPi2('mat_4_pi2', toiture);
+    setQty('mat_4_qty', Math.ceil(readPi2('mat_4_pi2', toiture) / C.toiture_alkyde_pi2_gal));
+  } else {
+    setQty('mat_4_qty', 0);
+  }
+
+  // ── mat_5 — Peinture portes / fenêtres ──
+  var gal_pf = (portes * C.gal_porte) + (garages * C.gal_garage) + (fenetres * C.gal_fen_simple);
+  if (gal_pf > 0) {
+    autoNom('mat_5_nom', 'Peinture portes / fenêtres');
+    var el5 = document.querySelector('[data-jobber-field="mat_5_pi2"]');
+    if (el5 && !el5.value) {
+      var desc = [];
+      if (portes  > 0) desc.push(portes  + ' porte'  + (portes  > 1 ? 's' : ''));
+      if (garages > 0) desc.push(garages + ' garage' + (garages > 1 ? 's' : ''));
+      if (fenetres > 0) desc.push(fenetres + ' fen.');
+      el5.value = desc.join(' + ');
+    }
+    setQty('mat_5_qty', Math.ceil(gal_pf));
+  } else {
+    setQty('mat_5_qty', 0);
+  }
+
+  syncConsommables();
+  saveJobData();
+}
+
+// Calcul automatique : Tape 3M, Polythène, Rouleaux papier
+function syncConsommables() {
+  // Gallons de peinture principale (mat_1)
+  var mat1QtyEl = document.querySelector('[data-jobber-field="mat_1_qty"]');
+  var gallons = parseFloat((mat1QtyEl && mat1QtyEl.value) || 0) || 0;
+
+  // Nombre de fenêtres (depuis Description du projet)
+  var winEl = document.querySelector('[data-jobber-field="windows_count"]');
+  var fenetres = parseFloat(((winEl && winEl.value) || '').replace(/[^\d.,]/g, '').replace(',', '.')) || 0;
+
+  var C2 = window.CFG || CFG_DEFAULTS;
+  // Polythène
+  var polyQty = fenetres > 0 ? Math.ceil(fenetres / C2.poly_par_fen) : 0;
+  var polyEl = document.querySelector('[data-jobber-field="mat_7_qty"]');
+  if (polyEl) {
+    polyEl.value = polyQty > 0 ? polyQty : '';
+    polyEl.style.background = polyQty > 0 ? '#fffbe6' : '';
+  }
+
+  // Tape 3M
+  var tapeQty = (gallons > 0 || polyQty > 0) ? Math.ceil(gallons / C2.tape_par_gal + polyQty * C2.tape_par_poly) : 0;
+  var tapeEl = document.querySelector('[data-jobber-field="mat_6_qty"]');
+  if (tapeEl) {
+    tapeEl.value = tapeQty > 0 ? tapeQty : '';
+    tapeEl.style.background = tapeQty > 0 ? '#fffbe6' : '';
+  }
+
+  // Rouleaux papier
+  var papierQty = gallons > 0 ? Math.ceil(gallons / C2.papier_par_gal) : 0;
+  var papierEl = document.querySelector('[data-jobber-field="mat_8_qty"]');
+  if (papierEl) {
+    papierEl.value = papierQty > 0 ? papierQty : '';
+    papierEl.style.background = papierQty > 0 ? '#fffbe6' : '';
+  }
+
+  // Disque à sabler
+  var sandEl = document.querySelector('[data-jobber-field="sanding_sqft"]');
+  var sablage = parseFloat(((sandEl && sandEl.value) || '').replace(/[^\d.,]/g, '').replace(',', '.')) || 0;
+  var disqueQty = sablage > 0 ? Math.ceil(sablage / C2.disque_par_pi2) : 0;
+  var disqueEl = document.querySelector('[data-jobber-field="mat_9_qty"]');
+  if (disqueEl) {
+    disqueEl.value = disqueQty > 0 ? disqueQty : '';
+    disqueEl.style.background = disqueQty > 0 ? '#fffbe6' : '';
+  }
+}
+
+// ================================================================
+// SYNC AUTOMATIQUE VERS SUIVI DES MATÉRIAUX
+// ================================================================
+function updateMatImport() {
+  var mapping = [
+    {key:'mat_1', catId:'cat-ext'},
+    {key:'mat_2', catId:'cat-apret'},
+    {key:'mat_3', catId:'cat-ext'},
+    {key:'mat_4', catId:'cat-ext'},
+    {key:'mat_5', catId:'cat-ext'},
+    {key:'mat_6', catId:'cat-ruban'},
+    {key:'mat_7', catId:'cat-plastique'},
+    {key:'mat_8', catId:'cat-ruban'},
+    {key:'mat_9', catId:'cat-conso'}
+  ];
+  var items = [];
+  mapping.forEach(function(m) {
+    var nomEl = document.querySelector('[data-jobber-field="' + m.key + '_nom"]');
+    var qtyEl = document.querySelector('[data-jobber-field="' + m.key + '_qty"]');
+    var nom   = nomEl ? ((nomEl.value || '').trim() || (nomEl.placeholder || '').trim()) : '';
+    var qty   = qtyEl ? (qtyEl.value || '').trim() : '';
+    if (!nom || !qty || qty === '0') return;
+    items.push({nom: nom, qty: qty, catId: m.catId});
+  });
+  if (items.length > 0) {
+    ISQStore.setItem('isq_import_materiaux', JSON.stringify(items));
+  } else {
+    ISQStore.removeItem('isq_import_materiaux');
+  }
+}
+
+function setStatut(btn, cls) {
+  document.querySelectorAll('#statutRow .statut-btn').forEach(function(b) {
+    b.className = 'statut-btn';
+  });
+  btn.classList.add(cls);
+  // Persister le statut sélectionné
+  var idx = Array.from(document.querySelectorAll('#statutRow .statut-btn')).indexOf(btn);
+  ISQStore.setItem('_isq_statut_idx', idx);
+  ISQStore.setItem('_isq_statut_cls', cls);
+  saveJobData();
+}
+
+// ================================================================
+// SAUVEGARDE & RESTAURATION
+// ================================================================
+function collectAllFields() {
+  var data = {};
+  var seen = {};
+  document.querySelectorAll('[data-jobber-field]').forEach(function(el) {
+    var f = el.getAttribute('data-jobber-field');
+    if (!f) return;
+    if (el.type === 'checkbox') {
+      data[f] = el.checked ? 'Oui' : 'Non';
+    } else if (el.type === 'radio') {
+      if (el.checked) data[f] = el.value;
+    } else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT') {
+      // Si plusieurs inputs avec le même champ, on garde le premier non-vide
+      if (!seen[f] || el.value) { data[f] = el.value || ''; seen[f] = true; }
+    }
+    // divs (job_number affiché) — on ignore, on lit depuis isq_projet
+  });
+
+  // Sauvegarder les couleurs approuvées par le client
+  document.querySelectorAll('.cp-card[data-field]').forEach(function(card) {
+    var f = card.dataset.field;
+    data['_clr_' + f + '_code']   = card.dataset.selectedCode   || '';
+    data['_clr_' + f + '_nom']    = card.dataset.selectedNom    || '';
+    data['_clr_' + f + '_hex']    = card.dataset.selectedHex    || '';
+    data['_clr_' + f + '_source'] = card.dataset.selectedSource || '';
+  });
+
+  return data;
+}
+
+function saveJobData() {
+  try {
+    var data = collectAllFields();
+    // Récupérer le numéro de job depuis isq_projet si non trouvé dans les champs
+    var jobNum = data.job_number || '';
+    if (!jobNum) {
+      try { jobNum = JSON.parse(ISQStore.getItem('isq_projet') || '{}').job_number || ''; } catch(e){}
+    }
+    var json = JSON.stringify(data);
+    if (jobNum) ISQStore.setItem('isq_bon_travail_' + jobNum, json);
+    ISQStore.setItem('isq_bon_travail_courant', json);
+    // Synchroniser les champs partages dans isq_projet
+    try {
+      var projSync = JSON.parse(ISQStore.getItem('isq_projet') || '{}');
+      ['job_number','client_name','client_phone','job_address','foreman_name',
+       'total_sqft','surface_type','floors_count','sanding_sqft','doors_count',
+       'garage_doors_count','windows_count','roofing','gouttieres_sqft'].forEach(function(sf) {
+        if (data[sf]) projSync[sf] = data[sf];
+      });
+      ISQStore.setItem('isq_projet', JSON.stringify(projSync));
+    } catch(ep) {}
+    updateMatImport();
+  } catch(e) {}
+}
+
+// Auto-save sur chaque modification
+document.addEventListener('input',  function() { saveJobData(); });
+document.addEventListener('change', function() { saveJobData(); });
+window.addEventListener('beforeunload', function() {
+  saveJobData();
+  if (window.ISQSavesDB) {
+    var _d = collectAllFields();
+    var _jn = _d.job_number || (JSON.parse(ISQStore.getItem('isq_projet')||'{}').job_number)||'';
+    ISQSavesDB.logSave('bon_travail', _jn, 'fermeture', _d);
+  }
+});
+
+// ================================================================
+// Calcul des durées estimées par tâche (normes MOYEN)
+// ================================================================
+function calcTaskHours() {
+  function getNum(f) {
+    var el = document.querySelector('[data-jobber-field="' + f + '"]');
+    return parseFloat(((el && el.value) || '0').replace(/[^\d.,]/g,'').replace(',','.')) || 0;
+  }
+  function getStr(f) {
+    var el = document.querySelector('[data-jobber-field="' + f + '"]');
+    return ((el && el.value) || '').toLowerCase();
+  }
+  function setH(n, h) {
+    var el = document.querySelector('[data-jobber-field="task_' + n + '_hours"]');
+    if (!el) return;
+    if (h > 0) {
+      el.value = h.toFixed(1) + ' h';
+      el.style.background = '#e8f4fd';
+    } else {
+      el.value = '';
+      el.style.background = '';
+    }
+  }
+
+  var sqft    = getNum('total_sqft');
+  var etages  = Math.min(Math.max(Math.round(getNum('floors_count') || 1), 1), 3);
+  var sablage = getNum('sanding_sqft');
+  var portes  = getNum('doors_count');
+  var garages = getNum('garage_doors_count');
+  var fenetres= getNum('windows_count');
+  var gout    = getNum('gouttieres_sqft');
+  var toiture = getNum('roofing');
+  var equipe  = Math.max(getNum('crew_size') || 1, 1);
+  var surf    = getStr('surface_type');
+  var IS_MACON = /stuc|brique|agr[eé]g|b[eé]ton|maç|mac/.test(surf);
+
+  // Normes MOYEN depuis CFG, indexées par étage
+  var C = window.CFG || CFG_DEFAULTS;
+  var idx = etages - 1;
+  var lavage_r   = [C.lavage_1,    C.lavage_2,    C.lavage_3    ][idx];
+  var grattage_r = [C.grattage_1,  C.grattage_2,  C.grattage_3  ][idx];
+  var sablage_r  = [C.sablage_rev_1, C.sablage_rev_2, C.sablage_rev_3][idx];
+  var apret_r    = [C.apret_app_1, C.apret_app_2, C.apret_app_3 ][idx];
+  var app_mac_r  = [C.app_macon_1, C.app_macon_2, C.app_macon_3 ][idx];
+  var app_std_r  = [C.app_std_1,   C.app_std_2,   C.app_std_3   ][idx];
+  var gout_r     = [C.gout_app_1,  C.gout_app_2,  C.gout_app_3  ][idx];
+  var win_app_h  = [C.app_fen_1,   C.app_fen_2,   C.app_fen_3   ][idx];
+
+  var app_r = IS_MACON ? app_mac_r : app_std_r;
+
+  // Calfeutrage (masquage + application)
+  var calf_p = C.calf_porte_maq      + C.calf_porte_app;
+  var calf_g = C.calf_garage_maq     + C.calf_garage_app;
+  var calf_f = C.calf_fen_simple_maq + C.calf_fen_simple_app;
+
+  // Masquage/démasquage
+  var maq_p = C.maq_porte;
+  var maq_g = C.maq_garage;
+  var maq_f = C.maq_fen_simple;
+
+  // ── Calcul par tâche ──────────────────────────────────────────
+  // T1: Lavage à pression (total surface)
+  setH(1, sqft > 0 ? sqft / lavage_r : 0);
+
+  // T2: Grattage (sur zones sablées)
+  setH(2, sablage > 0 ? sablage / grattage_r : 0);
+
+  // T3: Sablage revêtement écaillé
+  setH(3, sablage > 0 ? sablage / sablage_r : 0);
+
+  // T4: Calfeutrage portes + garages + fenêtres
+  setH(4, portes * calf_p + garages * calf_g + fenetres * calf_f);
+
+  // T5: Réparations (pas de champ count → laissé vide)
+  setH(5, 0);
+
+  // T6: Masquage fenêtres, portes, luminaires, végétation
+  setH(6, portes * maq_p + garages * maq_g + fenetres * maq_f);
+
+  // T7: Apprêt (sur zones sablées uniquement)
+  setH(7, sablage > 0 ? sablage / apret_r : 0);
+
+  // T8: 1ère couche peinture corps
+  setH(8, sqft > 0 ? sqft / app_r : 0);
+
+  // T9: 2e couche peinture corps (même taux)
+  setH(9, sqft > 0 ? sqft / app_r : 0);
+
+  // T10: Peinture soffit/fascia/gouttières (pi li.)
+  setH(10, gout > 0 ? gout / gout_r : 0);
+
+  // T11: Garnitures/boiseries — pas de taux distinct dans les normes
+  setH(11, 0);
+
+  // T12: Peinture portes extérieures
+  setH(12, portes * C.app_porte + garages * C.app_garage);
+
+  // T13: Peinture cadres/châssis fenêtres
+  setH(13, fenetres * win_app_h);
+
+  // T14: Peinture toiture
+  setH(14, toiture > 0 ? toiture / C.toiture_alkyde_app : 0);
+
+  // T15–18: Finition/nettoyage — pas de norme directe
+  setH(15, 0);
+  setH(16, 0);
+  setH(17, 0);
+  setH(18, 0);
+
+  // ── Total heures → durée prévue ──────────────────────────────
+  var total_h = 0;
+  for (var n = 1; n <= 18; n++) {
+    var el = document.querySelector('[data-jobber-field="task_' + n + '_hours"]');
+    if (el && el.value) {
+      total_h += parseFloat(el.value.replace(' h','').replace(',','.')) || 0;
+    }
+  }
+  if (total_h > 0) {
+    var durEl = document.querySelector('[data-jobber-field="duration_days"]');
+    if (durEl && !durEl.dataset.override) {
+      var jours = Math.ceil(total_h / equipe / 8);
+      durEl.value = jours + ' jour' + (jours > 1 ? 's' : '') + ' (~' + Math.round(total_h) + 'h÷' + equipe + ')';
+    }
+  }
+}
+
+// Recalcul automatique matériaux quand Description du projet change
+(function() {
+  var DESC_FIELDS = [
+    'total_sqft','surface_type','floors_count','sanding_sqft',
+    'doors_count','garage_doors_count','windows_count','roofing','gouttieres_sqft'
+  ];
+  DESC_FIELDS.forEach(function(f) {
+    var els = document.querySelectorAll('[data-jobber-field="' + f + '"]');
+    els.forEach(function(el) {
+      el.addEventListener('input',  function() { syncMat1(); calcTaskHours(); });
+      el.addEventListener('change', function() { syncMat1(); calcTaskHours(); });
+    });
+  });
+  // Recalcul si l'utilisateur modifie manuellement un champ pi2 des matériaux
+  // + flag override pour bloquer l'auto-fill sur les champs modifiés manuellement
+  ['mat_1_pi2','mat_2_pi2','mat_3_pi2','mat_4_pi2','mat_5_pi2'].forEach(function(f) {
+    var el = document.querySelector('[data-jobber-field="' + f + '"]');
+    if (!el) return;
+    el.addEventListener('input', function() {
+      el.dataset.override = '1'; // marquer comme édité manuellement
+      syncMat1();
+    });
+  });
+  // crew_size modifié → recalcul durée
+  var crewEl = document.querySelector('[data-jobber-field="crew_size"]');
+  if (crewEl) {
+    crewEl.addEventListener('input',  function() { calcTaskHours(); });
+    crewEl.addEventListener('change', function() { calcTaskHours(); });
+  }
+  // duration_days édité manuellement → override (empêche l'écrasement)
+  var durEl = document.querySelector('[data-jobber-field="duration_days"]');
+  if (durEl) {
+    durEl.addEventListener('input', function() { durEl.dataset.override = '1'; });
+  }
+})();
+
+// Pré-remplissage automatique des quantités dans "Travaux à effectuer"
+// Règle : qty = 1 quand le champ Description correspondant a une valeur, sinon reste 0
+function autoFillTaskQty() {
+  function getVal(field) {
+    var el = document.querySelector('[data-jobber-field="' + field + '"]');
+    return el ? (el.value || '').trim() : '';
+  }
+  function numVal(field) {
+    return parseFloat(getVal(field).replace(/[^\d.,\s]/g, '').replace(',', '.')) || 0;
+  }
+  function setQty(field, v) {
+    var el = document.querySelector('[data-jobber-field="' + field + '"]');
+    if (el && (el.value === '0' || el.value === '')) el.value = v;
+  }
+
+  var hasJob     = !!(getVal('work_type') || getVal('surface_type') || numVal('total_sqft') || numVal('floors_count'));
+  var sanding    = numVal('sanding_sqft');
+  var doors      = numVal('doors_count');
+  var garage     = numVal('garage_doors_count');
+  var windows    = numVal('windows_count');
+  var roofing    = numVal('roofing');
+  var gouttieres = numVal('gouttieres_sqft');
+
+  // Tâches de base — présentes dès qu'il y a un projet
+  if (hasJob) {
+    ['task_1_qty','task_2_qty','task_5_qty','task_6_qty','task_7_qty',
+     'task_8_qty','task_9_qty','task_15_qty','task_16_qty','task_17_qty','task_18_qty']
+    .forEach(function(f) { setQty(f, '1'); });
+  }
+
+  // Tâches spécifiques selon les champs Description
+  if (sanding    > 0)                  setQty('task_3_qty',  '1'); // Sablage
+  if (doors > 0  || windows > 0)       setQty('task_4_qty',  '1'); // Calfeutrage
+  if (gouttieres > 0)                  setQty('task_10_qty', '1'); // Soffit et fascia
+  if (windows > 0 || gouttieres > 0)   setQty('task_11_qty', '1'); // Garnitures / boiseries
+  if (doors > 0  || garage > 0)        setQty('task_12_qty', '1'); // Portes extérieures
+  if (windows    > 0)                  setQty('task_13_qty', '1'); // Chassis fenêtres
+  if (roofing    > 0)                  setQty('task_14_qty', '1'); // Toiture
+}
+
+// Coche automatiquement la case quand qty = 0 (tâche non applicable)
+function syncCheckboxesToQty() {
+  document.querySelectorAll('[data-jobber-field$="_qty"]').forEach(function(qtyEl) {
+    var field = qtyEl.getAttribute('data-jobber-field');
+    var taskBase = field.replace('_qty', '');
+    var doneEl = document.querySelector('[data-jobber-field="' + taskBase + '_done"]');
+    if (!doneEl) return;
+    var qty = parseFloat(qtyEl.value) || 0;
+    doneEl.checked = (qty === 0);
+  });
+}
+
+// Sync en temps réel quand l'utilisateur modifie une quantité
+document.addEventListener('input', function(e) {
+  var field = e.target.getAttribute && e.target.getAttribute('data-jobber-field');
+  if (!field || !field.endsWith('_qty')) return;
+  var doneEl = document.querySelector('[data-jobber-field="' + field.replace('_qty', '_done') + '"]');
+  if (!doneEl) return;
+  var qty = parseFloat(e.target.value) || 0;
+  doneEl.checked = (qty === 0);
+});
+
+// Restauration au chargement
+(function(){
+  function applyField(f, val) {
+    if (val === undefined || val === null || val === '') return;
+    document.querySelectorAll('[data-jobber-field="' + f + '"]').forEach(function(el) {
+      if (el.type === 'checkbox') {
+        el.checked = (val === 'Oui' || val === true || val === '1');
+      } else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT') {
+        el.value = val;
+      } else {
+        el.textContent = val; // div affichage (job_number)
+      }
+    });
+  }
+
+  try {
+    var params = new URLSearchParams(window.location.search);
+    var stored = {};
+    try { stored = JSON.parse(ISQStore.getItem('isq_projet') || '{}'); } catch(e){}
+    var jobNumber = params.get('job_number') || stored.job_number || '';
+
+    // Mettre à jour isq_projet si on arrive avec des params URL (fusion, sans écraser les champs n8n)
+    if (params.toString()) {
+      var p = {};
+      ['job_number','client_name','client_phone','job_address','foreman_name','start_date','work_type','surface_type','total_sqft'].forEach(function(f){
+        p[f] = params.get(f) || stored[f] || '';
+      });
+      try {
+        var projMerge = JSON.parse(ISQStore.getItem('isq_projet') || '{}');
+        Object.keys(p).forEach(function(f){ if (p[f]) projMerge[f] = p[f]; });
+        ISQStore.setItem('isq_projet', JSON.stringify(projMerge));
+      } catch(e){}
+    }
+
+    // Chercher données sauvegardées
+    var saved = null;
+    try {
+      if (jobNumber) saved = JSON.parse(ISQStore.getItem('isq_bon_travail_' + jobNumber) || 'null');
+      if (!saved)    saved = JSON.parse(ISQStore.getItem('isq_bon_travail_courant') || 'null');
+    } catch(e) {}
+
+    if (saved) {
+      // Données sauvegardées trouvées — les utiliser entièrement (priorité absolue)
+      Object.keys(saved).forEach(function(f) { applyField(f, saved[f]); });
+
+      // Restaurer le statut du mandat
+      try {
+        var statIdx = parseInt(ISQStore.getItem('_isq_statut_idx'));
+        var statCls = ISQStore.getItem('_isq_statut_cls') || '';
+        if (!isNaN(statIdx) && statCls) {
+          var statBtns = document.querySelectorAll('#statutRow .statut-btn');
+          statBtns.forEach(function(b) { b.className = 'statut-btn'; });
+          if (statBtns[statIdx]) statBtns[statIdx].classList.add(statCls);
+        }
+      } catch(es) {}
+
+      // Restaurer les couleurs approuvées par le client (sélection manuelle avec hex)
+      document.querySelectorAll('.cp-card[data-field]').forEach(function(card) {
+        var f = card.dataset.field;
+        var code   = saved['_clr_' + f + '_code']   || '';
+        var nom    = saved['_clr_' + f + '_nom']    || '';
+        var hex    = saved['_clr_' + f + '_hex']    || '';
+        var source = saved['_clr_' + f + '_source'] || '';
+        if (nom) {
+          card.querySelector('.cp-swatch').style.background = hex || '#C8C8C8';
+          card.querySelector('.cp-selected').textContent = nom;
+          card.querySelector('.cp-source').textContent = source ? source + (code ? ' — ' + code : '') : code;
+          card.querySelector('.cp-search').value = nom + (code ? ' (' + code + ')' : '');
+          card.dataset.selectedCode   = code;
+          card.dataset.selectedNom    = nom;
+          card.dataset.selectedHex    = hex;
+          card.dataset.selectedSource = source;
+          card.classList.add('has-color');
+        }
+      });
+
+      // Si special_instructions sauvegardé ressemble à un template couleurs → rediriger vers les bulles
+      if (saved.special_instructions && !saved.colors_raw) {
+        var siRaw = saved.special_instructions.toLowerCase()
+          .replace(/[àâä]/g,'a').replace(/[éèêë]/g,'e')
+          .replace(/[îï]/g,'i').replace(/[ôö]/g,'o')
+          .replace(/[ùûü]/g,'u').replace(/ç/g,'c');
+        var CZ_RE = /(revetement|garniture|boiserie|soffit|fascia|fenetre|porte|toiture|calfeutrage)/;
+        if (CZ_RE.test(siRaw) && saved.special_instructions.indexOf(':') !== -1) {
+          saved.colors_raw = saved.special_instructions;
+          saved.special_instructions = '';
+        }
+      }
+
+      // Couleurs depuis Google Sheets (colors_raw) — s'applique seulement si la bulle n'a pas déjà une couleur manuelle
+      if (saved.colors_raw) {
+        var norm = function(s) {
+          return s.toLowerCase()
+            .replace(/[àâä]/g,'a').replace(/[éèêë]/g,'e')
+            .replace(/[îï]/g,'i').replace(/[ôö]/g,'o')
+            .replace(/[ùûü]/g,'u').replace(/ç/g,'c');
+        };
+        var GS_ZONES = [
+          { keys:['revetement','externe','corps'], field:'color_body'    },
+          { keys:['garniture','boiserie'],         field:'color_trim'    },
+          { keys:['soffit','fascia'],              field:'color_soffit'  },
+          { keys:['fenetre','cadre'],              field:'color_windows' },
+          { keys:['entree','principale'],          field:'color_door'    },
+          { keys:['porte de garage','garage'],     field:'color_door'    },
+          { keys:['porte'],                        field:'color_door'    },
+          { keys:['toiture','toit'],               field:'color_roof'    },
+          { keys:['calfeutrage','caulk'],          field:'color_trim'    },
+        ];
+        saved.colors_raw.toString().split(/\r?\n/).forEach(function(line) {
+          // Accepte " : ", ": " et ":" comme séparateurs
+          var sep = line.indexOf(':');
+          if (sep === -1) return;
+          var zoneNorm = norm(line.substring(0, sep).trim());
+          var couleur  = line.substring(sep + 1).trim();
+          if (!couleur) return;
+          var field = null;
+          for (var i = 0; i < GS_ZONES.length; i++) {
+            if (GS_ZONES[i].keys.some(function(k){ return zoneNorm.indexOf(k) !== -1; })) {
+              field = GS_ZONES[i].field; break;
+            }
+          }
+          if (!field) return;
+          var card = document.querySelector('.cp-card[data-field="' + field + '"]');
+          if (!card || card.classList.contains('has-color')) return;
+          // Recherche dans la base COULEURS — détection de marque en priorité
+          var parsedGS = parseBrandFromGS(couleur);
+          var found = matchCouleur(parsedGS.cleanRaw, parsedGS.brandSources);
+          if (found) {
+            card.querySelector('.cp-swatch').style.background = found.hex;
+            card.querySelector('.cp-selected').textContent = found.nom;
+            card.querySelector('.cp-source').textContent = found.source + ' — ' + found.code;
+            card.querySelector('.cp-search').value = found.nom + ' (' + found.code + ')';
+            card.dataset.selectedCode   = found.code;
+            card.dataset.selectedNom    = found.nom;
+            card.dataset.selectedHex    = found.hex;
+            card.dataset.selectedSource = found.source;
+          } else {
+            var fallbackSrc = parsedGS.brandLabel || 'Google Sheets';
+            var displayVal  = parsedGS.cleanRaw || couleur;
+            card.querySelector('.cp-selected').textContent = displayVal;
+            card.querySelector('.cp-source').textContent = fallbackSrc + ' ⚠ non confirmé';
+            card.querySelector('.cp-search').value = displayVal;
+            card.dataset.selectedCode   = '';
+            card.dataset.selectedNom    = displayVal;
+            card.dataset.selectedHex    = '';
+            card.dataset.selectedSource = fallbackSrc;
+            card.dataset.pendingCouleur = couleur;
+          }
+          card.classList.add('has-color');
+        });
+      }
+
+      // Surfaces depuis Google Sheets (surfaces_raw) — remplit Description du projet
+      if (saved.surfaces_raw) {
+        var normS = function(s) {
+          return s.toLowerCase()
+            .replace(/[àâä]/g,'a').replace(/[éèêë]/g,'e')
+            .replace(/[îï]/g,'i').replace(/[ôö]/g,'o')
+            .replace(/[ùûü]/g,'u').replace(/ç/g,'c');
+        };
+        var raw = saved.surfaces_raw.toString().trim();
+        // Si le contenu contient ":" → format structuré ligne par ligne
+        if (raw.indexOf(':') !== -1) {
+          var GS_DESC = [
+            { keys:['type de revetement','revetement','materiau','materiaux','type surface'], field:'surface_type'       },
+            { keys:['etage','niveau','etages'],                                               field:'floors_count'       },
+            { keys:['superficie','m2','pi2','pieds'],                                         field:'total_sqft'         },
+            { keys:['sablage'],                                                               field:'sanding_sqft'       },
+            { keys:['gouttieres','soffit','fascia','gouttiere'],                              field:'gouttieres_sqft'    },
+            { keys:['porte de garage','garage'],                                              field:'garage_doors_count' },
+            { keys:['porte','chassis'],                                                       field:'doors_count'        },
+            { keys:['fenetre','vitres'],                                                      field:'windows_count'      },
+            { keys:['toiture','toit'],                                                        field:'roofing'            },
+            { keys:['note','attention','avertissement','point'],                              field:'attention_points'   },
+            { keys:['type de travaux','travaux','service'],                                   field:'work_type'          },
+          ];
+          raw.split(/\r?\n/).forEach(function(line) {
+            var sep = line.indexOf(':');
+            if (sep === -1) return;
+            var zoneNorm = normS(line.substring(0, sep).trim());
+            var val = line.substring(sep + 1).trim();
+            if (!val) return;
+            var field = null;
+            for (var i = 0; i < GS_DESC.length; i++) {
+              if (GS_DESC[i].keys.some(function(k){ return zoneNorm.indexOf(k) !== -1; })) {
+                field = GS_DESC[i].field; break;
+              }
+            }
+            if (!field) field = 'work_type';
+            var el = document.querySelector('[data-jobber-field="' + field + '"]');
+            if (el && !el.value) el.value = val;
+          });
+        } else {
+          // Texte libre → va dans Type de travaux
+          var elWork = document.querySelector('[data-jobber-field="work_type"]');
+          if (elWork && !elWork.value) elWork.value = raw;
+        }
+      }
+    } else {
+      // Aucune donnée sauvegardée — pré-remplir depuis les params URL uniquement
+      ['job_number','client_name','client_phone','job_address','foreman_name','start_date'].forEach(function(f){
+        var val = params.get(f) || stored[f] || '';
+        if (val) applyField(f, val);
+      });
+    }
+
+    // Toujours appliquer les infos projet depuis isq_projet (source de vérité)
+    try {
+      var proj = JSON.parse(ISQStore.getItem('isq_projet') || '{}');
+      ['job_number','client_name','client_phone','job_address','foreman_name','start_date',
+       'work_type','surface_type','crew_size','duration_days','site_access','parking',
+       'client_onsite','client_email','client_company','total_sqft','floors_count','sanding_sqft',
+       'doors_count','garage_doors_count','windows_count','roofing','gouttieres_sqft',
+       'attention_points','special_instructions',
+       'office_contact_name','office_contact_phone','supplier_name','supplier_phone',
+       'emergency_name','emergency_phone',
+       'quote_number','subtotal','tps_amount','tvq_amount','total_ttc','acompte_amount','solde_amount'].forEach(function(f) {
+        if (!proj[f]) return;
+        document.querySelectorAll('[data-jobber-field="' + f + '"]').forEach(function(el) {
+          if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') { if (!el.value) el.value = proj[f]; }
+          else { if (!el.textContent || el.textContent === '#JOB-____-___') el.textContent = proj[f]; }
+        });
+      });
+      // Remplir la section financière (champs lecture seule)
+      var finMap = {
+        fin_quote_number: proj.quote_number,
+        fin_solde:        proj.solde_amount  ? (window.ISQ ? ISQ.formatMontant(proj.solde_amount)  : proj.solde_amount)  : null,
+        fin_total_ttc:    proj.total_ttc     ? (window.ISQ ? ISQ.formatMontant(proj.total_ttc)     : proj.total_ttc)     : null,
+        fin_acompte:      proj.acompte_amount? (window.ISQ ? ISQ.formatMontant(proj.acompte_amount): proj.acompte_amount): null,
+        fin_client_company: proj.client_company,
+        fin_client_email:   proj.client_email
+      };
+      Object.keys(finMap).forEach(function(id) {
+        if (!finMap[id]) return;
+        var el = document.getElementById(id);
+        if (el) el.textContent = finMap[id];
+      });
+
+      // Appliquer colors_raw depuis isq_projet pour les bulles sans couleur
+      if (proj.colors_raw && document.querySelector('.cp-card:not(.has-color)')) {
+        var normPrj = function(s) {
+          return s.toLowerCase()
+            .replace(/[àâä]/g,'a').replace(/[éèêë]/g,'e')
+            .replace(/[îï]/g,'i').replace(/[ôö]/g,'o')
+            .replace(/[ùûü]/g,'u').replace(/ç/g,'c');
+        };
+        var GS_ZONES_PRJ = [
+          { keys:['revetement','externe','corps'], field:'color_body'    },
+          { keys:['garniture','boiserie'],         field:'color_trim'    },
+          { keys:['soffit','fascia'],              field:'color_soffit'  },
+          { keys:['fenetre','cadre'],              field:'color_windows' },
+          { keys:['entree','principale'],          field:'color_door'    },
+          { keys:['porte de garage','garage'],     field:'color_door'    },
+          { keys:['porte'],                        field:'color_door'    },
+          { keys:['toiture','toit'],               field:'color_roof'    },
+          { keys:['calfeutrage','caulk'],          field:'color_trim'    },
+        ];
+        proj.colors_raw.toString().split(/\r?\n/).forEach(function(line) {
+          var sep = line.indexOf(':');
+          if (sep === -1) return;
+          var zoneNorm = normPrj(line.substring(0, sep).trim());
+          var couleur  = line.substring(sep + 1).trim();
+          if (!couleur) return;
+          var field = null;
+          for (var i = 0; i < GS_ZONES_PRJ.length; i++) {
+            if (GS_ZONES_PRJ[i].keys.some(function(k){ return zoneNorm.indexOf(k) !== -1; })) {
+              field = GS_ZONES_PRJ[i].field; break;
+            }
+          }
+          if (!field) return;
+          var card = document.querySelector('.cp-card[data-field="' + field + '"]');
+          if (!card || card.classList.contains('has-color')) return;
+          // Stocker pour re-traitement après chargement de couleurs-db.js
+          card.dataset.pendingCouleur = couleur;
+          var parsed0 = parseBrandFromGS(couleur);
+          var found0 = matchCouleur(parsed0.cleanRaw, parsed0.brandSources);
+          if (found0) {
+            card.querySelector('.cp-swatch').style.background = found0.hex;
+            card.querySelector('.cp-selected').textContent = found0.nom;
+            card.querySelector('.cp-source').textContent = found0.source + ' — ' + found0.code;
+            card.querySelector('.cp-search').value = found0.nom + ' (' + found0.code + ')';
+            card.dataset.selectedCode = found0.code; card.dataset.selectedNom = found0.nom;
+            card.dataset.selectedHex = found0.hex;   card.dataset.selectedSource = found0.source;
+            delete card.dataset.pendingCouleur;
+          } else {
+            var fb0 = parsed0.brandLabel || 'Google Sheets';
+            var dv0 = parsed0.cleanRaw || couleur;
+            card.querySelector('.cp-selected').textContent = dv0;
+            card.querySelector('.cp-source').textContent = fb0 + ' ⚠ non confirmé';
+            card.querySelector('.cp-search').value = dv0;
+            card.dataset.selectedNom = dv0;
+            card.dataset.selectedHex = '';
+            card.dataset.selectedSource = fb0;
+          }
+          card.classList.add('has-color');
+        });
+      }
+    } catch(e2) {}
+
+    // Sauvegarder immédiatement après remplissage (capture les valeurs pré-remplies)
+    setTimeout(function(){ syncMat1(); calcTaskHours(); syncConsommables(); autoFillTaskQty(); syncCheckboxesToQty(); saveJobData(); }, 100);
+
+    // Auto-fetch Google Sheets si des champs Description du projet ou des couleurs sont vides
+    setTimeout(function() {
+      try {
+        var webhooks = ISQ.getWebhooks();
+        if (!webhooks['lookup']) return;
+        var jn = (document.querySelector('[data-jobber-field="job_number"]') || {});
+        var num = (jn.value || jn.textContent || '').replace(/[^0-9]/g, '').trim();
+        if (!num) return;
+        // Toujours fetcher quand le numéro existe — données Sheets toujours prioritaires sur le cache
+        fetch(webhooks['lookup'] + '?numero=' + encodeURIComponent(num))
+          .then(function(r){ return r.ok ? r.json() : null; })
+          .then(function(data) {
+            if (!data || data.erreur) return;
+            // Champs venant directement de Sheets — toujours écraser le cache
+            var sheetsFields = ['surface_type','total_sqft','floors_count','sanding_sqft',
+              'doors_count','garage_doors_count','windows_count','roofing','gouttieres_sqft',
+              'duration_days','client_name','client_phone','job_address',
+              'client_company','client_email','quote_number',
+              'subtotal','tps_amount','tvq_amount','total_ttc','acompte_amount','solde_amount'];
+            document.querySelectorAll('[data-jobber-field]').forEach(function(el) {
+              var f = el.getAttribute('data-jobber-field');
+              if (!f || data[f] === undefined || data[f] === '') return;
+              if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+                if (sheetsFields.indexOf(f) !== -1 || !el.value) el.value = data[f];
+              }
+            });
+            // Gérer special_instructions comme source de couleurs si applicable
+            if (data.special_instructions) {
+              var siNorm = data.special_instructions.toLowerCase()
+                .replace(/[àâä]/g,'a').replace(/[éèêë]/g,'e')
+                .replace(/[îï]/g,'i').replace(/[ôö]/g,'o')
+                .replace(/[ùûü]/g,'u').replace(/ç/g,'c');
+              var CZ_RE2 = /(revetement|garniture|boiserie|soffit|fascia|fenetre|porte|toiture|calfeutrage)/;
+              if (CZ_RE2.test(siNorm) && data.special_instructions.indexOf(':') !== -1) {
+                if (!data.colors_raw) data.colors_raw = data.special_instructions;
+                data.special_instructions = '';
+              }
+            }
+            var proj = {};
+            try { proj = JSON.parse(ISQStore.getItem('isq_projet') || '{}'); } catch(e){}
+            ['floors_count','roofing','gouttieres_sqft','surface_type','work_type','total_sqft','sanding_sqft',
+             'doors_count','garage_doors_count','windows_count','attention_points','special_instructions',
+             'colors_raw','surfaces_raw',
+             'quote_number','client_company','client_email',
+             'subtotal','tps_amount','tvq_amount','total_ttc','acompte_amount','solde_amount'].forEach(function(f){
+              if (data[f]) proj[f] = data[f];
+            });
+            try { ISQStore.setItem('isq_projet', JSON.stringify(proj)); } catch(e){}
+            autoFillTaskQty();
+            syncConsommables();
+            // Appliquer colors_raw → bulles Couleurs approuvées
+            if (data.colors_raw) {
+              var GS_ZONES_AF = [
+                { keys:['revetement','externe','corps'], field:'color_body'    },
+                { keys:['garniture','boiserie'],         field:'color_trim'    },
+                { keys:['soffit','fascia'],              field:'color_soffit'  },
+                { keys:['fenetre','cadre'],              field:'color_windows' },
+                { keys:['entree','principale'],          field:'color_door'    },
+                { keys:['porte de garage','garage'],     field:'color_door'    },
+                { keys:['porte'],                        field:'color_door'    },
+                { keys:['toiture','toit'],               field:'color_roof'    },
+                { keys:['calfeutrage','caulk'],          field:'color_trim'    },
+              ];
+              data.colors_raw.toString().split(/\r?\n/).forEach(function(line) {
+                var sep = line.indexOf(':');
+                if (sep === -1) return;
+                var zoneNorm = normCouleur(line.substring(0, sep).trim());
+                var couleur  = line.substring(sep + 1).trim();
+                if (!couleur) return;
+                var field = null;
+                for (var i = 0; i < GS_ZONES_AF.length; i++) {
+                  if (GS_ZONES_AF[i].keys.some(function(k){ return zoneNorm.indexOf(k) !== -1; })) {
+                    field = GS_ZONES_AF[i].field; break;
+                  }
+                }
+                if (!field) return;
+                applyColorToCard(document.querySelector('.cp-card[data-field="' + field + '"]'), couleur);
+              });
+            }
+            saveJobData();
+          }).catch(function(){});
+      } catch(e) {}
+    }, 300);
+  } catch(e) {}
+})();
+
+// ================================================================
+// CHARGEMENT DEPUIS GOOGLE SHEETS (webhook lookup n8n)
+// ================================================================
+function loadFromSheets() {
+  var btn      = document.getElementById('btnLoadSheets');
+  var statusEl = document.getElementById('submitStatus');
+
+  // Lire le numéro de projet
+  var jobEl  = document.querySelector('[data-jobber-field="job_number"]');
+  var jobNum = jobEl ? (jobEl.value || jobEl.textContent || '').replace(/[^0-9]/g, '').trim() : '';
+
+  if (!jobNum) {
+    statusEl.textContent = '⚠️ Entrez un numéro de projet d\'abord';
+    statusEl.style.color = '#C62828';
+    return;
+  }
+
+  // Lire l'URL du webhook lookup
+  var webhooks = {};
+  webhooks = ISQ.getWebhooks();
+  var url = webhooks['lookup'] || '';
+
+  if (!url) {
+    statusEl.textContent = '⚠️ Webhook non configuré — contacter l'administrateur';
+    statusEl.style.color = '#C62828';
+    return;
+  }
+
+  btn.disabled = true;
+  statusEl.textContent = '⏳ Chargement depuis Google Sheets…';
+  statusEl.style.color = '#0170B9';
+
+  fetch(url + '?numero=' + encodeURIComponent(jobNum))
+    .then(function(r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    })
+    .then(function(data) {
+      if (data.erreur) {
+        statusEl.textContent = '❌ Projet ' + jobNum + ' introuvable dans Google Sheets';
+        statusEl.style.color = '#C62828';
+        btn.disabled = false;
+        return;
+      }
+      // Si job_number vide (colonne non reconnue), utiliser le numéro saisi
+      if (!data.job_number) data.job_number = jobNum;
+
+      // Remplir tous les champs [data-jobber-field] — Sheets toujours prioritaire pour ses colonnes
+      var sheetsFields = ['surface_type','total_sqft','floors_count','sanding_sqft',
+        'doors_count','garage_doors_count','windows_count','roofing','gouttieres_sqft',
+        'duration_days','client_name','client_phone','job_address',
+        'client_company','client_email','quote_number',
+        'subtotal','tps_amount','tvq_amount','total_ttc','acompte_amount','solde_amount'];
+      document.querySelectorAll('[data-jobber-field]').forEach(function(el) {
+        var f = el.getAttribute('data-jobber-field');
+        if (!f || data[f] === undefined || data[f] === '') return;
+        if (el.type === 'checkbox') el.checked = (data[f] === 'Oui');
+        else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+          if (sheetsFields.indexOf(f) !== -1 || !el.value) el.value = data[f];
+        }
+        else { if (!el.textContent || el.textContent === '#JOB-____-___') el.textContent = data[f]; }
+      });
+
+      // Si special_instructions ressemble à un template couleurs → le rediriger vers les bulles
+      // Sinon → l'utiliser comme Points d'attention
+      if (data.special_instructions) {
+        var siNorm = data.special_instructions.toLowerCase()
+          .replace(/[àâä]/g,'a').replace(/[éèêë]/g,'e')
+          .replace(/[îï]/g,'i').replace(/[ôö]/g,'o')
+          .replace(/[ùûü]/g,'u').replace(/ç/g,'c');
+        var COLOR_ZONES_RE = /(revetement|garniture|boiserie|soffit|fascia|fenetre|porte|toiture|calfeutrage)/;
+        var isColorTemplate = COLOR_ZONES_RE.test(siNorm) && data.special_instructions.indexOf(':') !== -1;
+        if (isColorTemplate) {
+          // Traiter comme source de couleurs supplémentaire
+          if (!data.colors_raw) data.colors_raw = data.special_instructions;
+          data.special_instructions = '';
+        } else {
+          // Texte de note → Points d'attention
+          var apEl = document.querySelector('[data-jobber-field="attention_points"]');
+          if (apEl && !apEl.value) apEl.value = data.special_instructions;
+        }
+      }
+
+      // Appliquer colors_raw → bulles Couleurs approuvées
+      if (data.colors_raw) {
+        var GS_ZONES = [
+          { keys:['revetement','externe','corps'], field:'color_body'    },
+          { keys:['garniture','boiserie'],         field:'color_trim'    },
+          { keys:['soffit','fascia'],              field:'color_soffit'  },
+          { keys:['fenetre','cadre'],              field:'color_windows' },
+          { keys:['entree','principale'],          field:'color_door'    },
+          { keys:['porte de garage','garage'],     field:'color_door'    },
+          { keys:['porte'],                        field:'color_door'    },
+          { keys:['toiture','toit'],               field:'color_roof'    },
+          { keys:['calfeutrage','caulk'],          field:'color_trim'    },
+        ];
+        data.colors_raw.toString().split(/\r?\n/).forEach(function(line) {
+          // Accepte " : ", ": " et ":" comme séparateurs
+          var sep = line.indexOf(':');
+          if (sep === -1) return;
+          var zoneNorm = normCouleur(line.substring(0, sep).trim());
+          var couleur  = line.substring(sep + 1).trim();
+          if (!couleur) return;
+          var field = null;
+          for (var i = 0; i < GS_ZONES.length; i++) {
+            if (GS_ZONES[i].keys.some(function(k){ return zoneNorm.indexOf(k) !== -1; })) {
+              field = GS_ZONES[i].field; break;
+            }
+          }
+          if (!field) return;
+          applyColorToCard(document.querySelector('.cp-card[data-field="' + field + '"]'), couleur);
+        });
+      }
+
+      // Appliquer surfaces_raw → champs description projet
+      if (data.surfaces_raw) {
+        var normS = function(s) {
+          return s.toLowerCase()
+            .replace(/[àâä]/g,'a').replace(/[éèêë]/g,'e')
+            .replace(/[îï]/g,'i').replace(/[ôö]/g,'o')
+            .replace(/[ùûü]/g,'u').replace(/ç/g,'c');
+        };
+        var GS_DESC = [
+          { keys:['type de revetement','revetement','materiau','type surface'], field:'surface_type'      },
+          { keys:['etage','niveau','etages'],                                   field:'floors_count'       },
+          { keys:['superficie','m2','pi2','pieds'],                             field:'total_sqft'        },
+          { keys:['sablage'],                                                   field:'sanding_sqft'      },
+          { keys:['gouttieres','soffit','fascia','gouttiere'],                  field:'gouttieres_sqft'   },
+          { keys:['porte de garage','garage'],                                  field:'garage_doors_count'},
+          { keys:['porte','chassis'],                                           field:'doors_count'       },
+          { keys:['fenetre'],                                                   field:'windows_count'     },
+          { keys:['toiture','toit'],                                            field:'roofing'           },
+          { keys:['note','attention','avertissement'],                          field:'attention_points'  },
+          { keys:['type de travaux','travaux','service'],                       field:'work_type'         },
+        ];
+        var raw = data.surfaces_raw.toString().trim();
+        if (raw.indexOf(':') !== -1) {
+          raw.split(/\r?\n/).forEach(function(line) {
+            var sep = line.indexOf(':');
+            if (sep === -1) return;
+            var zoneNorm = normS(line.substring(0, sep).trim());
+            var val = line.substring(sep + 1).trim();
+            if (!val) return;
+            var field = null;
+            for (var i = 0; i < GS_DESC.length; i++) {
+              if (GS_DESC[i].keys.some(function(k){ return zoneNorm.indexOf(k) !== -1; })) {
+                field = GS_DESC[i].field; break;
+              }
+            }
+            if (!field) field = 'work_type';
+            var el = document.querySelector('[data-jobber-field="' + field + '"]');
+            if (el && !el.value) el.value = val;
+          });
+        }
+      }
+
+      // Synchroniser isq_projet — tous les champs Description du projet inclus
+      var proj = {};
+      try { proj = JSON.parse(ISQStore.getItem('isq_projet') || '{}'); } catch(e) {}
+      ['job_number','client_name','client_phone','job_address','foreman_name',
+       'work_type','surface_type','crew_size','duration_days','site_access','parking',
+       'client_onsite','client_email','client_company','total_sqft','floors_count','sanding_sqft',
+       'doors_count','garage_doors_count','windows_count','roofing','gouttieres_sqft',
+       'attention_points','special_instructions',
+       'office_contact_name','office_contact_phone','supplier_name','supplier_phone',
+       'emergency_name','emergency_phone','end_date','job_completion_date',
+       'quote_number','quote_date','valid_until','approved_date',
+       'subtotal','tps_amount','tvq_amount','total_ttc','acompte_amount','solde_amount',
+       'colors_raw','surfaces_raw'].forEach(function(f) {
+        if (data[f]) proj[f] = data[f];
+      });
+      // Rafraîchir la section financière après le fetch Sheets
+      var fmAF = window.ISQ ? ISQ.formatMontant : function(v){ return v; };
+      var finMapAF = {
+        fin_quote_number: data.quote_number,
+        fin_solde:        data.solde_amount   ? fmAF(data.solde_amount)   : null,
+        fin_total_ttc:    data.total_ttc      ? fmAF(data.total_ttc)      : null,
+        fin_acompte:      data.acompte_amount ? fmAF(data.acompte_amount) : null,
+        fin_client_company: data.client_company,
+        fin_client_email:   data.client_email
+      };
+      Object.keys(finMapAF).forEach(function(id) {
+        if (!finMapAF[id]) return;
+        var el = document.getElementById(id);
+        if (el) el.textContent = finMapAF[id];
+      });
+      try { ISQStore.setItem('isq_projet', JSON.stringify(proj)); } catch(e) {}
+
+      syncMat1();
+      calcTaskHours();
+      saveJobData();
+
+      statusEl.textContent = '✅ Chargé depuis Google Sheets — ' + new Date().toLocaleTimeString('fr-CA', {hour:'2-digit', minute:'2-digit'});
+      statusEl.style.color = '#2E7D32';
+      btn.disabled = false;
+    })
+    .catch(function(err) {
+      statusEl.textContent = '❌ Erreur réseau — ' + err.message;
+      statusEl.style.color = '#C62828';
+      btn.disabled = false;
+    });
+}
+
+function submitToOffice() {
+  var btn = document.getElementById('btnSubmit');
+  var statusEl = document.getElementById('submitStatus');
+
+  var url = '';
+  try {
+    var webhooks = ISQ.getWebhooks();
+    url = webhooks['submit'] || '';
+  } catch(e) {}
+
+  if (!url) {
+    statusEl.textContent = '⚠️ Webhook non configuré — contacter l'administrateur';
+    statusEl.style.color = '#C62828';
+    return;
+  }
+
+  btn.disabled = true;
+  statusEl.textContent = '⏳ Envoi en cours…';
+  statusEl.style.color = '#0170B9';
+
+  // Collect all form data (inclut couleurs, statut, radios)
+  var payload = Object.assign({
+    document: 'Bon de travail',
+    timestamp: new Date().toISOString(),
+    date_locale: new Date().toLocaleDateString('fr-CA'),
+    heure_locale: new Date().toLocaleTimeString('fr-CA', {hour:'2-digit', minute:'2-digit'})
+  }, collectAllFields());
+
+  fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  })
+  .then(function(r) {
+    if (r.ok) {
+      statusEl.textContent = '✅ Envoyé au bureau — ' + payload.heure_locale;
+      statusEl.style.color = '#2E7D32';
+      if (window.ISQ) ISQ.writeStatutEnvoi('bon_travail');
+      if (window.ISQSavesDB) ISQSavesDB.logSave('bon_travail', payload.job_number || '', 'envoi', payload);
+    } else {
+      statusEl.textContent = '❌ Erreur ' + r.status;
+      statusEl.style.color = '#C62828';
+    }
+    btn.disabled = false;
+  })
+  .catch(function() {
+    statusEl.textContent = '❌ Erreur réseau';
+    statusEl.style.color = '#C62828';
+    btn.disabled = false;
+  });
+}
+</script>
+
+<script>
+(function(){
+  var ta;
+  document.addEventListener('DOMContentLoaded', function() {
+    ta = window.ISQ ? ISQ.initWorkType() : null;
+  });
+  setTimeout(function(){ if (ta && window.ISQ) ISQ.autoGrow(ta); }, 400);
+  setTimeout(function(){ if (ta && window.ISQ) ISQ.autoGrow(ta); }, 1200);
+})();
+</script>
+<script src="couleurs-db.js"></script>
+
+<script>
+// ================================================================
+// CONFIGURATION — normes de production (valeurs MOYEN par défaut)
+// ================================================================
+var CFG_DEFAULTS = {
+  // Déplacement
+  deplacement_km: 0.65,
+  // Préparation — lavage (pi²/h ou pi li./h)
+  lavage_1: 320,    lavage_2: 288,    lavage_3: 247,
+  lavage_gout_1: 50, lavage_gout_2: 46, lavage_gout_3: 39.9,
+  // Préparation — sablage
+  sablage_rev_1: 63,  sablage_rev_2: 63,  sablage_rev_3: 54.15,
+  sablage_gout_1: 17, sablage_gout_2: 15, sablage_gout_3: 12.35,
+  sablage_porte_garage_h: 0.75, sablage_porte_h: 0.5, sablage_fen_h: 0.27,
+  // Préparation — grattage & apprêt
+  grattage_1: 150,  grattage_2: 135,  grattage_3: 114.95,
+  apret_app_1: 200, apret_app_2: 180, apret_app_3: 150,
+  apret_pi2_gal: 300,
+  // Revêtement — application peinture (pi²/h) et couverture (pi²/gal)
+  app_macon_1: 200, app_macon_2: 170, app_macon_3: 140,
+  app_std_1: 316,   app_std_2: 267,   app_std_3: 227,
+  rev_macon_pi2_gal: 80,
+  rev_std_pi2_gal: 200,
+  // Corniche / gouttières
+  gout_app_1: 22, gout_app_2: 18.5, gout_app_3: 12.5,
+  gout_pi_li_gal: 40,
+  // Toiture
+  toiture_alkyde_app: 234,
+  toiture_alkyde_pi2_gal: 67,
+  toiture_bardeau_app: 270,
+  // Portes et fenêtres — masquage (h/unité)
+  maq_porte: 2.43, maq_garage: 2.96, maq_fen_simple: 1.37, maq_fen_double: 1.63,
+  // Portes et fenêtres — application (h/unité)
+  app_porte: 1.06, app_garage: 1.59,
+  app_fen_1: 0.70, app_fen_2: 0.77, app_fen_3: 0.89,
+  // Portes et fenêtres — quantité peinture (gal/unité)
+  gal_porte: 0.5, gal_garage: 1.05, gal_fen_simple: 0.2,
+  gal_fen_double: 0.3, gal_fen_triple: 0.35, gal_fen_quad: 0.4,
+  // Calfeutrage — masquage (h), application (h), tubes
+  calf_porte_maq: 1.518,       calf_porte_app: 0.35,       calf_porte_tube: 0.75,
+  calf_garage_maq: 2.156,      calf_garage_app: 0.47,      calf_garage_tube: 1.0,
+  calf_fen_simple_maq: 1.045,  calf_fen_simple_app: 0.23,  calf_fen_simple_tube: 0.5,
+  calf_fen_double_maq: 1.166,  calf_fen_double_app: 0.30,  calf_fen_double_tube: 0.6,
+  // Consommables
+  tape_par_gal: 5, tape_par_poly: 0.5, poly_par_fen: 5,
+  papier_par_gal: 8, disque_par_pi2: 100,
+  // Nacelle
+  nacelle_jour: 450, nacelle_semaine: 1650
+};
+
+function loadCFG() {
+  var saved = {};
+  try { saved = JSON.parse(ISQStore.getItem('isq_config') || '{}'); } catch(e) {}
+  window.CFG = {};
+  Object.keys(CFG_DEFAULTS).forEach(function(k) {
+    window.CFG[k] = (saved[k] !== undefined) ? saved[k] : CFG_DEFAULTS[k];
+  });
+}
+
+// Charger les normes depuis ISQStore (éditables dans configuration.html)
+loadCFG();
+
+// couleurs-db.js vient de se charger → re-tenter les couleurs non trouvées (Bétonel/Sherwin)
+(function() {
+  document.querySelectorAll('.cp-card[data-pending-couleur]').forEach(function(card) {
+    var pending = card.dataset.pendingCouleur;
+    delete card.dataset.pendingCouleur;
+    card.classList.remove('has-color');
+    applyColorToCard(card, pending);
+  });
+})();
+</script>
+
+</body>
+</html>

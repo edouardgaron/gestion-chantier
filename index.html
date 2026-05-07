@@ -1,0 +1,2158 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Accueil — InnovaSpray Québec</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="webhooks.config.js"></script>
+  <script src="isq-storage.js"></script>
+  <script src="isq-auth.js"></script>
+  <script>ISQAuth.requireLogin();</script>
+  <script src="isq-core.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bleu:    #0170B9;
+      --orange:  #FF6600;
+      --gris:    #F4F6F9;
+      --bordure: #D0D7E3;
+      --texte:   #1A1A2E;
+    }
+
+    body {
+      font-family: 'Montserrat', 'Segoe UI', Arial, sans-serif;
+      background: #F0F4F8;
+      color: var(--texte);
+      font-size: 15px;
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+
+    /* NAVBAR */
+    .navbar {
+      background: var(--bleu);
+      color: #fff;
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      box-shadow: 0 2px 12px rgba(1,112,185,.25);
+    }
+    .navbar img { border-radius: 6px; object-fit: contain; background: #fff; padding: 3px; flex-shrink: 0; }
+    .navbar-title h1 { font-size: 18px; font-weight: 800; letter-spacing: .5px; }
+    .navbar-title p { font-size: 12px; opacity: .8; margin-top: 1px; }
+
+    /* MAIN */
+    .main { max-width: 760px; margin: 0 auto; padding: 24px 16px 48px; }
+
+    /* PROJET CARD */
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 16px rgba(1,112,185,.10);
+      margin-bottom: 24px;
+      overflow: hidden;
+    }
+    .card-header {
+      background: var(--bleu);
+      color: #fff;
+      padding: 14px 20px;
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .card-body { padding: 20px; }
+
+    /* FORM */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    .form-group { display: flex; flex-direction: column; gap: 5px; }
+    .form-group label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      color: #666;
+    }
+    .form-group input,
+    .form-group textarea {
+      border: 1px solid var(--bordure);
+      border-radius: 7px;
+      padding: 11px 12px;
+      font-family: inherit;
+      font-size: 14px;
+      color: var(--texte);
+      background: var(--gris);
+      transition: border-color .2s, background .2s;
+      min-height: 44px;
+    }
+    .form-group input:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: var(--bleu);
+      background: #fff;
+    }
+    .form-group textarea {
+      resize: vertical;
+      line-height: 1.4;
+    }
+    .form-group.full { grid-column: 1 / -1; }
+
+    .btn-save {
+      display: block;
+      width: 100%;
+      margin-top: 18px;
+      padding: 14px;
+      background: var(--orange);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: .3px;
+      min-height: 52px;
+      transition: background .2s, transform .1s;
+    }
+    .btn-save:hover { background: #cc5200; }
+    .btn-save:active { transform: scale(.98); }
+    .btn-clear {
+      display: block;
+      width: 100%;
+      margin-top: 10px;
+      padding: 12px;
+      background: #fff;
+      color: #C62828;
+      border: 2px solid #C62828;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: .3px;
+      transition: background .2s, color .2s;
+    }
+    .btn-clear:hover { background: #C62828; color: #fff; }
+
+    /* TOAST */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: #1a7a40;
+      color: #fff;
+      padding: 12px 24px;
+      border-radius: 99px;
+      font-size: 14px;
+      font-weight: 700;
+      box-shadow: 0 4px 18px rgba(0,0,0,.2);
+      transition: transform .35s cubic-bezier(.22,1,.36,1), opacity .35s;
+      opacity: 0;
+      z-index: 999;
+      white-space: nowrap;
+    }
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    /* DOCUMENTS GRID */
+    .docs-title {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .8px;
+      color: var(--bleu);
+      margin-bottom: 14px;
+      padding-bottom: 6px;
+      border-bottom: 2px solid var(--bordure);
+    }
+    .docs-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    .doc-card {
+      background: #fff;
+      border: 1px solid var(--bordure);
+      border-radius: 12px;
+      padding: 18px 16px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      box-shadow: 0 1px 6px rgba(1,112,185,.07);
+      transition: box-shadow .2s, border-color .2s;
+    }
+    .doc-card:hover { box-shadow: 0 4px 20px rgba(1,112,185,.15); border-color: var(--bleu); }
+    .doc-icon { font-size: 28px; line-height: 1; margin-bottom: 2px; }
+    .doc-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--texte);
+    }
+    .doc-desc {
+      font-size: 12px;
+      color: #666;
+      line-height: 1.4;
+      flex: 1;
+    }
+    .btn-open {
+      display: block;
+      margin-top: 10px;
+      padding: 12px 0;
+      background: var(--bleu);
+      color: #fff;
+      text-align: center;
+      text-decoration: none;
+      border-radius: 7px;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: .3px;
+      min-height: 44px;
+      line-height: 1.4;
+      transition: background .2s;
+    }
+    .btn-open:hover { background: #015fa0; }
+
+    /* N8N SECTION */
+    .n8n-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .btn-config {
+      background: rgba(255,255,255,.18);
+      border: 1px solid rgba(255,255,255,.35);
+      color: #fff;
+      border-radius: 6px;
+      padding: 5px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background .2s;
+    }
+    .btn-config:hover { background: rgba(255,255,255,.3); }
+
+    .config-panel {
+      display: none;
+      padding: 16px 20px;
+      background: #f8fafd;
+      border-bottom: 1px solid var(--bordure);
+    }
+    .config-panel.open { display: block; }
+    .config-panel label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #888;
+      display: block;
+      margin-bottom: 4px;
+      margin-top: 12px;
+    }
+    .config-panel label:first-child { margin-top: 0; }
+    .config-panel input {
+      width: 100%;
+      border: 1px solid var(--bordure);
+      border-radius: 6px;
+      padding: 9px 10px;
+      font-family: inherit;
+      font-size: 12px;
+      color: var(--texte);
+      background: #fff;
+    }
+    .config-panel input:focus { outline: none; border-color: var(--bleu); }
+    .config-save {
+      margin-top: 14px;
+      padding: 9px 20px;
+      background: var(--bleu);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .config-save:hover { background: #015fa0; }
+
+    .trigger-list { padding: 16px 20px; display: flex; flex-direction: column; gap: 12px; }
+    .trigger-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      background: var(--gris);
+      border-radius: 10px;
+      border: 1px solid var(--bordure);
+      transition: border-color .2s;
+    }
+    .trigger-row:hover { border-color: var(--bleu); }
+    .trigger-icon { font-size: 22px; flex-shrink: 0; }
+    .trigger-info { flex: 1; min-width: 0; }
+    .trigger-name { font-size: 13px; font-weight: 700; }
+    .trigger-desc { font-size: 11px; color: #777; margin-top: 2px; }
+    .trigger-status {
+      font-size: 11px;
+      font-weight: 700;
+      min-width: 60px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+    .trigger-status.ok  { color: #2E7D32; }
+    .trigger-status.err { color: #C62828; }
+    .trigger-status.loading { color: var(--bleu); }
+    .btn-trigger {
+      flex-shrink: 0;
+      padding: 9px 16px;
+      background: var(--orange);
+      color: #fff;
+      border: none;
+      border-radius: 7px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      min-height: 40px;
+      transition: background .2s, opacity .2s;
+    }
+    .btn-trigger:hover { background: #cc5200; }
+    .btn-trigger:disabled { opacity: .55; cursor: default; }
+
+    /* FOOTER */
+    .site-footer {
+      text-align: center;
+      padding: 24px 16px;
+      font-size: 12px;
+      color: #888;
+    }
+    .site-footer a { color: var(--bleu); text-decoration: none; }
+
+    /* MOBILE */
+    @media (max-width: 600px) {
+      .form-grid { grid-template-columns: 1fr; }
+      .form-group.full { grid-column: 1; }
+      .docs-grid { grid-template-columns: 1fr; }
+      .navbar-title h1 { font-size: 15px; }
+      /* Boutons tactiles ≥ 44px */
+      button { min-height: 44px !important; }
+      .btn-voir-pdf { min-height: 44px !important; font-size: 13px; padding: 8px 14px; }
+      .btn-annuler, .btn-confirmer { min-height: 50px; font-size: 15px; }
+      /* Texte minimum 12px */
+      .modal-doc-status { font-size: 12px !important; }
+      .trigger-desc { font-size: 12px !important; }
+      .webhook-url { font-size: 12px !important; }
+      small { font-size: 12px !important; }
+      label { font-size: 13px !important; }
+      /* Inputs */
+      input[type="text"], input[type="tel"], input[type="email"], input[type="number"], select, textarea {
+        font-size: 16px !important;
+        min-height: 44px;
+        padding: 10px 8px;
+      }
+      input[type="checkbox"] { width: 22px; height: 22px; min-width: 22px; }
+    }
+
+    /* COMPTE RENDU BUTTON */
+    .btn-compterendu {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      width: 100%;
+      margin: 28px 0 8px;
+      padding: 18px 20px;
+      background: linear-gradient(135deg, #1a7a40 0%, #27ae60 100%);
+      color: #fff;
+      border: none;
+      border-radius: 14px;
+      font-family: inherit;
+      font-size: 17px;
+      font-weight: 800;
+      cursor: pointer;
+      letter-spacing: .4px;
+      min-height: 62px;
+      box-shadow: 0 4px 20px rgba(39,174,96,.35);
+      transition: background .2s, transform .1s, box-shadow .2s;
+      text-transform: uppercase;
+    }
+    .btn-compterendu:hover {
+      background: linear-gradient(135deg, #155f32 0%, #219a52 100%);
+      box-shadow: 0 6px 28px rgba(39,174,96,.45);
+    }
+    .btn-compterendu:active { transform: scale(.98); }
+    .btn-compterendu .cr-icon { font-size: 26px; flex-shrink: 0; }
+    .btn-compterendu:disabled { opacity: .6; cursor: default; transform: none; }
+
+    .cr-status {
+      text-align: center;
+      font-size: 13px;
+      font-weight: 700;
+      min-height: 22px;
+      margin-bottom: 8px;
+    }
+    .cr-status.ok  { color: #1a7a40; }
+    .cr-status.err { color: #C62828; }
+    .cr-status.loading { color: var(--bleu); }
+
+    /* MODAL COMPTE RENDU */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.55);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .modal-overlay.open { display: flex; }
+
+    .modal-box {
+      background: #fff;
+      border-radius: 16px;
+      width: 100%;
+      max-width: 540px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 12px 48px rgba(0,0,0,.3);
+      display: flex;
+      flex-direction: column;
+    }
+    .modal-header {
+      background: linear-gradient(135deg, #1a7a40 0%, #27ae60 100%);
+      color: #fff;
+      padding: 18px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-radius: 16px 16px 0 0;
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: .4px;
+      flex-shrink: 0;
+    }
+    .modal-header button {
+      background: rgba(255,255,255,.2);
+      border: none;
+      color: #fff;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      font-size: 15px;
+      cursor: pointer;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+    .modal-intro {
+      font-size: 13px;
+      color: #555;
+      margin-bottom: 16px;
+    }
+    .modal-body { padding: 20px; flex: 1; }
+    .modal-doc-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+
+    .modal-doc-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--bordure);
+      background: var(--gris);
+    }
+    .modal-doc-icon { font-size: 22px; flex-shrink: 0; }
+    .modal-doc-info { flex: 1; min-width: 0; }
+    .modal-doc-name { font-size: 13px; font-weight: 700; }
+    .modal-doc-status { font-size: 11px; margin-top: 2px; font-weight: 600; }
+    .modal-doc-status.ok  { color: #2E7D32; }
+    .modal-doc-status.vide { color: #999; }
+
+    .btn-voir-pdf {
+      flex-shrink: 0;
+      padding: 7px 13px;
+      background: var(--bleu);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      min-height: 36px;
+      transition: background .2s;
+    }
+    .btn-voir-pdf:hover { background: #015fa0; }
+    .btn-voir-pdf:disabled { background: #ccc; cursor: default; }
+
+    .modal-footer {
+      padding: 16px 20px;
+      display: flex;
+      gap: 10px;
+      border-top: 1px solid var(--bordure);
+      flex-shrink: 0;
+    }
+    .btn-annuler {
+      flex: 1;
+      padding: 13px;
+      background: #f0f0f0;
+      border: none;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      color: #555;
+    }
+    .btn-annuler:hover { background: #e0e0e0; }
+    .btn-confirmer {
+      flex: 2;
+      padding: 13px;
+      background: linear-gradient(135deg, #1a7a40 0%, #27ae60 100%);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: opacity .2s;
+    }
+    .btn-confirmer:hover { opacity: .9; }
+    .btn-confirmer:disabled { opacity: .55; cursor: default; }
+
+    .modal-send-status {
+      text-align: center;
+      font-size: 13px;
+      font-weight: 700;
+      min-height: 20px;
+      margin-top: 10px;
+    }
+    .modal-send-status.ok  { color: #1a7a40; }
+    .modal-send-status.err { color: #C62828; }
+    .modal-send-status.loading { color: var(--bleu); }
+
+    /* BADGES STATUT D'ENVOI */
+    .doc-envoi-badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 9px;
+      border-radius: 99px;
+      display: inline-block;
+      margin-top: 6px;
+      min-height: 20px;
+      line-height: 1.6;
+    }
+    .doc-envoi-badge.ok      { background: #e8f5e9; color: #2e7d32; }
+    .doc-envoi-badge.pending { background: #fff3e0; color: #e65100; }
+    .doc-envoi-badge.empty   { color: #aaa; background: none; font-weight: 500; }
+
+    @media print {
+      .btn-save, .toast, .btn-compterendu, .cr-status { display: none !important; }
+    }
+
+    /* ── CALENDRIER DATE DE DÉBUT ── */
+    .date-picker-group { position: relative; }
+    .date-wrap { display: flex; }
+    .date-wrap input {
+      flex: 1;
+      border-radius: 7px 0 0 7px;
+      cursor: pointer;
+      caret-color: transparent;
+      user-select: none;
+    }
+    .date-wrap input:focus { outline: none; border-color: var(--bleu); background: #fff; }
+    .cal-btn {
+      background: var(--bleu);
+      color: #fff;
+      border: 1px solid var(--bleu);
+      border-radius: 0 7px 7px 0;
+      padding: 0 14px;
+      cursor: pointer;
+      font-size: 17px;
+      transition: background .15s;
+      min-height: 44px;
+    }
+    .cal-btn:hover { background: #0156a0; }
+    .cal-popup {
+      display: none;
+      position: fixed;
+      z-index: 9999;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(1,112,185,.28);
+      width: 294px;
+      overflow: hidden;
+      animation: calFadeIn .15s ease;
+    }
+    .cal-popup.open { display: block; }
+    @keyframes calFadeIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:none; } }
+    .cal-head {
+      background: var(--bleu);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 13px 16px;
+    }
+    .cal-head .cal-label { font-weight: 700; font-size: 15px; letter-spacing: .3px; }
+    .cal-nav-btn {
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 20px;
+      cursor: pointer;
+      padding: 2px 8px;
+      border-radius: 6px;
+      line-height: 1;
+      transition: background .15s;
+    }
+    .cal-nav-btn:hover { background: rgba(255,255,255,.22); }
+    .cal-weekdays {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      background: #e3f2fd;
+      border-bottom: 1px solid #c8dff5;
+    }
+    .cal-weekdays span {
+      text-align: center;
+      padding: 7px 0;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--bleu);
+      text-transform: uppercase;
+      letter-spacing: .4px;
+    }
+    .cal-days {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      padding: 8px 6px 10px;
+      gap: 2px;
+    }
+    .cal-day {
+      text-align: center;
+      padding: 8px 2px;
+      font-size: 13px;
+      border-radius: 7px;
+      cursor: pointer;
+      border: 2px solid transparent;
+      background: none;
+      font-family: inherit;
+      font-weight: 500;
+      color: var(--texte);
+      transition: background .12s, color .12s;
+    }
+    .cal-day:hover { background: #e3f2fd; color: var(--bleu); }
+    .cal-day.today { border-color: var(--bleu); color: var(--bleu); font-weight: 700; }
+    .cal-day.selected { background: var(--orange) !important; color: #fff !important; font-weight: 700; border-color: transparent; }
+    .cal-day.other-month { color: #c8d0dc; }
+    .cal-day.other-month:hover { background: #f5f5f5; color: #aaa; }
+    .cal-today-btn {
+      display: block;
+      width: calc(100% - 20px);
+      margin: 0 10px 10px;
+      padding: 8px;
+      background: #f0f4f8;
+      border: 1px solid var(--bordure);
+      border-radius: 7px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--bleu);
+      cursor: pointer;
+      text-align: center;
+      transition: background .15s;
+    }
+    .cal-today-btn:hover { background: var(--bleu); color: #fff; border-color: var(--bleu); }
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<div class="navbar">
+  <img src="https://innovaspray.com/wp-content/uploads/2025/09/organization_logo_par.jpg" height="60" width="60" alt="InnovaSpray Québec">
+  <div class="navbar-title">
+    <h1>INNOVASPRAY QUÉBEC</h1>
+    <p>Portail des chefs d'équipe</p>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- INFOS PROJET -->
+  <div class="card">
+    <div class="card-header">
+      <span>📋</span> Informations du projet
+    </div>
+    <div class="card-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="f_job_number">Numéro de projet</label>
+          <input type="text" id="f_job_number" placeholder="ex: #JOB-2024-001">
+        </div>
+        <div class="form-group">
+          <label for="f_client_name">Nom du client</label>
+          <input type="text" id="f_client_name" placeholder="ex: Jean Tremblay">
+        </div>
+        <div class="form-group">
+          <label for="f_client_phone">Téléphone du client</label>
+          <input type="tel" id="f_client_phone" placeholder="ex: 418-555-1234">
+        </div>
+        <div class="form-group full">
+          <label for="f_job_address">Adresse du chantier</label>
+          <textarea id="f_job_address" placeholder="ex: 123 rue des Érables, Québec" rows="2"></textarea>
+        </div>
+        <div class="form-group">
+          <label for="f_foreman_name">Chef d'équipe</label>
+          <input type="text" id="f_foreman_name" placeholder="ex: Marc Bouchard">
+        </div>
+        <div class="form-group date-picker-group">
+          <label for="f_start_date">Date de début</label>
+          <div class="date-wrap">
+            <input type="text" id="f_start_date" placeholder="Sélectionner une date" readonly autocomplete="off" onclick="calToggle()">
+            <button type="button" class="cal-btn" onclick="calToggle()" tabindex="-1">📅</button>
+          </div>
+          <div class="cal-popup" id="calPopup"></div>
+        </div>
+      </div>
+      <button class="btn-save" onclick="saveProjet()">💾 Sauvegarder les infos du projet</button>
+      <button class="btn-clear" onclick="nouveauChantier()">🗑 Nouveau chantier — Effacer toutes les données</button>
+    </div>
+  </div>
+
+  <!-- PROJETS SAUVEGARDÉS -->
+  <div class="card" id="cardProjetsList" style="margin-bottom:18px;">
+    <div class="card-header" style="display:flex;align-items:center;gap:10px;">
+      <span>📂 Projets sauvegardés</span>
+      <span id="projetsListCount" style="background:rgba(255,255,255,.2);border-radius:99px;padding:2px 10px;font-size:12px;"></span>
+      <button id="btnActualiserSheets" onclick="chargerListeSheets()" title="Charger tous les projets depuis Google Sheets" style="margin-left:auto;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .2s;min-height:32px;">🔄 Sheets</button>
+    </div>
+    <div id="projetsListBody" style="padding:0;"></div>
+  </div>
+
+  <!-- DOCUMENTS -->
+  <div class="docs-title">Documents du chantier</div>
+  <div class="docs-grid">
+
+    <div class="doc-card" data-statut-key="bon_travail">
+      <div class="doc-icon">📋</div>
+      <div class="doc-title">Bon de travail</div>
+      <div class="doc-desc">Instructions du mandat pour le chef d'équipe — tâches, couleurs, matériaux</div>
+      <div class="doc-envoi-badge empty" id="badge_bon_travail">— Non envoyé</div>
+      <a class="btn-open" href="Bon de travail.html" data-doc="Bon de travail.html">Ouvrir →</a>
+    </div>
+
+    <div class="doc-card" data-statut-key="fiche_chantier">
+      <div class="doc-icon">🏗️</div>
+      <div class="doc-title">Fiche de chantier</div>
+      <div class="doc-desc">Feuille quotidienne de chantier — remplir chaque jour</div>
+      <div class="doc-envoi-badge empty" id="badge_fiche_chantier">— Non envoyé</div>
+      <a class="btn-open" href="fiche_chantier.html" data-doc="fiche_chantier.html">Ouvrir →</a>
+    </div>
+
+    <div class="doc-card" data-statut-key="checklist">
+      <div class="doc-icon">✅</div>
+      <div class="doc-title">Checklist qualité</div>
+      <div class="doc-desc">Inspection finale avant remise au client</div>
+      <div class="doc-envoi-badge empty" id="badge_checklist">— Non envoyé</div>
+      <a class="btn-open" href="checklist_qualite.html" data-doc="checklist_qualite.html">Ouvrir →</a>
+    </div>
+
+    <div class="doc-card" data-statut-key="materiaux">
+      <div class="doc-icon">🎨</div>
+      <div class="doc-title">Suivi des matériaux</div>
+      <div class="doc-desc">Gérer les peintures et consommables commandés</div>
+      <div class="doc-envoi-badge empty" id="badge_materiaux">— Non envoyé</div>
+      <a class="btn-open" href="suivi_materiaux.html" data-doc="suivi_materiaux.html">Ouvrir →</a>
+    </div>
+
+    <div class="doc-card" data-statut-key="satisfaction">
+      <div class="doc-icon">⭐</div>
+      <div class="doc-title">Rapport de satisfaction</div>
+      <div class="doc-desc">Sondage client à envoyer après les travaux</div>
+      <div class="doc-envoi-badge empty" id="badge_satisfaction">— Non envoyé</div>
+      <a class="btn-open" href="rapport_satisfaction.html" data-doc="rapport_satisfaction.html">Ouvrir →</a>
+    </div>
+
+    <div class="doc-card">
+      <div class="doc-icon">📖</div>
+      <div class="doc-title">Guide n8n</div>
+      <div class="doc-desc">Guide des automatisations n8n</div>
+      <a class="btn-open" href="guide_n8n.html">Ouvrir →</a>
+    </div>
+
+    <div class="doc-card">
+      <div class="doc-icon">🗄️</div>
+      <div class="doc-title">Historique des sauvegardes</div>
+      <div class="doc-desc">Consulter, filtrer et restaurer toutes les sauvegardes de tous les documents</div>
+      <a class="btn-open" href="historique_sauvegardes.html">Ouvrir →</a>
+    </div>
+
+    <div class="doc-card" id="cardConfig" style="display:none;">
+      <div class="doc-icon">⚙️</div>
+      <div class="doc-title">Configuration</div>
+      <div class="doc-desc">Normes de production MOYEN — taux d'application, couverture peinture, consommables</div>
+      <a class="btn-open" href="configuration.html">Ouvrir →</a>
+    </div>
+
+    <div class="doc-card" id="cardGestionUsers" style="display:none;">
+      <div class="doc-icon">👥</div>
+      <div class="doc-title">Gestion des utilisateurs</div>
+      <div class="doc-desc">Ajouter, modifier ou supprimer les comptes d'accès à l'application</div>
+      <a class="btn-open" href="gestion-utilisateurs.html">Ouvrir →</a>
+    </div>
+
+  </div><!-- /docs-grid -->
+
+  <!-- AUTOMATISATIONS N8N -->
+  <div class="card">
+    <div class="card-header">
+      <div class="n8n-header">
+        <span>⚡ Automatisations n8n</span>
+      </div>
+    </div>
+
+    <!-- LISTE DES DÉCLENCHEURS -->
+    <div class="trigger-list">
+      <div class="trigger-row">
+        <div class="trigger-icon">🚀</div>
+        <div class="trigger-info">
+          <div class="trigger-name">Début de chantier</div>
+          <div class="trigger-desc">Notifie l'équipe + démarre le suivi du chantier</div>
+        </div>
+        <div class="trigger-status" id="st_debut"></div>
+        <button class="btn-trigger" onclick="triggerWebhook('debut')">Déclencher</button>
+      </div>
+      <div class="trigger-row">
+        <div class="trigger-icon">🏁</div>
+        <div class="trigger-info">
+          <div class="trigger-name">Fin de chantier</div>
+          <div class="trigger-desc">Marque le projet comme terminé + notifie le bureau</div>
+        </div>
+        <div class="trigger-status" id="st_fin"></div>
+        <button class="btn-trigger" onclick="triggerWebhook('fin')">Déclencher</button>
+      </div>
+      <div class="trigger-row">
+        <div class="trigger-icon">📦</div>
+        <div class="trigger-info">
+          <div class="trigger-name">Commande matériaux</div>
+          <div class="trigger-desc">Envoie la liste de matériaux à commander</div>
+        </div>
+        <div class="trigger-status" id="st_materiaux"></div>
+        <button class="btn-trigger" onclick="triggerWebhook('materiaux')">Déclencher</button>
+      </div>
+      <div class="trigger-row">
+        <div class="trigger-icon">⭐</div>
+        <div class="trigger-info">
+          <div class="trigger-name">Sondage satisfaction</div>
+          <div class="trigger-desc">Envoie le sondage par courriel au client</div>
+        </div>
+        <div class="trigger-status" id="st_satisfaction"></div>
+        <button class="btn-trigger" onclick="triggerWebhook('satisfaction')">Déclencher</button>
+      </div>
+      <div class="trigger-row">
+        <div class="trigger-icon">💰</div>
+        <div class="trigger-info">
+          <div class="trigger-name">Facturation</div>
+          <div class="trigger-desc">Génère et envoie la facture finale au client</div>
+        </div>
+        <div class="trigger-status" id="st_facture"></div>
+        <button class="btn-trigger" onclick="triggerWebhook('facture')">Déclencher</button>
+      </div>
+      <div class="trigger-row">
+        <div class="trigger-icon">🔔</div>
+        <div class="trigger-info">
+          <div class="trigger-name">Alerte météo / Reporter</div>
+          <div class="trigger-desc">Notifie le client que le chantier est reporté</div>
+        </div>
+        <div class="trigger-status" id="st_meteo"></div>
+        <button class="btn-trigger" onclick="triggerWebhook('meteo')">Déclencher</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- COMPTE RENDU -->
+  <div class="cr-status" id="crStatus"></div>
+  <button class="btn-compterendu" id="btnCR" onclick="ouvrirModalCompteRendu()">
+    <span class="cr-icon">📬</span>
+    Compte rendu de la journée
+  </button>
+
+</div><!-- /main -->
+
+<footer class="site-footer">
+  InnovaSpray Québec — <a href="https://www.innovaspray.ca" target="_blank">innovaspray.ca</a>
+</footer>
+
+<div class="toast" id="toast">✓ Sauvegardé</div>
+
+<!-- MODAL COMPTE RENDU -->
+<div class="modal-overlay" id="modalCR">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span>📬 Compte rendu de la journée</span>
+      <button onclick="fermerModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="modal-intro">Les documents suivants seront générés en PDF et envoyés au bureau. Cliquez <strong>Confirmer et envoyer</strong> pour lancer l'envoi.</p>
+      <div class="modal-doc-list" id="modalDocList"></div>
+      <div class="modal-send-status" id="modalStatus"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-annuler" onclick="fermerModal()">Annuler</button>
+      <button class="btn-confirmer" id="btnConfirmer" onclick="confirmerEnvoi()">✅ Confirmer et envoyer</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// Afficher les cartes admin uniquement pour les administrateurs
+document.addEventListener('DOMContentLoaded', function () {
+  var session = ISQAuth.getSession();
+  if (session && session.role === 'admin') {
+    var cc = document.getElementById('cardConfig');
+    var cu = document.getElementById('cardGestionUsers');
+    if (cc) cc.style.display = '';
+    if (cu) cu.style.display = '';
+  }
+});
+</script>
+
+<script>
+(function () {
+  var KEY = 'isq_projet';
+  var ids = ['job_number', 'client_name', 'client_phone', 'job_address', 'foreman_name', 'start_date'];
+
+  function getProjet() {
+    var p = {};
+    ids.forEach(function (id) {
+      p[id] = document.getElementById('f_' + id).value.trim();
+    });
+    return p;
+  }
+
+  // Charger depuis ISQStore
+  function loadProjet() {
+    try {
+      var p = JSON.parse(ISQStore.getItem(KEY) || '{}');
+      ids.forEach(function (id) {
+        if (p[id]) document.getElementById('f_' + id).value = p[id];
+      });
+    } catch (e) {}
+  }
+
+  // Sauvegarder dans ISQStore + déclencher le lookup Google Sheets
+  window.saveProjet = function () {
+    try {
+      var p = getProjet();
+      // Fusionner dans isq_projet existant pour ne pas écraser les champs GS_EXTRA (work_type, total_sqft, etc.)
+      var existing = {};
+      try { existing = JSON.parse(ISQStore.getItem(KEY) || '{}'); } catch(e) {}
+      Object.keys(p).forEach(function(k) { existing[k] = p[k]; });
+      ISQStore.setItem(KEY, JSON.stringify(existing));
+      if (existing.job_number) saveToProjectsList(existing);
+      updateLinks();
+      if (typeof refreshDocStatuts === 'function') refreshDocStatuts();
+      showToast();
+      // Aller chercher les données depuis Google Sheets PRODUCTION si numéro de projet présent
+      if (p.job_number) {
+        // Vider le cache pour forcer un fetch frais depuis Google Sheets
+        ISQStore.removeItem('isq_job_' + p.job_number);
+        loadFromJob(p.job_number, true); // silent=true : ne pas écraser le toast "Sauvegardé"
+      }
+    } catch (e) {}
+  };
+
+  // Mettre à jour les liens Ouvrir avec les paramètres URL
+  function updateLinks() {
+    var p = getProjet();
+    // Récupérer aussi les champs Sheets depuis isq_projet
+    var stored = {};
+    try { stored = JSON.parse(ISQStore.getItem(KEY) || '{}'); } catch(e) {}
+    var EXTRA_LINK_FIELDS = ['work_type','surface_type','total_sqft','foreman_name',
+      'crew_size','duration_days','end_date','floors_count','windows_count',
+      'doors_count','garage_doors_count','roofing','gouttieres_sqft','sanding_sqft','attention_points',
+      'quote_number','client_company','client_email',
+      'subtotal','total_ttc','acompte_amount','solde_amount',
+      'supplier_name','colors_raw'];
+    document.querySelectorAll('[data-doc]').forEach(function (a) {
+      var params = new URLSearchParams();
+      ids.forEach(function (id) { if (p[id]) params.set(id, p[id]); });
+      EXTRA_LINK_FIELDS.forEach(function(f) { if (stored[f]) params.set(f, stored[f]); });
+      var qs = params.toString();
+      a.href = a.getAttribute('data-doc') + (qs ? '?' + qs : '');
+    });
+  }
+
+  // Toast (délègue à la fonction globale avec le message par défaut)
+  function showToast() { showToastMsg('✓ Sauvegardé'); }
+
+  // Lookup soumission quand le numéro de projet change
+  function loadFromJob(num, silent) {
+    if (!num) return;
+
+    // Correspondance champ → ID du formulaire
+    var MAP = {
+      client_name:   'f_client_name',
+      client_phone:  'f_client_phone',
+      job_address:   'f_job_address',
+      foreman_name:  'f_foreman_name'
+    };
+
+    function applyData(data) {
+      var filled = false;
+      Object.keys(MAP).forEach(function(field) {
+        if (data[field]) {
+          var el = document.getElementById(MAP[field]);
+          if (el) { el.value = data[field]; filled = true; }
+        }
+      });
+      if (filled) {
+        try {
+          ISQStore.setItem('isq_job_courant', JSON.stringify(data));
+          ISQStore.setItem('isq_job_' + num, JSON.stringify(data));
+          // Fusionner TOUS les champs n8n dans isq_projet (pas seulement les 6 du formulaire)
+          // Lire l'isq_projet SAUVEGARDÉ (pas le DOM qui peut être temporairement vidé)
+          var proj = {};
+          try { proj = JSON.parse(ISQStore.getItem(KEY) || '{}'); } catch(ep) {}
+          // Appliquer les champs MAP (depuis webhook)
+          Object.keys(MAP).forEach(function(mf) { if (data[mf]) proj[mf] = data[mf]; });
+          var GS_EXTRA = ['work_type','surface_type','crew_size','duration_days',
+            'site_access','parking','client_onsite','client_email','client_company',
+            'attention_points','special_instructions','total_sqft','floors_count','sanding_sqft',
+            'doors_count','garage_doors_count','windows_count','roofing','gouttieres_sqft',
+            'office_contact_name','office_contact_phone','supplier_name','supplier_phone',
+            'emergency_name','emergency_phone','end_date','job_completion_date',
+            'quote_number','quote_date','valid_until','approved_date',
+            'subtotal','tps_amount','tvq_amount','total_ttc','acompte_amount','solde_amount',
+            'colors_raw','surfaces_raw'];
+          GS_EXTRA.forEach(function(f){ if (data[f]) proj[f] = data[f]; });
+          ISQStore.setItem(KEY, JSON.stringify(proj));
+        } catch(e) {}
+        updateLinks();
+      }
+      return filled;
+    }
+
+    // 1. Essayer ISQStore d'abord
+    try {
+      var saved = JSON.parse(ISQStore.getItem('isq_job_' + num) || 'null');
+      if (saved && applyData(saved)) {
+        showToastMsg('✓ Informations chargées (local)');
+        return;
+      }
+    } catch(e) {}
+
+    // 2. Si rien en local → appeler le webhook n8n Google Sheets lookup
+    try {
+      var wh = ISQ.getWebhooks();
+      var lookupUrl = wh['lookup'];
+      if (!lookupUrl) {
+        if (!silent) showToastMsg('⚠️ Webhook lookup non configuré — contacter l\'administrateur');
+        return;
+      }
+
+      var statusEl = document.getElementById('f_job_number');
+      statusEl.style.borderColor = '#FF6600';
+      statusEl.title = '⏳ Chargement depuis Google Sheets…';
+
+      // Vider les champs immédiatement pour éviter d'afficher les données du devis précédent
+      Object.keys(MAP).forEach(function(field) {
+        var el = document.getElementById(MAP[field]);
+        if (el) el.value = '';
+      });
+
+      fetch(lookupUrl + '?numero=' + encodeURIComponent(num))
+        .then(function(r) {
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.json();
+        })
+        .then(function(data) {
+          statusEl.style.borderColor = '';
+          statusEl.title = '';
+          // Vérifier que la réponse contient bien un client (devis trouvé)
+          if (!data || !data.client_name) {
+            statusEl.style.borderColor = '#c62828';
+            showToastMsg('❌ Devis introuvable dans Google Sheets');
+            setTimeout(function() { statusEl.style.borderColor = ''; }, 3000);
+            return;
+          }
+          if (applyData(data)) {
+            showToastMsg('✅ Informations chargées depuis Google Sheets !');
+          } else {
+            showToastMsg('⚠️ Projet trouvé mais données vides');
+          }
+        })
+        .catch(function() {
+          statusEl.style.borderColor = '#c62828';
+          statusEl.title = '';
+          showToastMsg('⚠️ Projet introuvable dans Google Sheets');
+          setTimeout(function() { statusEl.style.borderColor = ''; }, 3000);
+        });
+    } catch(e) {}
+  }
+
+  // Auto-save avec debounce 500ms
+  var debounceTimer;
+  ids.forEach(function (id) {
+    var el = document.getElementById('f_' + id);
+    el.addEventListener('input', function () {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(function () {
+        try {
+          var existing2 = {};
+          try { existing2 = JSON.parse(ISQStore.getItem(KEY) || '{}'); } catch(e2) {}
+          var cur = getProjet();
+          Object.keys(cur).forEach(function(k) { existing2[k] = cur[k]; });
+          ISQStore.setItem(KEY, JSON.stringify(existing2));
+          updateLinks();
+        } catch (e) {}
+      }, 500);
+    });
+  });
+
+  // Lookup automatique pendant la frappe (debounce 600ms) + blur + Enter
+  var _jobNumTimer = null;
+  document.getElementById('f_job_number').addEventListener('input', function() {
+    var num = this.value.trim();
+    clearTimeout(_jobNumTimer);
+    if (!num) return;
+    _jobNumTimer = setTimeout(function() { loadFromJob(num); }, 600);
+  });
+  document.getElementById('f_job_number').addEventListener('blur', function() {
+    clearTimeout(_jobNumTimer);
+    var num = this.value.trim();
+    if (num) loadFromJob(num);
+  });
+  document.getElementById('f_job_number').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { clearTimeout(_jobNumTimer); this.blur(); }
+  });
+
+  loadProjet();
+  updateLinks();
+  window.updateLinks = updateLinks;
+  window.loadFromJob  = loadFromJob;
+})();
+
+// Rafraîchir les badges au chargement de la page
+window.addEventListener('load', function() {
+  if (typeof refreshDocStatuts === 'function') refreshDocStatuts();
+});
+
+// === N8N WEBHOOKS ===
+
+function nouveauChantier() {
+  if (!confirm('Effacer toutes les données du chantier actuel et recommencer à zéro ?')) return;
+
+  // Supprimer toutes les clés de documents du ISQStore
+  var keysToRemove = [];
+  for (var i = 0; i < ISQStore.length; i++) {
+    var k = ISQStore.key(i);
+    if (k && (
+      k.startsWith('isq_job_') ||
+      k.startsWith('isq_bon_travail_') ||
+      k.startsWith('isq_fiche_') ||
+      k.startsWith('isq_checklist_') ||
+      k.startsWith('isq_materiaux_') ||
+      k.startsWith('isq_satisfaction_') ||
+      k === 'isq_projet' ||
+      k === 'isq_job_courant' ||
+      k === 'isq_bon_travail_courant' ||
+      k === 'isq_materiaux_courant' ||
+      k === 'isq_checklist_courant' ||
+      k === 'isq_satisfaction_courant' ||
+      k === 'isq_import_materiaux' ||
+      k.startsWith('isq_fiche_courant') ||
+      k === '_isq_statut_idx' ||
+      k === '_isq_statut_cls'
+    )) {
+      keysToRemove.push(k);
+    }
+  }
+  keysToRemove.forEach(function(k) { ISQStore.removeItem(k); });
+
+  // Vider les champs du projet
+  ['f_job_number','f_client_name','f_client_phone','f_job_address','f_foreman_name','f_start_date'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+
+  // Mettre à jour les liens
+  updateLinks();
+
+  var t = document.getElementById('toast');
+  t.textContent = '✓ Données effacées';
+  t.classList.add('show');
+  setTimeout(function() { t.classList.remove('show'); t.textContent = '✓ Sauvegardé'; }, 2200);
+}
+
+
+function getProjetData() {
+  try { return JSON.parse(ISQStore.getItem('isq_projet') || '{}'); } catch(e) { return {}; }
+}
+
+function triggerWebhook(id) {
+  try {
+    var w = ISQ.getWebhooks();
+    var url = w[id];
+    var statusEl = document.getElementById('st_' + id);
+    var btn = statusEl.parentElement.querySelector('.btn-trigger');
+
+    if (!url) {
+      statusEl.textContent = '⚠️ URL manquante';
+      statusEl.className = 'trigger-status err';
+      setTimeout(function() { statusEl.textContent = ''; statusEl.className = 'trigger-status'; }, 3000);
+      return;
+    }
+
+    btn.disabled = true;
+    statusEl.textContent = '⏳ Envoi…';
+    statusEl.className = 'trigger-status loading';
+
+    var payload = Object.assign({}, getProjetData(), {
+      trigger: id,
+      timestamp: new Date().toISOString(),
+      source: 'InnovaSpray Portail Chef'
+    });
+
+    fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+    .then(function(r) {
+      statusEl.textContent = r.ok ? '✓ Envoyé' : '✗ Erreur ' + r.status;
+      statusEl.className = 'trigger-status ' + (r.ok ? 'ok' : 'err');
+    })
+    .catch(function() {
+      statusEl.textContent = '✗ Erreur réseau';
+      statusEl.className = 'trigger-status err';
+    })
+    .finally(function() {
+      btn.disabled = false;
+      setTimeout(function() { statusEl.textContent = ''; statusEl.className = 'trigger-status'; }, 5000);
+    });
+
+  } catch(e) {}
+}
+
+function showToastMsg(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(function() { t.classList.remove('show'); t.textContent = '✓ Sauvegardé'; }, 2500);
+}
+
+// === COMPTE RENDU DE LA JOURNÉE ===
+
+// Configuration de tous les documents du chantier
+var DOCS_CONFIG = [
+  { key: 'bon_de_travail',    statutKey: 'bon_travail',    lsKey: 'isq_bon_travail_',  icon: '📋', nom: 'Bon de travail' },
+  { key: 'fiche_de_chantier', statutKey: 'fiche_chantier', lsKey: 'isq_fiche_',        icon: '🏗️', nom: 'Fiche de chantier' },
+  { key: 'checklist',         statutKey: 'checklist',      lsKey: 'isq_checklist_',    icon: '✅', nom: 'Checklist qualité' },
+  { key: 'suivi_materiaux',   statutKey: 'materiaux',      lsKey: 'isq_materiaux_',    icon: '🎨', nom: 'Suivi des matériaux' },
+  { key: 'satisfaction',      statutKey: 'satisfaction',   lsKey: 'isq_satisfaction_', icon: '⭐', nom: 'Rapport de satisfaction' }
+];
+
+// Lecture de toutes les clés valides pour un document (gère les suffixes _j1.._j5 pour la fiche)
+function getDocData(cfg, jobNum) {
+  var keys = [];
+  if (cfg.lsKey === 'isq_fiche_') {
+    // Fiche chantier : clés par numéro ET courant, jours 1..5
+    for (var d = 1; d <= 5; d++) {
+      if (jobNum) keys.push(cfg.lsKey + jobNum + '_j' + d);
+      keys.push('isq_fiche_courant_j' + d);
+    }
+  } else {
+    if (jobNum) keys.push(cfg.lsKey + jobNum);
+    // Clé courant (sans numéro)
+    var courantKey = cfg.lsKey.replace(/isq_([^_]+)_$/, 'isq_$1_courant');
+    keys.push(courantKey);
+  }
+  for (var i = 0; i < keys.length; i++) {
+    try {
+      var raw = ISQStore.getItem(keys[i]);
+      if (raw) {
+        var parsed = JSON.parse(raw);
+        if (Object.keys(parsed).length > 0) return parsed;
+      }
+    } catch(e) {}
+  }
+  return {};
+}
+
+// Rafraîchir les badges statut d'envoi sur les doc-cards de l'accueil
+function refreshDocStatuts() {
+  var projet = {};
+  try { projet = JSON.parse(ISQStore.getItem('isq_projet') || '{}'); } catch(e) {}
+  var statuts = projet.statuts_envoi || {};
+
+  DOCS_CONFIG.forEach(function(cfg) {
+    var badge = document.getElementById('badge_' + cfg.statutKey);
+    if (!badge) return;
+    var st = statuts[cfg.statutKey];
+    if (st && st.envoye) {
+      badge.textContent = '✓ Envoyé ' + (st.heure || '');
+      badge.className = 'doc-envoi-badge ok';
+    } else {
+      badge.textContent = '— Non envoyé';
+      badge.className = 'doc-envoi-badge empty';
+    }
+  });
+}
+
+function ouvrirModalCompteRendu() {
+  // Réinitialiser le bouton confirmer au cas où il aurait été désactivé
+  var btnConf = document.getElementById('btnConfirmer');
+  if (btnConf) { btnConf.disabled = false; btnConf.textContent = '✅ Confirmer et envoyer'; }
+
+  var projet = {};
+  try { projet = JSON.parse(ISQStore.getItem('isq_projet') || '{}'); } catch(e) {}
+  var jobNum = projet.job_number || '';
+  var statuts = projet.statuts_envoi || {};
+
+  var list = document.getElementById('modalDocList');
+  list.innerHTML = '';
+
+  DOCS_CONFIG.forEach(function(cfg) {
+    var data = getDocData(cfg, jobNum);
+    var hasData = Object.keys(data).length > 0;
+    var st = statuts[cfg.statutKey];
+    var statutLabel = st && st.envoye
+      ? '<span style="color:#2e7d32;">✓ Envoyé ' + (st.heure || '') + '</span>'
+      : (hasData ? '✓ Données disponibles' : '— Aucune donnée saisie');
+
+    var row = document.createElement('div');
+    row.className = 'modal-doc-row';
+    row.innerHTML =
+      '<div class="modal-doc-icon">' + cfg.icon + '</div>' +
+      '<div class="modal-doc-info">' +
+        '<div class="modal-doc-name">' + cfg.nom + '</div>' +
+        '<div class="modal-doc-status ' + (hasData ? 'ok' : 'vide') + '">' + statutLabel + '</div>' +
+      '</div>';
+    list.appendChild(row);
+  });
+
+  document.getElementById('modalStatus').textContent = '';
+  document.getElementById('modalStatus').className = 'modal-send-status';
+  document.getElementById('btnConfirmer').disabled = false;
+  document.getElementById('modalCR').classList.add('open');
+}
+
+function fermerModal() {
+  document.getElementById('modalCR').classList.remove('open');
+}
+
+function confirmerEnvoi() {
+  var w = ISQ.getWebhooks();
+  var webhookUrl = w['submit'] || '';
+  var statusEl = document.getElementById('modalStatus');
+  var btnC = document.getElementById('btnConfirmer');
+
+  if (!webhookUrl) {
+    statusEl.textContent = '⚠️ Webhook non configuré — contacter l\'administrateur';
+    statusEl.className = 'modal-send-status err';
+    return;
+  }
+
+  btnC.disabled = true;
+  statusEl.textContent = '⏳ Génération des PDFs…';
+  statusEl.className = 'modal-send-status loading';
+
+  var projet = {};
+  try { projet = JSON.parse(ISQStore.getItem('isq_projet') || '{}'); } catch(e) {}
+  var jobNum = projet.job_number || '';
+
+  // Paramètres URL à transmettre aux pages
+  var params = new URLSearchParams();
+  ['job_number','client_name','job_address','foreman_name','start_date'].forEach(function(id) {
+    if (projet[id]) params.set(id, projet[id]);
+  });
+  var qs = params.toString() ? '?' + params.toString() : '';
+
+  var pages = [
+    { key: 'bon_de_travail',    url: 'Bon de travail.html',     nom: 'Bon_de_travail' },
+    { key: 'fiche_de_chantier', url: 'fiche_chantier.html',     nom: 'Fiche_de_chantier' },
+    { key: 'checklist',         url: 'checklist_qualite.html',  nom: 'Checklist_qualite' },
+    { key: 'suivi_materiaux',   url: 'suivi_materiaux.html',    nom: 'Suivi_materiaux' },
+    { key: 'satisfaction',      url: 'rapport_satisfaction.html', nom: 'Rapport_satisfaction' }
+  ];
+
+  var meta = {
+    document:     'Compte rendu de la journée',
+    timestamp:    new Date().toISOString(),
+    date_locale:  new Date().toLocaleDateString('fr-CA'),
+    heure_locale: new Date().toLocaleTimeString('fr-CA', {hour:'2-digit', minute:'2-digit'}),
+    job_number:   projet.job_number   || '',
+    client_name:  projet.client_name  || '',
+    job_address:  projet.job_address  || '',
+    foreman_name: projet.foreman_name || '',
+    start_date:   projet.start_date   || ''
+  };
+
+  var formData = new FormData();
+  formData.append('metadata', JSON.stringify(meta));
+
+  // Capture les pages une par une puis envoie
+  var index = 0;
+  function captureNext() {
+    if (index >= pages.length) {
+      statusEl.textContent = '⏳ Envoi au bureau…';
+      statusEl.className = 'modal-send-status loading';
+      fetch(webhookUrl, { method: 'POST', body: formData })
+        .then(function(r) {
+          if (r.ok) {
+            statusEl.textContent = '✅ Compte rendu envoyé au bureau !';
+            statusEl.className = 'modal-send-status ok';
+            showToastMsg('✅ Compte rendu envoyé !');
+            setTimeout(fermerModal, 2500);
+          } else {
+            statusEl.textContent = '❌ Erreur ' + r.status + ' — réessayez';
+            statusEl.className = 'modal-send-status err';
+            btnC.disabled = false;
+          }
+        })
+        .catch(function() {
+          statusEl.textContent = '❌ Erreur réseau — vérifiez votre connexion';
+          statusEl.className = 'modal-send-status err';
+          btnC.disabled = false;
+        });
+      return;
+    }
+
+    var page = pages[index];
+    index++;
+    statusEl.textContent = '⏳ PDF ' + index + '/' + pages.length + ' — ' + page.nom.replace(/_/g, ' ') + '…';
+
+    capturePageAsPDF(page.url + qs)
+      .then(function(ab) {
+        var blob = new Blob([ab], { type: 'application/pdf' });
+        formData.append(page.key, blob, page.nom + '_' + (jobNum || 'sans_num') + '.pdf');
+        captureNext();
+      })
+      .catch(function(err) {
+        console.warn('Capture échouée:', page.url, err);
+        captureNext(); // passer au suivant même en cas d'erreur
+      });
+  }
+
+  captureNext();
+}
+
+// ── Capture d'une page HTML en PDF via iframe + html2canvas ─────────────────
+// Format A4 à 96 dpi : 210mm/25.4×96 = 794px  |  297mm/25.4×96 = 1123px
+// En points PDF (72pt/in) : 595.28 pt × 841.89 pt
+var PRINT_FORMAT = 'a4';
+var PRINT_W      = 794;    // px — largeur iframe
+var PRINT_H      = 1123;   // px — hauteur d'une page
+var PRINT_PW_PT  = 595.28; // pt — largeur PDF
+var PRINT_PH_PT  = 841.89; // pt — hauteur PDF
+
+function capturePageAsPDF(pageUrl) {
+  return new Promise(function(resolve, reject) {
+
+    // L'iframe doit être visible dans le DOM pour un rendu fidèle
+    // On la place hors écran sans la cacher (visibility:hidden brise le rendu)
+    var iframe = document.createElement('iframe');
+    iframe.style.cssText = [
+      'position:fixed',
+      'left:' + (-PRINT_W - 20) + 'px',  // hors écran mais pas hidden
+      'top:0',
+      'width:' + PRINT_W + 'px',
+      'height:' + PRINT_H + 'px',
+      'border:none',
+      'background:#fff',
+      'overflow:hidden'
+    ].join(';');
+    document.body.appendChild(iframe);
+
+    var killTimer = setTimeout(function() {
+      cleanup(); reject(new Error('Timeout: ' + pageUrl));
+    }, 30000);
+
+    function cleanup() {
+      if (iframe.parentNode) document.body.removeChild(iframe);
+    }
+
+    iframe.onload = function() {
+      var doc = iframe.contentDocument || iframe.contentWindow.document;
+
+      // 1. Attendre que les polices soient chargées (Google Fonts, etc.)
+      var fontsReady = (doc.fonts && doc.fonts.ready)
+        ? doc.fonts.ready
+        : new Promise(function(r) { setTimeout(r, 2500); });
+
+      fontsReady.then(function() {
+
+        // 2. Appliquer les règles @media print comme styles écran
+        applyPrintStyles(doc);
+
+        // 3. Fond blanc, marges nulles, couleurs fidèles
+        var fix = doc.createElement('style');
+        fix.textContent =
+          // Fond blanc, sans marges pour utiliser toute la surface de la page
+          'html,body{background:#fff!important;margin:0!important;padding:0!important;width:' + PRINT_W + 'px!important;}' +
+          // Reproductions fidèles des couleurs (pas de conversion gris)
+          '*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}' +
+          // overflow:hidden coupe le contenu → visible uniquement sur les conteneurs principaux
+          '.page,.body,.card,.section,.container,.wrapper,main,article,section' +
+          '{overflow:visible!important;max-width:100%!important;}';
+        doc.head.appendChild(fix);
+
+        // 4. Laisser le navigateur recalculer le layout
+        setTimeout(function() {
+
+          // 5. Mesurer la hauteur totale
+          var fullH = Math.max(
+            doc.body.scrollHeight,
+            doc.body.offsetHeight,
+            doc.documentElement.scrollHeight
+          );
+          iframe.style.height = fullH + 'px';
+
+          // 6. Attendre le repaint puis repousser les éléments hors des coupures
+          setTimeout(function() {
+
+            // REFLOW : chaque élément qui chevaucherait une coupure
+            // est repoussé au début de la page suivante
+            reflowForPaging(doc, PRINT_H);
+
+            // 7. Re-mesurer après le reflow (des éléments ont été poussés vers le bas)
+            setTimeout(function() {
+              var fullHAfter = Math.max(
+                doc.body.scrollHeight,
+                doc.body.offsetHeight,
+                doc.documentElement.scrollHeight
+              );
+              iframe.style.height = fullHAfter + 'px';
+
+              // 8. Attendre le repaint final
+              setTimeout(function() {
+
+                // 9. Capturer — scale:2 pour texte net
+                html2canvas(doc.body, {
+                  scale: 2,
+                  useCORS: true,
+                  allowTaint: true,   // logo InnovaSpray sans CORS → rendu quand même
+                  scrollX: 0,
+                  scrollY: 0,
+                  x: 0,
+                  y: 0,
+                  width: PRINT_W,
+                  height: fullHAfter,
+                  windowWidth: PRINT_W,
+                  windowHeight: fullHAfter,
+                  backgroundColor: '#ffffff',
+                  imageTimeout: 15000,
+                  logging: false,
+                  onclone: function(clonedDoc) {
+                    // ── Rendre visibles les valeurs des champs de formulaire ──
+                    // html2canvas lit l'attribut HTML, pas la propriété JS → on les synchronise
+
+                    // Inputs texte / nombre / time / date
+                    clonedDoc.querySelectorAll('input:not([type="checkbox"]):not([type="radio"])').forEach(function(el) {
+                      el.setAttribute('value', el.value);
+                      // Remplacer l'input par un span pour un rendu texte fidèle
+                      var span = clonedDoc.createElement('span');
+                      var cs = doc.defaultView.getComputedStyle(
+                        doc.querySelector('[data-jobber-field="' + el.dataset.jobberField + '"]') || el
+                      );
+                      span.style.cssText = el.style.cssText;
+                      span.style.display = 'inline-block';
+                      span.style.minWidth = el.offsetWidth + 'px';
+                      span.style.fontFamily = cs.fontFamily;
+                      span.style.fontSize   = cs.fontSize;
+                      span.style.fontWeight = cs.fontWeight;
+                      span.style.color      = cs.color;
+                      span.style.borderBottom = cs.borderBottom || '1px solid #ccc';
+                      span.style.padding    = cs.padding || '0 2px';
+                      span.textContent = el.value || el.placeholder || '';
+                      if (el.parentNode) el.parentNode.replaceChild(span, el);
+                    });
+
+                    // Textareas
+                    clonedDoc.querySelectorAll('textarea').forEach(function(el) {
+                      var div = clonedDoc.createElement('div');
+                      div.style.cssText = el.style.cssText;
+                      div.style.whiteSpace = 'pre-wrap';
+                      div.style.wordBreak  = 'break-word';
+                      div.style.minHeight  = el.offsetHeight + 'px';
+                      div.style.width      = el.offsetWidth  + 'px';
+                      div.textContent = el.value || el.placeholder || '';
+                      if (el.parentNode) el.parentNode.replaceChild(div, el);
+                    });
+
+                    // Cases à cocher
+                    clonedDoc.querySelectorAll('input[type="checkbox"]').forEach(function(el) {
+                      if (el.checked) el.setAttribute('checked', 'checked');
+                      else            el.removeAttribute('checked');
+                    });
+
+                    // Boutons de statut / sélections colorées — garder visible
+                    clonedDoc.querySelectorAll('.cp-selected, .statut-btn.active, [class*="active"]').forEach(function(el) {
+                      el.style.display = 'inline-block';
+                    });
+                  }
+                }).then(function(canvas) {
+                  clearTimeout(killTimer);
+                  cleanup();
+
+                  // 10. Construire le PDF — format A4, coupures fixes après reflow
+                  var jsPDFLib = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
+                  var pdf = new jsPDFLib({
+                    unit        : 'pt',
+                    format      : PRINT_FORMAT,   // 'a4' = 595.28 × 841.89 pt
+                    orientation : 'portrait',
+                    compress    : true
+                  });
+
+                  // Dimensions exactes de la page PDF
+                  var pW = PRINT_PW_PT;  // 595.28 pt
+                  var pH = PRINT_PH_PT;  // 841.89 pt
+
+                  // canvas.width = PRINT_W × 2 = 1632 px (scale:2)
+                  // ratio px-canvas → pt : 612 / 1632 = 0.375
+                  var pxToPt = pW / canvas.width;
+
+                  // Hauteur d'une page en px canvas = PRINT_H × scale:2
+                  // Vérifié : 1056 × 2 × 0.375 = 792 pt ✓ (pas de distorsion)
+                  var pageCanvasH = PRINT_H * 2;
+                  var totalPages  = Math.ceil(canvas.height / pageCanvasH);
+
+                  for (var i = 0; i < totalPages; i++) {
+                    if (i > 0) pdf.addPage(PRINT_FORMAT, 'portrait');
+                    var srcY = i * pageCanvasH;
+                    var srcH = Math.min(pageCanvasH, canvas.height - srcY);
+
+                    // Tranche de la page — toujours pageCanvasH de haut,
+                    // fond blanc pour que chaque page soit propre et complète
+                    var slice = document.createElement('canvas');
+                    slice.width  = canvas.width;
+                    slice.height = pageCanvasH;
+                    var ctx = slice.getContext('2d');
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(0, 0, slice.width, slice.height);
+                    ctx.drawImage(canvas,
+                      0, srcY, canvas.width, srcH,
+                      0, 0,    canvas.width, srcH);
+
+                    // Image placée à (0,0), taille exacte pW × pH
+                    // → chaque page PDF est exactement A4 595.28 × 841.89 pt
+                    pdf.addImage(
+                      slice.toDataURL('image/jpeg', 0.95),
+                      'JPEG',
+                      0, 0,   // position x, y
+                      pW, pH  // largeur, hauteur en pt = page entière
+                    );
+                  }
+
+                  resolve(pdf.output('arraybuffer'));
+
+                }).catch(function(err) {
+                  clearTimeout(killTimer);
+                  cleanup();
+                  reject(err);
+                });
+
+              }, 350); // repaint final
+            }, 200);   // re-mesure après reflow
+          }, 200);     // repaint avant reflow
+        }, 150);       // layout après CSS
+      });
+    };
+
+    iframe.src = pageUrl;
+  });
+}
+
+// ── Application des styles @media print avant capture ───────────────────────
+// Extrait toutes les règles @media print de la page et les injecte comme
+// styles écran normaux → html2canvas voit exactement le rendu impression
+function applyPrintStyles(doc) {
+  var printCSS = '';
+  try {
+    var sheets = doc.styleSheets;
+    for (var i = 0; i < sheets.length; i++) {
+      try {
+        var rules = sheets[i].cssRules || sheets[i].rules || [];
+        for (var j = 0; j < rules.length; j++) {
+          var rule = rules[j];
+          if (rule.type === CSSRule.MEDIA_RULE) {
+            var media = rule.conditionText || (rule.media && rule.media.mediaText) || '';
+            if (media.indexOf('print') !== -1) {
+              for (var k = 0; k < rule.cssRules.length; k++) {
+                printCSS += rule.cssRules[k].cssText + '\n';
+              }
+            }
+          }
+        }
+      } catch (e) {} // feuilles cross-origin ignorées
+    }
+  } catch (e) {}
+
+  if (printCSS) {
+    var style = doc.createElement('style');
+    style.textContent = printCSS;
+    doc.head.appendChild(style);
+  }
+}
+
+// ── Reflow DOM — aucune information coupée entre les pages ──────────────────
+// Algorithme :
+//   1. Forcer overflow:visible sur les conteneurs pour que le layout soit exact
+//   2. Boucle itérative : tant qu'un élément chevauche une coupure, le pousser
+//      à la page suivante (getBoundingClientRect est live → chaque push
+//      déplace automatiquement les éléments suivants)
+//   3. Arrêter quand aucun élément ne chevauche plus de coupure (stable)
+function reflowForPaging(doc, pageH) {
+  var win = doc.defaultView || doc.parentWindow;
+
+  // Étape 1 — libérer l'overflow sur tous les conteneurs
+  // Sans ça, un div avec overflow:hidden empêche ses enfants de pousser le layout
+  var ovFix = doc.createElement('style');
+  ovFix.id  = '__reflow_fix__';
+  ovFix.textContent =
+    'div,section,article,main,aside,header,footer,form,' +
+    'fieldset,table,tbody,thead,tfoot,tr,ul,ol,li,' +
+    '.page,.body,.card,.card-body,.section,.chef-band,.header' +
+    '{overflow:visible!important;max-height:none!important;height:auto!important;}';
+  doc.head.appendChild(ovFix);
+
+  // Sélecteur : tous les blocs visibles qui doivent rester intacts
+  var SEL =
+    'h1,h2,h3,h4,h5,h6,' +
+    'p,li,tr,' +
+    '.form-group,.field-row,.info-row,' +
+    '.section,.card,.card-body,' +
+    '.chef-cell,.chef-band,' +
+    '.section-title,.section-block,' +
+    '.header,.doc-footer,' +
+    'fieldset,table,blockquote,' +
+    '.info-grid>div,.couleurs-grid>div,' +
+    '.contacts-grid>div,.projet-grid>div';
+
+  // Étape 2 — boucles jusqu'à stabilisation (max 12 passes)
+  for (var pass = 0; pass < 12; pass++) {
+    var changed = false;
+
+    // Re-trier à chaque passe (positions live après les pushes précédents)
+    var els = Array.from(doc.querySelectorAll(SEL));
+    els.sort(function(a, b) {
+      return a.getBoundingClientRect().top - b.getBoundingClientRect().top;
+    });
+
+    for (var i = 0; i < els.length; i++) {
+      var el   = els[i];
+      var rect = el.getBoundingClientRect();
+      var top  = rect.top;   // scrollTop=0 car l'iframe a la hauteur complète
+      var h    = rect.height;
+
+      // Ignorer : vide, invisible, ou trop grand pour tenir sur une seule page
+      if (h < 4 || h >= pageH * 0.92) continue;
+
+      // Prochaine coupure de page après le haut de l'élément
+      var cutY   = (Math.floor(top / pageH) + 1) * pageH;
+      var bottom = top + h;
+
+      if (bottom > cutY + 1) {
+        // L'élément chevauche la coupure → pousser au début de la page suivante
+        var push     = cutY - top + 6;
+        var curMT    = parseFloat(win.getComputedStyle(el).marginTop) || 0;
+        el.style.marginTop = Math.max(0, curMT + push) + 'px';
+        changed = true;
+      }
+    }
+
+    if (!changed) break; // Stable : plus aucun élément ne chevauche de coupure
+  }
+}
+
+
+// ================================================================
+// LISTE DES PROJETS SAUVEGARDÉS
+// ================================================================
+var PROJ_LIST_KEY = 'isq_projets_liste';
+
+function saveToProjectsList(fullProj) {
+  if (!fullProj || !fullProj.job_number) return;
+  var list = [];
+  try { list = JSON.parse(ISQStore.getItem(PROJ_LIST_KEY) || '[]'); } catch(e) {}
+  var entry = Object.assign({}, fullProj, {
+    saved_at: new Date().toLocaleString('fr-CA', {year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})
+  });
+  var idx = -1;
+  for (var i = 0; i < list.length; i++) {
+    if (list[i].job_number === fullProj.job_number) { idx = i; break; }
+  }
+  if (idx >= 0) { list[idx] = entry; } else { list.unshift(entry); }
+  ISQStore.setItem(PROJ_LIST_KEY, JSON.stringify(list));
+  renderProjectsList();
+}
+
+function loadProject(jobNum) {
+  var list = [];
+  try { list = JSON.parse(ISQStore.getItem(PROJ_LIST_KEY) || '[]'); } catch(e) {}
+  var entry = null;
+  for (var i = 0; i < list.length; i++) {
+    if (list[i].job_number === jobNum) { entry = list[i]; break; }
+  }
+  if (!entry) { entry = { job_number: jobNum }; }
+  var projData = Object.assign({}, entry);
+  delete projData.saved_at;
+  delete projData._from_sheets;
+  ISQStore.setItem('isq_projet', JSON.stringify(projData));
+  ['job_number','client_name','client_phone','job_address','foreman_name','start_date'].forEach(function(f) {
+    var el = document.getElementById('f_' + f);
+    if (el) el.value = projData[f] || '';
+  });
+  if (window.updateLinks) updateLinks();
+  if (typeof refreshDocStatuts === 'function') refreshDocStatuts();
+  showToastMsg('⏳ Chargement de ' + jobNum + '…');
+  if (window.loadFromJob) window.loadFromJob(jobNum);
+}
+
+function deleteProject(jobNum) {
+  if (!confirm('Retirer le projet ' + jobNum + ' de la liste ?')) return;
+  var list = [];
+  try { list = JSON.parse(ISQStore.getItem(PROJ_LIST_KEY) || '[]'); } catch(e) {}
+  list = list.filter(function(e) { return e.job_number !== jobNum; });
+  ISQStore.setItem(PROJ_LIST_KEY, JSON.stringify(list));
+  renderProjectsList();
+  showToastMsg('✓ Projet retiré de la liste');
+}
+
+function buildProjectsListHtml(list) {
+  if (list.length === 0) {
+    return '<div style="padding:16px 20px;text-align:center;color:#999;font-size:13px;">Aucun résultat</div>';
+  }
+  var html = '';
+  list.forEach(function(e) {
+    var safeNum = (e.job_number || '').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    var fromSheets = e._from_sheets;
+    var sourceBadge = fromSheets
+      ? '<span style="font-size:10px;font-weight:700;background:#e3f2fd;color:#0170B9;border-radius:99px;padding:2px 7px;flex-shrink:0;">📊 Sheets</span>'
+      : '<span style="font-size:10px;font-weight:700;background:#e8f5e9;color:#2e7d32;border-radius:99px;padding:2px 7px;flex-shrink:0;">💾 Local</span>';
+    var saveLine = e.saved_at
+      ? '<span style="font-size:11px;color:#888;">Sauvegardé : ' + e.saved_at + '</span>'
+      : (fromSheets ? '<span style="font-size:11px;color:#aaa;">Non sauvegardé localement</span>' : '');
+    html +=
+      '<div style="display:flex;align-items:center;gap:10px;padding:13px 20px;border-top:1px solid var(--bordure);flex-wrap:wrap;cursor:pointer;transition:background .15s;" ' +
+        'onmouseover="this.style.background=\'#f0f6ff\'" onmouseout="this.style.background=\'\'" ' +
+        'onclick="loadProject(\'' + safeNum + '\')">' +
+        '<div style="flex:1;min-width:0;">' +
+          '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">' +
+            '<span style="font-size:14px;font-weight:800;color:var(--bleu);">' + (e.job_number || '—') + '</span>' +
+            (e.client_name ? '<span style="font-size:13px;color:var(--texte);font-weight:600;">— ' + e.client_name + '</span>' : '') +
+            sourceBadge +
+          '</div>' +
+          (e.job_address ? '<div style="font-size:11px;color:#888;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:280px;">' + e.job_address.replace(/\n/g,', ') + '</div>' : '') +
+          (saveLine ? '<div style="margin-top:3px;">' + saveLine + '</div>' : '') +
+        '</div>' +
+        '<button onclick="event.stopPropagation();loadProject(\'' + safeNum + '\')" style="padding:7px 16px;background:var(--bleu);color:#fff;border:none;border-radius:6px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;min-height:36px;white-space:nowrap;flex-shrink:0;">Charger</button>' +
+        '<button onclick="event.stopPropagation();deleteProject(\'' + safeNum + '\')" style="padding:7px 10px;background:#fff;color:#C62828;border:1px solid #C62828;border-radius:6px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;min-height:36px;flex-shrink:0;" title="Retirer de la liste">✕</button>' +
+      '</div>';
+  });
+  return html;
+}
+
+function chargerListeSheets(silent) {
+  var w = ISQ.getWebhooks();
+  var url = (w['liste_projets'] || '').trim();
+  if (!url) {
+    if (!silent) showToastMsg('⚠️ Webhook "Liste des projets" non configuré — contacter l\'administrateur');
+    return;
+  }
+  // Validation URL basique
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    if (!silent) showToastMsg('❌ URL invalide — doit commencer par http:// ou https://');
+    return;
+  }
+  var btn = document.getElementById('btnActualiserSheets');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
+
+  fetch(url)
+    .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
+    .then(function(text) {
+      if (!text || !text.trim()) throw new Error('EMPTY_RESPONSE');
+      var data;
+      try { data = JSON.parse(text); } catch(e) { throw new Error('INVALID_JSON:' + text.substring(0, 120)); }
+      var projets = Array.isArray(data) ? data : (data.projets || data.data || data.rows || []);
+      if (!projets.length) { showToastMsg('⚠️ Aucun projet reçu depuis Sheets'); return; }
+
+      var local = [];
+      try { local = JSON.parse(ISQStore.getItem(PROJ_LIST_KEY) || '[]'); } catch(e) {}
+
+      var merged = [];
+      projets.forEach(function(p) {
+        if (!p.job_number) return;
+        var localEntry = null;
+        for (var i = 0; i < local.length; i++) {
+          if (local[i].job_number === p.job_number) { localEntry = local[i]; break; }
+        }
+        merged.push(Object.assign({}, p, {
+          _from_sheets: true,
+          saved_at: localEntry ? localEntry.saved_at : null
+        }));
+      });
+      // Ajouter les projets locaux absents de Sheets
+      local.forEach(function(l) {
+        var already = false;
+        for (var j = 0; j < merged.length; j++) { if (merged[j].job_number === l.job_number) { already = true; break; } }
+        if (!already) merged.push(Object.assign({}, l, { _from_sheets: false }));
+      });
+
+      ISQStore.setItem(PROJ_LIST_KEY, JSON.stringify(merged));
+      renderProjectsList();
+      showToastMsg('✅ ' + projets.length + ' projet' + (projets.length !== 1 ? 's' : '') + ' chargé' + (projets.length !== 1 ? 's' : '') + ' depuis Sheets');
+    })
+    .catch(function(err) {
+      var msg = err.message || '';
+      if (msg.toLowerCase().indexOf('networkerror') !== -1 || msg.toLowerCase().indexOf('failed to fetch') !== -1 || msg.toLowerCase().indexOf('load failed') !== -1) {
+        showToastMsg('❌ Connexion impossible — n8n est-il démarré ? Vérifiez l\'URL dans ⚙️ Webhooks');
+      } else if (msg === 'EMPTY_RESPONSE') {
+        showToastMsg('❌ n8n a répondu vide — le workflow est-il activé et configuré correctement ?');
+      } else if (msg.indexOf('INVALID_JSON:') === 0) {
+        showToastMsg('❌ Réponse non-JSON reçue — le workflow n8n doit retourner un tableau JSON');
+      } else if (msg.indexOf('HTTP ') === 0) {
+        showToastMsg('❌ Erreur serveur ' + msg + ' — vérifiez le workflow n8n');
+      } else {
+        showToastMsg('❌ Erreur Sheets : ' + msg);
+      }
+    })
+    .finally(function() {
+      if (btn) { btn.disabled = false; btn.textContent = '🔄 Sheets'; }
+    });
+}
+
+function renderProjectsList() {
+  var list = [];
+  try { list = JSON.parse(ISQStore.getItem(PROJ_LIST_KEY) || '[]'); } catch(e) {}
+  var body = document.getElementById('projetsListBody');
+  var countEl = document.getElementById('projetsListCount');
+  if (!body) return;
+  countEl.textContent = list.length + ' projet' + (list.length !== 1 ? 's' : '');
+
+  // Conserver le texte de recherche si déjà saisi
+  var prevSearch = '';
+  var prevEl = document.getElementById('projetsSearch');
+  if (prevEl) prevSearch = prevEl.value;
+
+  body.innerHTML =
+    '<div style="padding:14px 20px 10px;">' +
+      '<div style="position:relative;">' +
+        '<span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;pointer-events:none;">🔍</span>' +
+        '<input type="text" id="projetsSearch" placeholder="Rechercher par numéro de projet ou nom de client…" ' +
+          'oninput="filterProjectsList(this.value)" ' +
+          'style="width:100%;border:1px solid var(--bordure);border-radius:8px;padding:10px 14px 10px 36px;font-family:inherit;font-size:13px;background:var(--gris);outline:none;transition:border-color .2s,background .2s;" ' +
+          'onfocus="this.style.borderColor=\'#0170B9\';this.style.background=\'#fff\'" ' +
+          'onblur="this.style.borderColor=\'\';this.style.background=\'var(--gris)\'">' +
+      '</div>' +
+    '</div>' +
+    '<div id="projetsFilteredList" style="max-height:340px;overflow-y:auto;"></div>';
+
+  var searchEl = document.getElementById('projetsSearch');
+  if (searchEl && prevSearch) searchEl.value = prevSearch;
+
+  // Appliquer le filtre (ou afficher tout)
+  filterProjectsList(prevSearch);
+}
+
+function filterProjectsList(query) {
+  var list = [];
+  try { list = JSON.parse(ISQStore.getItem(PROJ_LIST_KEY) || '[]'); } catch(e) {}
+  var q = (query || '').toLowerCase().trim();
+  var filtered = q ? list.filter(function(e) {
+    return (e.job_number  || '').toLowerCase().indexOf(q) !== -1 ||
+           (e.client_name || '').toLowerCase().indexOf(q) !== -1;
+  }) : list;
+  var container = document.getElementById('projetsFilteredList');
+  if (!container) return;
+  if (list.length === 0) {
+    container.innerHTML = '<div style="padding:4px 20px 18px;text-align:center;color:#999;font-size:13px;">Aucun projet — cliquez sur 🔄 Sheets pour charger depuis Google Sheets</div>';
+  } else if (filtered.length === 0) {
+    container.innerHTML = '<div style="padding:16px 20px;text-align:center;color:#999;font-size:13px;">Aucun résultat pour « ' + (query || '') + ' »</div>';
+  } else {
+    container.innerHTML = buildProjectsListHtml(filtered);
+  }
+}
+
+window.addEventListener('load', function() {
+  renderProjectsList();
+  // Chargement auto depuis Sheets au démarrage
+  var w = ISQ.getWebhooks();
+  if ((w['liste_projets'] || '').trim()) {
+    var container = document.getElementById('projetsFilteredList');
+    if (container) container.innerHTML = '<div style="padding:16px 20px;text-align:center;color:#888;font-size:13px;">⏳ Chargement depuis Google Sheets…</div>';
+    var countEl = document.getElementById('projetsListCount');
+    if (countEl) countEl.textContent = '⏳';
+    chargerListeSheets(true);
+  }
+});
+
+// Fermer le modal en cliquant sur l'overlay
+document.getElementById('modalCR').addEventListener('click', function(e) {
+  if (e.target === this) fermerModal();
+});
+
+// ================================================================
+// CALENDRIER — DATE DE DÉBUT
+// ================================================================
+(function () {
+  var MOIS = ['Janvier','Février','Mars','Avril','Mai','Juin',
+              'Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+  var JOURS_COURT = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+
+  var popup  = document.getElementById('calPopup');
+  var input  = document.getElementById('f_start_date');
+  var today  = new Date();
+  today.setHours(0,0,0,0);
+
+  var curYear  = today.getFullYear();
+  var curMonth = today.getMonth();
+  var selected = null; // Date object
+
+  // Lire la valeur existante si déjà remplie
+  function parseInputDate() {
+    var v = input.value.trim();
+    if (!v) return null;
+    var m = v.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (m) return new Date(+m[1], +m[2]-1, +m[3]);
+    return null;
+  }
+
+  function render() {
+    var firstDow = new Date(curYear, curMonth, 1).getDay(); // 0=dim
+    var daysInMo = new Date(curYear, curMonth + 1, 0).getDate();
+    var daysInPrev = new Date(curYear, curMonth, 0).getDate();
+
+    var html = '<div class="cal-head">'
+      + '<button class="cal-nav-btn" type="button" onclick="calPrev()">&#8249;</button>'
+      + '<span class="cal-label">' + MOIS[curMonth] + ' ' + curYear + '</span>'
+      + '<button class="cal-nav-btn" type="button" onclick="calNext()">&#8250;</button>'
+      + '</div>'
+      + '<div class="cal-weekdays">'
+      + JOURS_COURT.map(function(j){ return '<span>'+j+'</span>'; }).join('')
+      + '</div>'
+      + '<div class="cal-days">';
+
+    // Jours du mois précédent (remplissage)
+    for (var i = 0; i < firstDow; i++) {
+      var d = daysInPrev - firstDow + 1 + i;
+      html += '<button class="cal-day other-month" type="button">' + d + '</button>';
+    }
+
+    // Jours du mois courant
+    for (var d = 1; d <= daysInMo; d++) {
+      var dt = new Date(curYear, curMonth, d);
+      var cls = 'cal-day';
+      if (dt.getTime() === today.getTime()) cls += ' today';
+      if (selected && dt.getTime() === selected.getTime()) cls += ' selected';
+      html += '<button class="' + cls + '" type="button" onclick="calPick(' + d + ')">' + d + '</button>';
+    }
+
+    // Compléter la grille avec les jours du mois suivant
+    var total = firstDow + daysInMo;
+    var rem = total % 7 === 0 ? 0 : 7 - (total % 7);
+    for (var i = 1; i <= rem; i++) {
+      html += '<button class="cal-day other-month" type="button">' + i + '</button>';
+    }
+
+    html += '</div>';
+    html += '<button class="cal-today-btn" type="button" onclick="calGoToday()">Aujourd\'hui</button>';
+    popup.innerHTML = html;
+  }
+
+  window.calToggle = function () {
+    if (popup.classList.contains('open')) {
+      popup.classList.remove('open');
+    } else {
+      var fromInput = parseInputDate();
+      if (fromInput) {
+        selected = fromInput;
+        curYear  = fromInput.getFullYear();
+        curMonth = fromInput.getMonth();
+      }
+      render();
+      // Positionner sous l'input en fixed pour ignorer overflow:hidden des parents
+      var rect = input.getBoundingClientRect();
+      var popupW = 294;
+      var left = rect.left;
+      if (left + popupW > window.innerWidth - 8) left = window.innerWidth - popupW - 8;
+      popup.style.top  = (rect.bottom + 6) + 'px';
+      popup.style.left = left + 'px';
+      popup.classList.add('open');
+    }
+  };
+
+  window.calPrev = function () {
+    curMonth--;
+    if (curMonth < 0) { curMonth = 11; curYear--; }
+    render();
+  };
+
+  window.calNext = function () {
+    curMonth++;
+    if (curMonth > 11) { curMonth = 0; curYear++; }
+    render();
+  };
+
+  window.calPick = function (day) {
+    selected = new Date(curYear, curMonth, day);
+    var mm = String(curMonth + 1).padStart(2, '0');
+    var dd = String(day).padStart(2, '0');
+    input.value = curYear + '-' + mm + '-' + dd;
+    popup.classList.remove('open');
+    // Déclencher input event pour que le auto-save le détecte
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    // Mettre à jour isq_projet et les liens immédiatement
+    try {
+      var p = JSON.parse(ISQStore.getItem('isq_projet') || '{}');
+      p.start_date = input.value;
+      ISQStore.setItem('isq_projet', JSON.stringify(p));
+    } catch(e) {}
+    if (window.updateLinks) updateLinks();
+  };
+
+  window.calGoToday = function () {
+    curYear  = today.getFullYear();
+    curMonth = today.getMonth();
+    calPick(today.getDate());
+  };
+
+  // Fermer si clic en dehors du calendrier
+  document.addEventListener('click', function (e) {
+    if (!popup.contains(e.target)
+        && e.target !== input
+        && !e.target.classList.contains('cal-btn')) {
+      popup.classList.remove('open');
+    }
+  });
+
+  // Initialiser la date sélectionnée si déjà une valeur dans l'input (ex: ISQStore)
+  window.addEventListener('load', function () {
+    var fromInput = parseInputDate();
+    if (fromInput) {
+      selected = fromInput;
+      curYear  = fromInput.getFullYear();
+      curMonth = fromInput.getMonth();
+    }
+  });
+}());
+</script>
+
+</body>
+</html>
