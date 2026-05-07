@@ -146,17 +146,6 @@ app.delete('/api/saves', (req, res) => {
 // ── Pages HTML — injection de __ISQ_PRELOAD__ ──────────────────────
 const STATIC_DIR = __dirname;
 
-// Endpoint de diagnostic (temporaire)
-app.get('/debug-fs', (req, res) => {
-  const htmlFiles = fs.readdirSync(STATIC_DIR).filter(f => f.endsWith('.html'));
-  const bonPath   = path.join(STATIC_DIR, 'Bon de travail.html');
-  res.json({
-    dirname:    __dirname,
-    bonExists:  fs.existsSync(bonPath),
-    bonPath,
-    htmlFiles
-  });
-});
 
 app.get(/\.html$/, (req, res) => {
   const filePath = path.join(STATIC_DIR, decodeURIComponent(req.path));
