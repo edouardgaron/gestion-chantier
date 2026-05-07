@@ -146,7 +146,7 @@ app.delete('/api/saves', (req, res) => {
 // ── Pages HTML — injection de __ISQ_PRELOAD__ ──────────────────────
 const STATIC_DIR = __dirname;
 
-app.get('*.html', (req, res) => {
+app.get(/\.html$/, (req, res) => {
   const filePath = path.join(STATIC_DIR, req.path);
   if (!fs.existsSync(filePath)) return res.status(404).send('Page introuvable.');
 
