@@ -159,7 +159,7 @@ app.get('/debug-fs', (req, res) => {
 });
 
 app.get(/\.html$/, (req, res) => {
-  const filePath = path.join(STATIC_DIR, req.path);
+  const filePath = path.join(STATIC_DIR, decodeURIComponent(req.path));
   if (!fs.existsSync(filePath)) return res.status(404).send('Page introuvable.');
 
   let html = fs.readFileSync(filePath, 'utf8');
