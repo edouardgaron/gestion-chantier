@@ -61,6 +61,8 @@ const stmtSaveCount  = db.prepare('SELECT COUNT(*) as cnt FROM saves');
 // ── Middleware ─────────────────────────────────────────────────────
 app.use(express.json());
 
+app.get('/favicon.ico', (req, res) => res.status(204).end());
+
 // ── API /api/kv ────────────────────────────────────────────────────
 
 // GET /api/kv — toutes les paires clé-valeur
