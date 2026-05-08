@@ -2297,6 +2297,20 @@ document.addEventListener('input', function(e) {
         if (el) el.textContent = finMap[id];
       });
 
+      // Si le client a changé, vider les cartes de l'ancien client
+      if (proj.job_number && saved && saved.job_number && proj.job_number !== saved.job_number) {
+        document.querySelectorAll('.cp-card[data-field]').forEach(function(card) {
+          card.querySelector('.cp-swatch').style.background = '#F4F2EC';
+          card.querySelector('.cp-selected').textContent = 'Aucune sélection';
+          card.querySelector('.cp-source').textContent = '';
+          card.querySelector('.cp-search').value = '';
+          card.dataset.selectedCode = '';
+          card.dataset.selectedNom = '';
+          card.dataset.selectedHex = '';
+          card.dataset.selectedSource = '';
+          card.classList.remove('has-color');
+        });
+      }
       // Appliquer colors_raw depuis isq_projet pour les bulles sans couleur
       if (proj.colors_raw && document.querySelector('.cp-card:not(.has-color)')) {
         var normPrj = function(s) {
