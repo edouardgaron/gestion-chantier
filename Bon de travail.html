@@ -2357,8 +2357,8 @@ document.addEventListener('input', function(e) {
       }
     } catch(e2) {}
 
-    // Auto-remplir chef d'équipe avec l'utilisateur connecté si vide
-    (function() { var el = document.querySelector('[data-jobber-field="foreman_name"]'); if (el && !el.value) { var u = ISQAuth.getCurrentUser(); if (u) el.value = u.nom; } })();
+    // Chef de chantier = toujours l'utilisateur connecté (écrase les données sauvegardées)
+    (function() { var el = document.querySelector('[data-jobber-field="foreman_name"]'); var u = ISQAuth.getCurrentUser(); if (el && u) el.value = u.nom; })();
 
     // Sauvegarder immédiatement après remplissage (capture les valeurs pré-remplies)
     setTimeout(function(){ syncMat1(); calcTaskHours(); syncConsommables(); autoFillTaskQty(); syncCheckboxesToQty(); saveJobData(); }, 100);

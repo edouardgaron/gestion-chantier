@@ -1252,7 +1252,7 @@ window.addEventListener('DOMContentLoaded', function() {
     fill('client_name', p.client_name);
     fill('client_phone', p.client_phone);
     fill('job_address', p.job_address);
-    fill('foreman_name', p.foreman_name || (function(){ var _u = ISQAuth.getCurrentUser(); return _u ? _u.nom : ''; })());
+    fill('foreman_name', (function(){ var _u = ISQAuth.getCurrentUser(); return _u ? _u.nom : p.foreman_name; })());
     fill('work_type', p.work_type);
     fill('surface_type', p.surface_type);
     fill('total_sqft', p.total_sqft);
