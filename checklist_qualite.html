@@ -1146,9 +1146,10 @@
       ['job_number','client_name','client_phone','job_address','foreman_name','start_date',
        'work_type','surface_type','total_sqft','crew_size','end_date','job_completion_date'].forEach(function(f) {
         if (!proj[f]) return;
+        var alwaysSync = ['job_number','client_name','client_phone','job_address','start_date'].indexOf(f) >= 0;
         document.querySelectorAll('[data-jobber-field="' + f + '"]').forEach(function(el) {
-          if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') { if (!el.value) el.value = proj[f]; }
-          else { if (!el.textContent || el.textContent === '#JOB-____-___') el.textContent = proj[f]; }
+          if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') { if (alwaysSync || !el.value) el.value = proj[f]; }
+          else { if (alwaysSync || !el.textContent || el.textContent === '#JOB-____-___') el.textContent = proj[f]; }
         });
       });
     } catch(e2) {}

@@ -2276,9 +2276,10 @@ document.addEventListener('input', function(e) {
        'emergency_name','emergency_phone',
        'quote_number','subtotal','tps_amount','tvq_amount','total_ttc','acompte_amount','solde_amount'].forEach(function(f) {
         if (!proj[f]) return;
+        var alwaysSync = ['job_number','client_name','client_phone','job_address','start_date'].indexOf(f) >= 0;
         document.querySelectorAll('[data-jobber-field="' + f + '"]').forEach(function(el) {
-          if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') { if (!el.value) el.value = proj[f]; }
-          else { if (!el.textContent || el.textContent === '#JOB-____-___') el.textContent = proj[f]; }
+          if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') { if (alwaysSync || !el.value) el.value = proj[f]; }
+          else { if (alwaysSync || !el.textContent || el.textContent === '#JOB-____-___') el.textContent = proj[f]; }
         });
       });
       // Remplir la section financière (champs lecture seule)
