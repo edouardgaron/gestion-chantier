@@ -270,6 +270,32 @@
       <div class="info-cell"><div class="lbl">Durée (jours)</div><input type="number" class="val" placeholder="0"></div>
     </div>
 
+    <!-- MATÉRIAUX SPÉCIFIÉS -->
+    <div class="section-title" style="margin-top:20px;display:flex;align-items:center;justify-content:space-between;">
+      <span>🧮 Matériaux spécifiés</span>
+      <button class="btn-sm btn-orange no-print" onclick="calcSpec()" style="font-size:10px;padding:3px 12px;border-radius:4px;background:#fff;color:var(--primaire);border:1.5px solid rgba(255,255,255,.7);font-weight:700;">⟳ Recalculer</button>
+    </div>
+    <div id="sec-spec">
+      <p id="specNote" style="font-size:11px;color:#888;margin-bottom:10px;font-style:italic;padding:0 2px;">
+        Calculé à partir de la description du projet et des normes de production.
+      </p>
+      <div style="overflow-x:auto;">
+      <table class="data-table" id="specTable">
+        <thead>
+          <tr>
+            <th>Matériau</th>
+            <th>Base de calcul</th>
+            <th class="r" style="width:90px;">Qté estimée</th>
+            <th style="width:100px;">Unité</th>
+          </tr>
+        </thead>
+        <tbody id="specBody">
+          <tr id="specEmpty"><td colspan="4" style="text-align:center;color:#aaa;padding:14px;font-size:12px;">— Données de projet manquantes — remplissez la description dans le Bon de travail —</td></tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+
     <!-- TABLEAU PRINCIPAL -->
     <div class="section-title" style="margin-top:20px;">
       <span>📦 Tableau commandé vs utilisé</span>
@@ -818,6 +844,101 @@ function autoCalcQty(row, catalogueCat) {
 
 loadCFG();
 loadJobData();
+
+// ================================================================
+// MATÉRIAUX SPÉCIFIÉS — calcul automatique depuis description projet + normes config
+// ================================================================
+function calcSpec() {
+  loadCFG();
+  loadJobData();
+  var J = window.JOB || {};
+  var C = window.CFG || CFG_DEFAULTS;
+
+  function pn(v) { return parseFloat((v||'').toString().replace(/[^\d.,]/g,'').replace(',','.')) || 0; }
+  function rd1(v) { return Math.round(v * 10) / 10; }
+
+  var sqft    = pn(J.total_sqft);
+  var sablage = pn(J.sanding_sqft);
+  var portes  = pn(J.doors_count);
+  var garages = pn(J.garage_doors_count);
+  var fenetres= pn(J.windows_count);
+  var toiture = pn(J.roofing);
+  var gout    = pn(J.gouttieres_sqft);
+  var surface = (J.surface_type || '').toLowerCase()
+    .replace(/[àâä]/g,'a').replace(/[éèê]/g,'e').replace(/[îï]/g,'i')
+    .replace(/[ôö]/g,'o').replace(/[ùû]/g,'u').replace(/ç/g,'c');
+  var IS_MACON = /stuc|brique|agr|beton|macon|pierre/.test(surface);
+  var pi2Gal   = IS_MACON ? C.rev_macon_pi2_gal : C.rev_std_pi2_gal;
+
+  var rows = [];
+
+  if (sablage > 0) {
+    rows.push({ label:'Apprêt', detail: sablage+' pi² ÷ '+C.apret_pi2_gal+' pi²/gal', qty: rd1(sablage / C.apret_pi2_gal), unit:'gallon(s)' });
+  }
+  if (sqft > 0) {
+    var typeLbl = IS_MACON ? 'maçonnerie' : 'standard';
+    rows.push({ label:'Peinture — revêtement', detail: sqft+' pi² ÷ '+pi2Gal+' pi²/gal ('+typeLbl+')', qty: rd1(sqft / pi2Gal), unit:'gallon(s)' });
+  }
+  var gal_gout  = gout > 0 ? gout / C.gout_pi_li_gal : 0;
+  var gal_pf    = portes * C.gal_porte + garages * C.gal_garage + fenetres * C.gal_fen_simple;
+  var gal_garni = gal_gout + gal_pf;
+  if (gal_garni > 0) {
+    var gParts = [];
+    if (gout>0)     gParts.push(gout+' pi li. gouttières');
+    if (portes>0)   gParts.push(portes+' porte(s) × '+C.gal_porte+' gal');
+    if (garages>0)  gParts.push(garages+' p.gar. × '+C.gal_garage+' gal');
+    if (fenetres>0) gParts.push(fenetres+' fen. × '+C.gal_fen_simple+' gal');
+    rows.push({ label:'Peinture — garnitures', detail: gParts.join(' + '), qty: rd1(gal_garni), unit:'gallon(s)' });
+  }
+  if (toiture > 0) {
+    rows.push({ label:'Peinture — toiture (alkyde)', detail: toiture+' pi² ÷ '+C.toiture_alkyde_pi2_gal+' pi²/gal', qty: rd1(toiture / C.toiture_alkyde_pi2_gal), unit:'gallon(s)' });
+  }
+  var tubes = portes * C.calf_porte_tube + garages * C.calf_garage_tube + fenetres * C.calf_fen_simple_tube;
+  if (tubes > 0) {
+    var tp = [];
+    if (portes>0)   tp.push(portes+'P × '+C.calf_porte_tube);
+    if (garages>0)  tp.push(garages+'PG × '+C.calf_garage_tube);
+    if (fenetres>0) tp.push(fenetres+'F × '+C.calf_fen_simple_tube);
+    rows.push({ label:'Calfeutrage', detail: tp.join(' + '), qty: Math.ceil(tubes), unit:'tube(s)' });
+  }
+  var polyQty = fenetres > 0 ? Math.ceil(fenetres / C.poly_par_fen) : 0;
+  if (polyQty > 0) {
+    rows.push({ label:'Polythène', detail: fenetres+' fen. ÷ '+C.poly_par_fen+' fen./roul.', qty: polyQty, unit:'rouleau(x)' });
+  }
+  var totGal  = (sqft > 0 ? sqft / pi2Gal : 0) + gal_garni + (toiture > 0 ? toiture / C.toiture_alkyde_pi2_gal : 0);
+  var tapeQty = (totGal > 0 || polyQty > 0) ? Math.ceil(totGal / C.tape_par_gal + polyQty * C.tape_par_poly) : 0;
+  if (tapeQty > 0) {
+    rows.push({ label:'Tape 3M', detail: rd1(totGal)+' gal total ÷ '+C.tape_par_gal+' gal/roul.', qty: tapeQty, unit:'rouleau(x)' });
+  }
+  var papier = totGal > 0 ? Math.ceil(totGal / C.papier_par_gal) : 0;
+  if (papier > 0) {
+    rows.push({ label:'Rouleaux de papier', detail: rd1(totGal)+' gal ÷ '+C.papier_par_gal+' gal/roul.', qty: papier, unit:'rouleau(x)' });
+  }
+  if (sablage > 0) {
+    rows.push({ label:'Disques à sabler', detail: sablage+' pi² ÷ '+C.disque_par_pi2+' pi²/disque', qty: Math.ceil(sablage / C.disque_par_pi2), unit:'disque(s)' });
+  }
+
+  var tbody = document.getElementById('specBody');
+  if (!tbody) return;
+  var note  = document.getElementById('specNote');
+
+  if (rows.length === 0) {
+    tbody.innerHTML = '<tr id="specEmpty"><td colspan="4" style="text-align:center;color:#aaa;padding:14px;font-size:12px;">— Données de projet manquantes — remplissez la description dans le Bon de travail —</td></tr>';
+    if (note) note.textContent = 'Aucune donnée de projet disponible.';
+    return;
+  }
+
+  tbody.innerHTML = rows.map(function(r) {
+    return '<tr>' +
+      '<td style="font-weight:600;">' + r.label + '</td>' +
+      '<td style="color:#666;font-size:11px;">' + r.detail + '</td>' +
+      '<td class="r" style="font-weight:800;color:var(--primaire);font-size:14px;">' + r.qty + '</td>' +
+      '<td style="color:#555;">' + r.unit + '</td>' +
+    '</tr>';
+  }).join('');
+
+  if (note) note.textContent = 'Mis à jour à ' + new Date().toLocaleTimeString('fr-CA', {hour:'2-digit', minute:'2-digit'});
+}
 
 // ================================================================
 // TABLE MANAGEMENT
@@ -1390,6 +1511,9 @@ addWasteRow();
 
   } catch(e){}
 })();
+
+// Calculer les matériaux spécifiés dès que les données de projet sont chargées
+calcSpec();
 
 // ================================================================
 // LOOKUP PRIX CATALOGUE (utilisé pour l'import depuis Bon de travail)
