@@ -222,6 +222,13 @@ window.ISQAuth = (function () {
   /* ── Auto-init au chargement ─────────────────────────────────── */
   document.addEventListener('DOMContentLoaded', function () {
     _injectBadge();
+    /* Sync : si SQLite a des utilisateurs, les copier dans localStorage */
+    try {
+      var current = JSON.parse(ISQStore.getItem(USERS_KEY) || '[]');
+      if (current.length > 0) {
+        localStorage.setItem(USERS_LS_KEY, JSON.stringify(current));
+      }
+    } catch (e) {}
   });
 
   return {
