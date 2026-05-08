@@ -7,6 +7,7 @@ window.ISQSavesDB = (function () {
   'use strict';
 
   var _lastLog = {};
+  var _PROJ_LIST_KEY = 'isq_projets_liste';
 
   var DOC_LABELS = {
     bon_travail:    'Bon de travail',
@@ -15,6 +16,27 @@ window.ISQSavesDB = (function () {
     materiaux:      'Suivi matériaux',
     satisfaction:   'Rapport satisfaction'
   };
+
+  /* ── Mettre à jour isq_projets_liste à chaque sauvegarde ─────── */
+  function _updateProjectEntry(proj) {
+    if (!proj || !proj.job_number) return;
+    var list = [];
+    try { list = JSON.parse(ISQStore.getItem(_PROJ_LIST_KEY) || '[]'); } catch(e) {}
+    var entry = {};
+    Object.keys(proj).forEach(function(k) {
+      if (k !== '_sig_foreman' && k !== '_sig_client') entry[k] = proj[k];
+    });
+    entry.saved_at = new Date().toLocaleString('fr-CA', {
+      year: 'numeric', month: 'short', day: 'numeric',
+      hour: '2-digit', minute: '2-digit'
+    });
+    var idx = -1;
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].job_number === proj.job_number) { idx = i; break; }
+    }
+    if (idx >= 0) { list[idx] = entry; } else { list.unshift(entry); }
+    try { ISQStore.setItem(_PROJ_LIST_KEY, JSON.stringify(list)); } catch(e) {}
+  }
 
   /* ── Nettoyage des données avant stockage ─────────────────────── */
   function _clean(data) {
@@ -36,6 +58,12 @@ window.ISQSavesDB = (function () {
       if (_lastLog[key] && (now - _lastLog[key]) < 30000) return;
       _lastLog[key] = now;
     }
+
+    // Synchroniser isq_projets_liste avec les infos projet actuelles
+    try {
+      var _proj = JSON.parse((window.ISQStore && ISQStore.getItem('isq_projet')) || '{}');
+      _updateProjectEntry(_proj);
+    } catch(e) {}
 
     fetch('/api/saves', {
       method:  'POST',
