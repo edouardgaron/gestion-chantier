@@ -1046,7 +1046,7 @@
     fill('job_number', p.job_number);
     fill('client_name', p.client_name);
     fill('job_address', p.job_address);
-    fill('foreman_name', p.foreman_name);
+    fill('foreman_name', p.foreman_name || (function(){ var _u = ISQAuth.getCurrentUser(); return _u ? _u.nom : ''; })());
     fill('start_date', p.start_date);
     fill('total_sqft', p.total_sqft);
     fill('work_type', p.work_type);

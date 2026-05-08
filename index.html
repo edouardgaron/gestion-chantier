@@ -1143,6 +1143,8 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   loadProjet();
+  // Pré-remplir chef d'équipe avec l'utilisateur connecté si le champ est vide
+  (function() { var el = document.getElementById('f_foreman_name'); if (el && !el.value) { var u = ISQAuth.getCurrentUser(); if (u) el.value = u.nom; } })();
   updateLinks();
   window.updateLinks = updateLinks;
   window.loadFromJob  = loadFromJob;
