@@ -7,9 +7,10 @@
 window.ISQAuth = (function () {
   'use strict';
 
-  var USERS_KEY   = 'isq_users';
-  var SESSION_KEY = 'isq_session';
-  var SALT        = 'ISQ_INNOVASPRAY_2026';
+  var USERS_KEY    = 'isq_users';
+  var USERS_LS_KEY = 'isq_users_permanent';
+  var SESSION_KEY  = 'isq_session';
+  var SALT         = 'ISQ_INNOVASPRAY_2026';
 
   /* ── Hachage SHA-256 via SubtleCrypto ────────────────────────── */
   async function hashPwd(pwd) {
@@ -23,11 +24,23 @@ window.ISQAuth = (function () {
 
   /* ── Utilisateurs — lecture / écriture ───────────────────────── */
   function getUsers() {
-    try { return JSON.parse(ISQStore.getItem(USERS_KEY) || '[]'); } catch (e) { return []; }
+    try {
+      var fromStore = JSON.parse(ISQStore.getItem(USERS_KEY) || '[]');
+      if (fromStore.length > 0) return fromStore;
+      /* Fallback : restaurer depuis localStorage si SQLite est vide */
+      var fromLS = JSON.parse(localStorage.getItem(USERS_LS_KEY) || '[]');
+      if (fromLS.length > 0) {
+        ISQStore.setItem(USERS_KEY, JSON.stringify(fromLS));
+        return fromLS;
+      }
+      return [];
+    } catch (e) { return []; }
   }
 
   function saveUsers(users) {
     ISQStore.setItem(USERS_KEY, JSON.stringify(users));
+    /* Backup permanent dans localStorage du navigateur */
+    try { localStorage.setItem(USERS_LS_KEY, JSON.stringify(users)); } catch (e) {}
   }
 
   /* ── Session (sessionStorage — fermée quand onglet ferme) ─────── */
