@@ -1054,7 +1054,10 @@
     var saved = null;
     try {
       if (p.job_number) saved = JSON.parse(ISQStore.getItem('isq_checklist_' + p.job_number) || 'null');
-      if (!saved)        saved = JSON.parse(ISQStore.getItem('isq_checklist_courant')           || 'null');
+      if (!saved) {
+        var _courantCL = JSON.parse(ISQStore.getItem('isq_checklist_courant') || 'null');
+        if (_courantCL && (!p.job_number || !_courantCL.job_number || _courantCL.job_number === p.job_number)) saved = _courantCL;
+      }
     } catch(e) {}
     if (saved) {
       Object.keys(saved).forEach(function(f) {

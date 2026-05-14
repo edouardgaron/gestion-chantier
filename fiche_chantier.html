@@ -1261,10 +1261,16 @@ window.addEventListener('DOMContentLoaded', function() {
     var saved = null;
     try {
       if (p.job_number) saved = JSON.parse(ISQStore.getItem('isq_fiche_' + p.job_number + '_j1') || 'null');
-      if (!saved)        saved = JSON.parse(ISQStore.getItem('isq_fiche_courant_j1') || 'null');
+      if (!saved) {
+        var _courantFJ1 = JSON.parse(ISQStore.getItem('isq_fiche_courant_j1') || 'null');
+        if (_courantFJ1 && (!p.job_number || !_courantFJ1.job_number || _courantFJ1.job_number === p.job_number)) saved = _courantFJ1;
+      }
       // Compatibilité avec les anciennes clés sans numéro de jour
       if (!saved && p.job_number) saved = JSON.parse(ISQStore.getItem('isq_fiche_' + p.job_number) || 'null');
-      if (!saved)                  saved = JSON.parse(ISQStore.getItem('isq_fiche_courant') || 'null');
+      if (!saved) {
+        var _courantF = JSON.parse(ISQStore.getItem('isq_fiche_courant') || 'null');
+        if (_courantF && (!p.job_number || !_courantF.job_number || _courantF.job_number === p.job_number)) saved = _courantF;
+      }
     } catch(e) {}
     if (saved) {
       Object.keys(saved).forEach(function(f) {
@@ -1462,7 +1468,10 @@ function switchJour(n) {
   var saved = null;
   try {
     if (jobNum) saved = JSON.parse(ISQStore.getItem('isq_fiche_' + jobNum + jk) || 'null');
-    if (!saved)  saved = JSON.parse(ISQStore.getItem('isq_fiche_courant' + jk) || 'null');
+    if (!saved) {
+      var _courantFJn = JSON.parse(ISQStore.getItem('isq_fiche_courant' + jk) || 'null');
+      if (_courantFJn && (!jobNum || !_courantFJn.job_number || _courantFJn.job_number === jobNum)) saved = _courantFJn;
+    }
   } catch(e) {}
 
   if (saved) {
@@ -1540,7 +1549,10 @@ function updateJourIndicators() {
     try {
       var d = null;
       if (jobNum) d = JSON.parse(ISQStore.getItem('isq_fiche_' + jobNum + jk) || 'null');
-      if (!d) d = JSON.parse(ISQStore.getItem('isq_fiche_courant' + jk) || 'null');
+      if (!d) {
+        var _courantFHD = JSON.parse(ISQStore.getItem('isq_fiche_courant' + jk) || 'null');
+        if (_courantFHD && (!jobNum || !_courantFHD.job_number || _courantFHD.job_number === jobNum)) d = _courantFHD;
+      }
       if (d) hasData = Object.keys(d).some(function(k) { return k.charAt(0) !== '_' && d[k] && d[k] !== 'Non'; });
     } catch(e) {}
     btn.classList.toggle('has-data', hasData);

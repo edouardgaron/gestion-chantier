@@ -722,10 +722,15 @@ function loadCFG() {
 
 function loadJobData() {
   var j = {};
-  try { j = JSON.parse(ISQStore.getItem('isq_bon_travail_courant') || '{}'); } catch(e) {}
-  // Toujours combler les champs manquants depuis isq_projet (fiche chantier)
   try {
     var p = JSON.parse(ISQStore.getItem('isq_projet') || '{}');
+    var jobNum = p.job_number || '';
+    if (jobNum) { try { j = JSON.parse(ISQStore.getItem('isq_bon_travail_' + jobNum) || '{}'); } catch(e2) {} }
+    if (!j.job_number) {
+      var _courantBT2 = {};
+      try { _courantBT2 = JSON.parse(ISQStore.getItem('isq_bon_travail_courant') || '{}'); } catch(e3) {}
+      if (!jobNum || !_courantBT2.job_number || _courantBT2.job_number === jobNum) j = _courantBT2;
+    }
     ['total_sqft','surface_type','floors_count','sanding_sqft','doors_count',
      'garage_doors_count','windows_count','roofing','gouttieres_sqft'].forEach(function(f) {
       if (!j[f] && p[f]) j[f] = p[f];
@@ -1367,7 +1372,10 @@ addWasteRow();
     var saved = null;
     try {
       if (p.job_number) saved = JSON.parse(ISQStore.getItem('isq_materiaux_' + p.job_number) || 'null');
-      if (!saved)        saved = JSON.parse(ISQStore.getItem('isq_materiaux_courant')           || 'null');
+      if (!saved) {
+        var _courantMat = JSON.parse(ISQStore.getItem('isq_materiaux_courant') || 'null');
+        if (_courantMat && (!p.job_number || !_courantMat.job_number || _courantMat.job_number === p.job_number)) saved = _courantMat;
+      }
     } catch(e) {}
     if (saved) {
       // Restore jobber fields

@@ -804,7 +804,10 @@
     var saved = null;
     try {
       if (p.job_number) saved = JSON.parse(ISQStore.getItem('isq_satisfaction_' + p.job_number) || 'null');
-      if (!saved)        saved = JSON.parse(ISQStore.getItem('isq_satisfaction_courant')           || 'null');
+      if (!saved) {
+        var _courantSat = JSON.parse(ISQStore.getItem('isq_satisfaction_courant') || 'null');
+        if (_courantSat && (!p.job_number || !_courantSat.job_number || _courantSat.job_number === p.job_number)) saved = _courantSat;
+      }
     } catch(e) {}
     if (saved) {
       Object.keys(saved).forEach(function(f) {

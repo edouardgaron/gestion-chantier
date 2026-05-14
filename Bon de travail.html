@@ -2096,7 +2096,10 @@ document.addEventListener('input', function(e) {
     var saved = null;
     try {
       if (jobNumber) saved = JSON.parse(ISQStore.getItem('isq_bon_travail_' + jobNumber) || 'null');
-      if (!saved)    saved = JSON.parse(ISQStore.getItem('isq_bon_travail_courant') || 'null');
+      if (!saved) {
+        var _courantBT = JSON.parse(ISQStore.getItem('isq_bon_travail_courant') || 'null');
+        if (_courantBT && (!jobNumber || !_courantBT.job_number || _courantBT.job_number === jobNumber)) saved = _courantBT;
+      }
     } catch(e) {}
 
     if (saved) {
@@ -2378,7 +2381,7 @@ document.addEventListener('input', function(e) {
     // Sauvegarder immédiatement après remplissage (capture les valeurs pré-remplies)
     setTimeout(function(){ syncMat1(); calcTaskHours(); syncConsommables(); autoFillTaskQty(); syncCheckboxesToQty(); saveJobData(); }, 100);
 
-    // Auto-fetch Google Sheets si des champs Description du projet ou des couleurs sont vides
+    // Auto-fetch Google Sheets si des champs clés sont absents
     setTimeout(function() {
       try {
         var webhooks = ISQ.getWebhooks();
@@ -2386,7 +2389,10 @@ document.addEventListener('input', function(e) {
         var jn = (document.querySelector('[data-jobber-field="job_number"]') || {});
         var num = (jn.value || jn.textContent || '').replace(/[^0-9]/g, '').trim();
         if (!num) return;
-        // Toujours fetcher quand le numéro existe — données Sheets toujours prioritaires sur le cache
+        // Ne fetcher que si des données clés manquent (total_sqft ou client_name)
+        var elSqft = document.querySelector('[data-jobber-field="total_sqft"]');
+        var elClient = document.querySelector('[data-jobber-field="client_name"]');
+        if ((elSqft && elSqft.value) && (elClient && elClient.value)) return;
         fetch(webhooks['lookup'] + '?numero=' + encodeURIComponent(num))
           .then(function(r){ return r.ok ? r.json() : null; })
           .then(function(data) {

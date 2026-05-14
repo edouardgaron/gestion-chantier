@@ -1052,7 +1052,7 @@ document.addEventListener('DOMContentLoaded', function () {
     try {
       var saved = JSON.parse(ISQStore.getItem('isq_job_' + num) || 'null');
       if (saved && applyData(saved)) {
-        showToastMsg('✓ Informations chargées (local)');
+        if (!silent) showToastMsg('✓ Informations chargées (local)');
         return;
       }
     } catch(e) {}
@@ -1823,7 +1823,6 @@ function loadProject(jobNum) {
   });
   if (window.updateLinks) updateLinks();
   if (typeof refreshDocStatuts === 'function') refreshDocStatuts();
-  showToastMsg('⏳ Chargement de ' + jobNum + '…');
   if (window.loadFromJob) window.loadFromJob(jobNum);
 }
 
