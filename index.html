@@ -1408,6 +1408,8 @@ function confirmerEnvoi() {
 
   var formData = new FormData();
   formData.append('metadata', JSON.stringify(meta));
+  // Champs individuels pour accès direct dans n8n (sans parser le JSON)
+  Object.keys(meta).forEach(function(k) { formData.append(k, meta[k]); });
 
   // Capture les pages une par une puis envoie
   var index = 0;
