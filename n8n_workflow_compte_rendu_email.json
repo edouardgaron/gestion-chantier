@@ -1,0 +1,104 @@
+{
+  "name": "ISQ — Compte rendu de la journée (email PDFs)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "isq-fiches-chantier",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "id": "1a2b3c4d-0001-0001-0001-000000000001",
+      "name": "Webhook — Fiches chantier",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "isq-fiches-chantier"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Récupérer les métadonnées envoyées par l'app\nlet meta = {};\ntry {\n  const raw = $input.first().json.body?.metadata || '{}';\n  meta = JSON.parse(raw);\n} catch(e) {}\n\nconst jobNum     = meta.job_number   || 'N/A';\nconst client     = meta.client_name  || 'N/A';\nconst adresse    = meta.job_address  || 'N/A';\nconst foreman    = meta.foreman_name || 'N/A';\nconst dateLocale = meta.date_locale  || new Date().toLocaleDateString('fr-CA');\nconst heure      = meta.heure_locale || new Date().toLocaleTimeString('fr-CA', {hour:'2-digit',minute:'2-digit'});\n\nconst sujet = `Compte rendu — Chantier ${jobNum} — ${dateLocale}`;\n\nconst corps = `Bonjour,\n\nVeuillez trouver ci-joint le compte rendu de la journée pour :\n\n• Chantier :       ${jobNum}\n• Client :         ${client}\n• Adresse :        ${adresse}\n• Chef d'équipe :  ${foreman}\n• Date :           ${dateLocale} à ${heure}\n\nDocuments joints :\n  - Bon de travail\n  - Fiche de chantier\n  - Checklist qualité\n  - Suivi des matériaux\n  - Rapport de satisfaction\n\nBonne journée,\nSystème InnovaSpray Québec`;\n\nreturn [{ json: { sujet, corps, jobNum, client, adresse, foreman, dateLocale, heure } }];"
+      },
+      "id": "1a2b3c4d-0002-0002-0002-000000000002",
+      "name": "Code — Préparer email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "sendTo": "garonedouard@gmail.com",
+        "subject": "={{ $json.sujet }}",
+        "emailType": "text",
+        "message": "={{ $json.corps }}",
+        "options": {
+          "attachmentsUi": {
+            "attachmentsBinary": [
+              { "property": "bon_de_travail" },
+              { "property": "fiche_de_chantier" },
+              { "property": "checklist" },
+              { "property": "suivi_materiaux" },
+              { "property": "satisfaction" }
+            ]
+          }
+        }
+      },
+      "id": "1a2b3c4d-0003-0003-0003-000000000003",
+      "name": "Gmail — Envoyer compte rendu",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [720, 300],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "JImWyq0YJeOz2zPy",
+          "name": "InnovaSpray"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"ok\": true, \"message\": \"Compte rendu envoyé à garonedouard@gmail.com\" }",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              { "name": "Access-Control-Allow-Origin", "value": "*" }
+            ]
+          }
+        }
+      },
+      "id": "1a2b3c4d-0004-0004-0004-000000000004",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [960, 300]
+    }
+  ],
+  "connections": {
+    "Webhook — Fiches chantier": {
+      "main": [[{ "node": "Code — Préparer email", "type": "main", "index": 0 }]]
+    },
+    "Code — Préparer email": {
+      "main": [[{ "node": "Gmail — Envoyer compte rendu", "type": "main", "index": 0 }]]
+    },
+    "Gmail — Envoyer compte rendu": {
+      "main": [[{ "node": "Respond to Webhook", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": ""
+  },
+  "staticData": null,
+  "tags": [
+    { "name": "InnovaSpray", "createdAt": "2026-05-23T00:00:00.000Z", "updatedAt": "2026-05-23T00:00:00.000Z" },
+    { "name": "Gestion Chantier", "createdAt": "2026-05-23T00:00:00.000Z", "updatedAt": "2026-05-23T00:00:00.000Z" }
+  ],
+  "triggerCount": 1,
+  "updatedAt": "2026-05-23T00:00:00.000Z",
+  "id": "isq-compte-rendu-email"
+}
