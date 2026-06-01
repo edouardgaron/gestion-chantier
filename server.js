@@ -24,17 +24,40 @@ const { DatabaseSync } = require('node:sqlite');
 
 const { makeAuth }     = require('./server-auth');
 const email            = require('./server-email');
+const pdfgen           = require('./server-pdf');
+const archiver         = require('archiver');
 
 const app         = express();
 const PORT        = process.env.PORT || 3000;
 const DATA_DIR    = process.env.DATA_DIR || path.join(__dirname, 'data');
 const DB_PATH     = path.join(DATA_DIR, 'chantier.db');
 const UPLOADS_DIR = path.join(DATA_DIR, 'uploads');
+const PROJECTS_DIR = path.join(DATA_DIR, 'Projets');     // archivage par projet
+const ASSETS_DIR  = path.join(DATA_DIR, 'assets');
 const SECRETS_PATH = path.join(DATA_DIR, 'secrets.json');
+const LOGO_URL    = 'https://innovaspray.com/wp-content/uploads/2025/09/organization_logo_par.jpg';
 
 // Créer les dossiers nécessaires
-if (!fs.existsSync(DATA_DIR))    fs.mkdirSync(DATA_DIR, { recursive: true });
-if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+if (!fs.existsSync(DATA_DIR))     fs.mkdirSync(DATA_DIR, { recursive: true });
+if (!fs.existsSync(UPLOADS_DIR))  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+if (!fs.existsSync(PROJECTS_DIR)) fs.mkdirSync(PROJECTS_DIR, { recursive: true });
+if (!fs.existsSync(ASSETS_DIR))   fs.mkdirSync(ASSETS_DIR, { recursive: true });
+
+// ── Logo de marque pour les PDF (mise en cache locale, best-effort) ──
+const LOGO_PATH = path.join(ASSETS_DIR, 'logo.jpg');
+let LOGO_BUF = null;
+function loadLogo() {
+  try { if (fs.existsSync(LOGO_PATH)) { LOGO_BUF = fs.readFileSync(LOGO_PATH); return; } } catch (e) {}
+  // Télécharger une fois, puis mettre en cache
+  fetch(LOGO_URL).then(function (r) { return r.ok ? r.arrayBuffer() : null; })
+    .then(function (ab) {
+      if (!ab) return;
+      LOGO_BUF = Buffer.from(ab);
+      try { fs.writeFileSync(LOGO_PATH, LOGO_BUF); } catch (e) {}
+    })
+    .catch(function () { /* en-tête texte utilisé en repli */ });
+}
+loadLogo();
 
 // ── Base de données ────────────────────────────────────────────────
 const db = new DatabaseSync(DB_PATH);
@@ -97,6 +120,16 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_el_report ON email_logs (report_id);
 `);
 
+// ── Migration : colonnes ajoutées pour le module PDF (idempotent) ──
+function ensureColumn(table, col, type) {
+  const cols = db.prepare('PRAGMA table_info(' + table + ')').all();
+  if (!cols.some(function (c) { return c.name === col; })) {
+    db.exec('ALTER TABLE ' + table + ' ADD COLUMN ' + col + ' ' + type);
+  }
+}
+ensureColumn('daily_reports', 'details_json', 'TEXT');  // champs étendus + matériaux + coûts
+ensureColumn('daily_reports', 'pdfs_json', 'TEXT');     // métadonnées des PDF générés
+
 // ── Statements (existant) ──────────────────────────────────────────
 const stmtGet    = db.prepare('SELECT value FROM kv WHERE key = ?');
 const stmtSet    = db.prepare("INSERT OR REPLACE INTO kv (key, value, updated_at) VALUES (?, ?, datetime('now'))");
@@ -122,6 +155,9 @@ const stmtDRGet      = db.prepare('SELECT * FROM daily_reports WHERE id = ?');
 const stmtDRSetSent  = db.prepare("UPDATE daily_reports SET status='envoye', email_sent_at=?, email_error=NULL WHERE id=?");
 const stmtDRSetError = db.prepare("UPDATE daily_reports SET status='erreur', email_error=? WHERE id=?");
 const stmtDRPhotos   = db.prepare('UPDATE daily_reports SET photos_json=? WHERE id=?');
+const stmtDRDetails  = db.prepare('UPDATE daily_reports SET details_json=? WHERE id=?');
+const stmtDRPdfs     = db.prepare('UPDATE daily_reports SET pdfs_json=? WHERE id=?');
+const stmtDRByJob    = db.prepare('SELECT * FROM daily_reports WHERE job_number = ? ORDER BY report_date ASC, created_at ASC');
 
 const stmtLogInsert  = db.prepare('INSERT INTO email_logs (report_id, attempted_at, success, message) VALUES (?,?,?,?)');
 const stmtLogByReport = db.prepare('SELECT * FROM email_logs WHERE report_id = ? ORDER BY attempted_at DESC');
@@ -301,8 +337,10 @@ const EXT_BY_MIME  = { 'image/jpeg': 'jpg', 'image/jpg': 'jpg', 'image/png': 'pn
 const MAX_ATTACH_BYTES = 18 * 1024 * 1024; // ~18 Mo de pièces jointes max
 
 function rowToReport(r) {
-  let photos = [];
+  let photos = [], details = {}, pdfs = [];
   try { photos = JSON.parse(r.photos_json || '[]'); } catch (e) {}
+  try { details = JSON.parse(r.details_json || '{}'); } catch (e) {}
+  try { pdfs = JSON.parse(r.pdfs_json || '[]'); } catch (e) {}
   return {
     id: r.id, created_at: r.created_at, report_date: r.report_date,
     employee_name: r.employee_name, employee_uid: r.employee_uid,
@@ -311,7 +349,7 @@ function rowToReport(r) {
     work_done: r.work_done, materials_used: r.materials_used, problems: r.problems,
     remaining_work: r.remaining_work, comments: r.comments, signature: r.signature,
     status: r.status, email_to: r.email_to, email_error: r.email_error, email_sent_at: r.email_sent_at,
-    photos: photos
+    photos: photos, details: details, pdfs: pdfs
   };
 }
 
@@ -347,34 +385,154 @@ function baseUrlFromReq(req) {
   return req.protocol + '://' + req.get('host');
 }
 
-// Tente l'envoi du courriel pour un rapport déjà sauvegardé ; met à jour statut + logs
-async function attemptSend(reportRow, baseUrl) {
-  const report = rowToReport(reportRow);
-  const cfg = getEmailConfig();
-  const dir = path.join(UPLOADS_DIR, String(report.id));
+// ── Archivage & génération PDF ──────────────────────────────────────
+function sanitizeSeg(str) {
+  return String(str == null ? '' : str)
+    .replace(/[\/\\:*?"<>|]+/g, '-')   // caractères interdits dans les noms de fichier
+    .replace(/\s+/g, ' ').trim().slice(0, 80) || 'Projet';
+}
 
-  // Construire pièces jointes (sous le plafond de taille) + liens signés (toujours)
-  const attachments = [];
+function projectFolderName(report) {
+  return sanitizeSeg(report.job_name || report.job_number || 'Projet');
+}
+
+// Crée la structure Projets/<NomProjet>/{ComptesRendus,Photos,BonsTravail,...}
+function ensureProjectDirs(name) {
+  const base = path.join(PROJECTS_DIR, sanitizeSeg(name));
+  const dirs = {
+    base:     base,
+    cr:       path.join(base, 'ComptesRendus'),
+    photos:   path.join(base, 'Photos'),
+    bons:     path.join(base, 'BonsTravail'),
+    fiches:   path.join(base, 'FichesChantier'),
+    mat:      path.join(base, 'Materiaux'),
+    complets: path.join(base, 'RapportsComplets')
+  };
+  Object.keys(dirs).forEach(function (k) { if (!fs.existsSync(dirs[k])) fs.mkdirSync(dirs[k], { recursive: true }); });
+  return dirs;
+}
+
+// Coût matériel de la journée = somme(qté utilisée × coût unitaire), hors outils
+function computeDayCost(materials) {
+  let total = 0;
+  (materials || []).forEach(function (m) {
+    if (!m || m.category === 'outil') return;
+    total += (Number(m.used) || 0) * (Number(m.unit_cost) || 0);
+  });
+  return Math.round(total * 100) / 100;
+}
+
+// Coût matériel cumulé des autres comptes rendus du même chantier
+function getTotalCostBefore(jobNumber, excludeId) {
+  if (!jobNumber) return 0;
+  let sum = 0;
+  stmtDRByJob.all(jobNumber).forEach(function (r) {
+    if (r.id === excludeId) return;
+    try { const d = JSON.parse(r.details_json || '{}'); sum += (Number(d.day_cost) || 0); } catch (e) {}
+  });
+  return Math.round(sum * 100) / 100;
+}
+
+// Historique des interventions (autres comptes rendus du même chantier)
+function getHistory(jobNumber, excludeId) {
+  if (!jobNumber) return [];
+  return stmtDRByJob.all(jobNumber)
+    .filter(function (r) { return r.id !== excludeId; })
+    .map(function (r) {
+      return { date: r.report_date, employee: r.employee_name, hours: r.hours_worked, work: (r.work_done || '').slice(0, 160) };
+    })
+    .slice(-15);
+}
+
+// Photos sur disque avec chemins absolus
+function getPhotoFiles(report) {
+  const dir = path.join(UPLOADS_DIR, String(report.id));
+  return (report.photos || [])
+    .map(function (p) { return { stage: p.stage, label: p.label, filename: p.filename, path: path.join(dir, p.filename) }; })
+    .filter(function (p) { return fs.existsSync(p.path); });
+}
+
+// Génère les 4 PDF, les archive, met à jour pdfs_json ; renvoie les métadonnées
+async function generateAndArchivePdfs(reportRow) {
+  const report  = rowToReport(reportRow);
+  const details = report.details || {};
+  const photos  = getPhotoFiles(report);
+  const history = getHistory(report.job_number, report.id);
+  const assets  = { logo: LOGO_BUF };
+  const summary = { dayCost: details.day_cost, totalCost: details.total_cost };
+
+  const bon     = await pdfgen.genBonTravail({ report: report, details: details, photos: photos, assets: assets });
+  const fiche   = await pdfgen.genFicheChantier({ report: report, details: details, photos: photos, assets: assets, history: history });
+  const mat     = await pdfgen.genSuiviMateriaux({ report: report, details: details, assets: assets });
+  const complet = await pdfgen.genRapportComplet({ report: report, details: details, photos: photos, assets: assets, summary: summary, parts: [bon, fiche, mat] });
+
+  const dirs = ensureProjectDirs(projectFolderName(report));
+  const proj = projectFolderName(report);
+  const date = sanitizeSeg(report.report_date || 'sans-date');
+  const defs = [
+    { type: 'bon_travail',    label: 'Bon de travail',      name: 'BonTravail_' + proj + '_' + date + '.pdf',     dir: dirs.bons,     buf: bon },
+    { type: 'fiche_chantier', label: 'Fiche de chantier',   name: 'FicheChantier_' + proj + '_' + date + '.pdf',  dir: dirs.fiches,   buf: fiche },
+    { type: 'materiaux',      label: 'Suivi des matériaux', name: 'SuiviMateriaux_' + proj + '_' + date + '.pdf', dir: dirs.mat,      buf: mat },
+    { type: 'complet',        label: 'Rapport complet',     name: 'RapportComplet_' + proj + '_' + date + '.pdf', dir: dirs.complets, buf: complet }
+  ];
+  const meta = [];
+  defs.forEach(function (f) {
+    const full = path.join(f.dir, f.name);
+    fs.writeFileSync(full, f.buf);
+    meta.push({ type: f.type, label: f.label, filename: f.name, path: full, size: f.buf.length });
+  });
+
+  // Archiver aussi les photos du jour
+  try {
+    const pdir = path.join(dirs.photos, date + '_cr' + report.id);
+    if (!fs.existsSync(pdir)) fs.mkdirSync(pdir, { recursive: true });
+    photos.forEach(function (ph) { try { fs.copyFileSync(ph.path, path.join(pdir, ph.filename)); } catch (e) {} });
+  } catch (e) {}
+
+  stmtDRPdfs.run(JSON.stringify(meta), report.id);
+  return meta;
+}
+
+// Tente l'envoi du courriel (avec les 4 PDF joints) ; met à jour statut + logs
+async function attemptSend(reportRow, baseUrl) {
+  let report = rowToReport(reportRow);
+  const cfg = getEmailConfig();
+
+  // S'assurer que les PDF existent (les générer au besoin)
+  let pdfs = report.pdfs;
+  if (!pdfs || !pdfs.length || !pdfs.every(function (p) { return fs.existsSync(p.path); })) {
+    try { pdfs = await generateAndArchivePdfs(reportRow); report = rowToReport(stmtDRGet.get(report.id)); }
+    catch (e) { pdfs = report.pdfs || []; }
+  }
+
+  // Pièces jointes PDF
+  const attachments = pdfs.filter(function (p) { return fs.existsSync(p.path); })
+                          .map(function (p) { return { filename: p.filename, path: p.path }; });
+
+  // Photos : jusqu'à 3 intégrées (cid) + liens de secours signés
+  const dir = path.join(UPLOADS_DIR, String(report.id));
+  const inlinePhotos = [];
   const photoLinks = [];
-  let attachBytes = 0;
-  report.photos.forEach(function (p) {
+  report.photos.forEach(function (p, idx) {
     const filePath = path.join(dir, p.filename);
     const sig = auth.signResource(report.id + '/' + p.filename);
     photoLinks.push({
       label: p.label,
       url: baseUrl + '/api/daily-reports/' + report.id + '/photos/' + encodeURIComponent(p.filename) + '?sig=' + sig
     });
-    if (fs.existsSync(filePath) && (attachBytes + (p.size || 0)) <= MAX_ATTACH_BYTES) {
-      attachments.push({ filename: (report.job_number || report.id) + '_' + p.filename, path: filePath, contentType: p.mime });
-      attachBytes += (p.size || 0);
+    if (fs.existsSync(filePath) && inlinePhotos.length < 3) {
+      inlinePhotos.push({ cid: 'photo' + idx, path: filePath, label: p.label });
     }
   });
 
   try {
-    const info = await email.sendReportEmail({ cfg: cfg, report: report, attachments: attachments, photoLinks: photoLinks });
+    const info = await email.sendReportEmail({
+      cfg: cfg, report: report, details: report.details,
+      attachments: attachments, inlinePhotos: inlinePhotos, photoLinks: photoLinks
+    });
     const sentAt = new Date().toISOString();
     stmtDRSetSent.run(sentAt, report.id);
-    stmtLogInsert.run(report.id, sentAt, 1, 'Envoyé à ' + cfg.recipient + (info.messageId ? ' (id: ' + info.messageId + ')' : ''));
+    stmtLogInsert.run(report.id, sentAt, 1, 'Envoyé à ' + cfg.recipient + ' avec ' + attachments.length + ' PDF' + (info.messageId ? ' (id: ' + info.messageId + ')' : ''));
     return { ok: true, status: 'envoye', sentAt: sentAt, recipient: cfg.recipient };
   } catch (err) {
     const msg = (err && err.message ? err.message : String(err));
@@ -430,6 +588,22 @@ app.post('/api/daily-reports', auth.requireAuth, async (req, res) => {
   try { photosMeta = storePhotos(reportId, b.photos); } catch (e) { photosMeta = []; }
   stmtDRPhotos.run(JSON.stringify(photosMeta), reportId);
 
+  // 2b. Champs étendus + matériaux + calcul des coûts
+  const details = (b.details && typeof b.details === 'object') ? b.details : {};
+  const materials = Array.isArray(b.materials) ? b.materials
+                    : (Array.isArray(details.materials) ? details.materials : []);
+  details.materials = materials;
+  const dayCost = computeDayCost(materials);
+  const totalBefore = getTotalCostBefore(String(b.job_number || '').trim(), reportId);
+  details.day_cost = dayCost;
+  details.total_cost_before = totalBefore;
+  details.total_cost = Math.round((totalBefore + dayCost) * 100) / 100;
+  stmtDRDetails.run(JSON.stringify(details), reportId);
+
+  // 2c. Générer + archiver les 4 PDF (même si le courriel n'est pas configuré)
+  try { await generateAndArchivePdfs(stmtDRGet.get(reportId)); }
+  catch (e) { console.error('Génération PDF échouée:', e && e.message ? e.message : e); }
+
   // 3. Tenter l'envoi
   if (!cfg.smtpUser || !cfg.smtpPass) {
     const msg = "Courriel non configuré : un administrateur doit saisir l'identifiant Gmail et le mot de passe d'application dans Configuration.";
@@ -437,7 +611,7 @@ app.post('/api/daily-reports', auth.requireAuth, async (req, res) => {
     stmtLogInsert.run(reportId, new Date().toISOString(), 0, msg);
     return res.status(200).json({
       ok: true, saved: true, emailSent: false, id: reportId, status: 'erreur',
-      message: 'Compte rendu enregistré, mais le courriel n\'a pas pu être envoyé.', error: msg
+      message: 'Compte rendu enregistré et PDF générés, mais le courriel n\'a pas pu être envoyé.', error: msg
     });
   }
 
@@ -515,6 +689,83 @@ app.get('/api/daily-reports/:id/photos/:filename', (req, res) => {
     return res.status(404).send('Photo introuvable.');
   }
   res.sendFile(resolved);
+});
+
+// ════════════════════════════════════════════════════════════════════
+//  DOCUMENTATION PDF DES PROJETS
+// ════════════════════════════════════════════════════════════════════
+
+// GET /api/daily-reports/:id/pdf/:type — servir un PDF (inline=prévisualiser, ?download=1=télécharger)
+app.get('/api/daily-reports/:id/pdf/:type', (req, res) => {
+  const id = Number(req.params.id);
+  const type = String(req.params.type);
+  const okSig = auth.verifyResource('pdf:' + id + '/' + type, req.query.sig);
+  const session = auth.authFromReq(req);
+  if (!okSig && !session) return res.status(401).send('Accès non autorisé.');
+
+  const row = stmtDRGet.get(id);
+  if (!row) return res.status(404).send('Compte rendu introuvable.');
+  const report = rowToReport(row);
+  const pdf = (report.pdfs || []).find(function (p) { return p.type === type; });
+  if (!pdf || !fs.existsSync(pdf.path)) return res.status(404).send('PDF introuvable. Régénérez-le depuis la documentation.');
+
+  res.setHeader('Content-Type', 'application/pdf');
+  const disp = req.query.download ? 'attachment' : 'inline';
+  res.setHeader('Content-Disposition', disp + '; filename="' + pdf.filename.replace(/[^\w.\-]+/g, '_') + '"');
+  fs.createReadStream(pdf.path).pipe(res);
+});
+
+// GET /api/daily-reports/:id/pdf-zip — télécharger les 4 PDF en lot (admin)
+app.get('/api/daily-reports/:id/pdf-zip', auth.requireAdmin, (req, res) => {
+  const row = stmtDRGet.get(Number(req.params.id));
+  if (!row) return res.status(404).send('Compte rendu introuvable.');
+  const report = rowToReport(row);
+  const pdfs = (report.pdfs || []).filter(function (p) { return fs.existsSync(p.path); });
+  if (!pdfs.length) return res.status(404).send('Aucun PDF disponible.');
+
+  const zipName = 'Documents_' + projectFolderName(report) + '_' + sanitizeSeg(report.report_date) + '.zip';
+  res.setHeader('Content-Type', 'application/zip');
+  res.setHeader('Content-Disposition', 'attachment; filename="' + zipName.replace(/[^\w.\-]+/g, '_') + '"');
+  const arch = archiver('zip', { zlib: { level: 6 } });
+  arch.on('error', function () { try { res.status(500).end(); } catch (e) {} });
+  arch.pipe(res);
+  pdfs.forEach(function (p) { arch.file(p.path, { name: p.filename }); });
+  arch.finalize();
+});
+
+// POST /api/daily-reports/:id/regenerate — régénérer les 4 PDF (admin)
+app.post('/api/daily-reports/:id/regenerate', auth.requireAdmin, async (req, res) => {
+  const row = stmtDRGet.get(Number(req.params.id));
+  if (!row) return res.status(404).json({ error: 'Compte rendu introuvable.' });
+  try {
+    const meta = await generateAndArchivePdfs(row);
+    res.json({ ok: true, pdfs: meta.map(function (m) { return { type: m.type, label: m.label, filename: m.filename, size: m.size }; }), message: 'Documents PDF régénérés.' });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: 'Échec de la régénération : ' + (e && e.message ? e.message : String(e)) });
+  }
+});
+
+// GET /api/documentation — documentation regroupée par projet (admin)
+app.get('/api/documentation', auth.requireAdmin, (req, res) => {
+  const rows = db.prepare('SELECT * FROM daily_reports ORDER BY report_date DESC, created_at DESC').all();
+  const projects = {};
+  const order = [];
+  rows.forEach(function (r) {
+    const rep = rowToReport(r);
+    const key = rep.job_number || rep.job_name || 'Sans projet';
+    if (!projects[key]) {
+      projects[key] = { project: rep.job_name || rep.job_number || 'Sans projet', job_number: rep.job_number, client_name: rep.client_name, reports: [] };
+      order.push(key);
+    }
+    projects[key].reports.push({
+      id: rep.id, report_date: rep.report_date, employee_name: rep.employee_name,
+      status: rep.status, hours_worked: rep.hours_worked,
+      day_cost: rep.details ? rep.details.day_cost : null,
+      total_cost: rep.details ? rep.details.total_cost : null,
+      pdfs: (rep.pdfs || []).map(function (p) { return { type: p.type, label: p.label, filename: p.filename, size: p.size }; })
+    });
+  });
+  res.json(order.map(function (k) { return projects[k]; }));
 });
 
 // ── Pages HTML — injection de __ISQ_PRELOAD__ ──────────────────────

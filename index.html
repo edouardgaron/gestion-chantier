@@ -816,6 +816,13 @@
       <a class="btn-open" href="admin_comptes_rendus.html">Ouvrir →</a>
     </div>
 
+    <div class="doc-card" id="cardDocumentation" style="display:none;">
+      <div class="doc-icon">📁</div>
+      <div class="doc-title">Documentation projet</div>
+      <div class="doc-desc">Tous les PDF générés par chantier — prévisualiser, télécharger, télécharger en lot, régénérer, renvoyer</div>
+      <a class="btn-open" href="admin_documentation.html">Ouvrir →</a>
+    </div>
+
     <div class="doc-card" id="cardGestionUsers" style="display:none;">
       <div class="doc-icon">👥</div>
       <div class="doc-title">Gestion des utilisateurs</div>
@@ -934,9 +941,11 @@ document.addEventListener('DOMContentLoaded', function () {
     var cc = document.getElementById('cardConfig');
     var cu = document.getElementById('cardGestionUsers');
     var cr = document.getElementById('cardComptesRendus');
+    var cd = document.getElementById('cardDocumentation');
     if (cc) cc.style.display = '';
     if (cu) cu.style.display = '';
     if (cr) cr.style.display = '';
+    if (cd) cd.style.display = '';
   }
 });
 </script>
