@@ -159,6 +159,8 @@ const stmtDRPhotos   = db.prepare('UPDATE daily_reports SET photos_json=? WHERE 
 const stmtDRDetails  = db.prepare('UPDATE daily_reports SET details_json=? WHERE id=?');
 const stmtDRPdfs     = db.prepare('UPDATE daily_reports SET pdfs_json=? WHERE id=?');
 const stmtDRByJob    = db.prepare('SELECT * FROM daily_reports WHERE job_number = ? ORDER BY report_date ASC, created_at ASC');
+const stmtDRDelete   = db.prepare('DELETE FROM daily_reports WHERE id = ?');
+const stmtLogDelete  = db.prepare('DELETE FROM email_logs WHERE report_id = ?');
 
 const stmtLogInsert  = db.prepare('INSERT INTO email_logs (report_id, attempted_at, success, message) VALUES (?,?,?,?)');
 const stmtLogByReport = db.prepare('SELECT * FROM email_logs WHERE report_id = ? ORDER BY attempted_at DESC');
@@ -707,6 +709,24 @@ app.post('/api/daily-reports/:id/resend', auth.requireAuth, async (req, res) => 
   const result = await attemptSend(row, baseUrlFromReq(req));
   if (result.ok) return res.json({ ok: true, status: 'envoye', message: 'Courriel renvoyé à ' + result.recipient + '.' });
   return res.status(200).json({ ok: false, status: 'erreur', error: result.error, message: "L'envoi a de nouveau échoué." });
+});
+
+// DELETE /api/daily-reports/:id — supprimer un compte rendu (admin)
+// Retire l'entrée, ses logs, ses photos et ses PDF archivés.
+app.delete('/api/daily-reports/:id', auth.requireAdmin, (req, res) => {
+  const id = Number(req.params.id);
+  const row = stmtDRGet.get(id);
+  if (!row) return res.status(404).json({ error: 'Compte rendu introuvable.' });
+  const report = rowToReport(row);
+  // Supprimer les PDF archivés de ce compte rendu
+  (report.pdfs || []).forEach(function (p) {
+    try { if (p.path && fs.existsSync(p.path)) fs.unlinkSync(p.path); } catch (e) {}
+  });
+  // Supprimer les photos téléversées
+  try { fs.rmSync(path.join(UPLOADS_DIR, String(id)), { recursive: true, force: true }); } catch (e) {}
+  stmtLogDelete.run(id);
+  stmtDRDelete.run(id);
+  res.json({ ok: true, message: 'Compte rendu supprimé.' });
 });
 
 // GET /api/daily-reports/:id/photos/:filename — photo (jeton de session OU signature de ressource)

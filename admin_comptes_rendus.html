@@ -43,7 +43,9 @@
     .btn { padding:10px 16px; border-radius:8px; font-family:inherit; font-size:13px; font-weight:700; cursor:pointer; border:none; white-space:nowrap; }
     .btn-blue { background:var(--bleu); color:#fff; }
     .btn-ghost { background:#fff; color:var(--bleu); border:2px solid var(--bleu); }
+    .btn-danger { background:#fff; color:var(--rouge); border:2px solid var(--rouge); }
     .btn-blue:hover { background:var(--bleu-f); } .btn-ghost:hover { background:var(--bleu); color:#fff; }
+    .btn-danger:hover { background:var(--rouge); color:#fff; }
 
     .summary { font-size:13px; color:#666; margin:4px 2px 10px; font-weight:600; }
 
@@ -172,6 +174,7 @@
     <div class="modal-body" id="m_body"></div>
     <div class="modal-foot">
       <button class="btn btn-blue" id="m_resend" onclick="resendCurrent()">🔄 Renvoyer le courriel</button>
+      <button class="btn btn-danger" id="m_delete" onclick="deleteCurrent()">🗑 Supprimer</button>
       <span class="resend-status" id="m_resend_status"></span>
     </div>
   </div>
@@ -326,6 +329,25 @@ async function resendCurrent() {
   } else {
     st.style.color = 'var(--rouge)';
     st.textContent = '✕ ' + (r.data && (r.data.error || r.data.message) ? (r.data.error || r.data.message) : 'Échec du renvoi.');
+  }
+}
+
+async function deleteCurrent() {
+  if (!currentId) return;
+  if (!confirm('Supprimer définitivement ce compte rendu ?\n\nLe rapport, ses photos et ses PDF archivés seront effacés. Cette action est irréversible.')) return;
+  var btn = document.getElementById('m_delete');
+  var st = document.getElementById('m_resend_status');
+  btn.disabled = true;
+  st.style.color = 'var(--jaune)';
+  st.textContent = '⏳ Suppression…';
+  var r = await ISQApi.del('/api/daily-reports/' + currentId);
+  btn.disabled = false;
+  if (r.ok && r.data.ok) {
+    closeModal();
+    loadReports();
+  } else {
+    st.style.color = 'var(--rouge)';
+    st.textContent = '✕ ' + (r.data && r.data.error ? r.data.error : 'Échec de la suppression.');
   }
 }
 
