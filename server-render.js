@@ -113,6 +113,28 @@ async function renderPageToPdf(o) {
       'h1, h2, h3, .section-title, [class*="section-title"] { page-break-after: avoid; }'
     });
 
+    // Masquer les lignes VIDES des tableaux à saisie libre (équipe, surfaces,
+    // produits) pour un rendu propre. On NE touche PAS aux listes de tâches
+    // (Bon de travail) dont chaque ligne doit apparaître, cochée ou non.
+    await page.evaluate(function () {
+      function rowIsEmpty(tr) {
+        const fields = tr.querySelectorAll('input:not([type=checkbox]):not([type=radio]), textarea, select');
+        if (!fields.length) return false;
+        for (let i = 0; i < fields.length; i++) {
+          if (String(fields[i].value || '').trim() !== '') return false;
+        }
+        return true;
+      }
+      // Fiche de chantier : affectation de l'équipe + surfaces travaillées
+      document.querySelectorAll('#crewTable tbody tr, [data-jobber-field="surfaces_today"] tbody tr').forEach(function (tr) {
+        if (rowIsEmpty(tr)) tr.style.display = 'none';
+      });
+      // Suivi des matériaux : lignes de produits sans aucune saisie
+      document.querySelectorAll('#mainBody tr[data-row]').forEach(function (tr) {
+        if (rowIsEmpty(tr)) tr.style.display = 'none';
+      });
+    });
+
     const footerTemplate =
       '<div style="font-family:Arial,sans-serif; width:100%; box-sizing:border-box; padding:0 12mm 3px; ' +
         'font-size:8px; color:#888; display:flex; justify-content:space-between; align-items:center;">' +
