@@ -24,7 +24,8 @@ const { DatabaseSync } = require('node:sqlite');
 
 const { makeAuth }     = require('./server-auth');
 const email            = require('./server-email');
-const pdfgen           = require('./server-pdf');
+const render           = require('./server-render');
+const { PDFDocument: LibPDF } = require('pdf-lib');
 const archiver         = require('archiver');
 
 const app         = express();
@@ -452,35 +453,71 @@ function getPhotoFiles(report) {
     .filter(function (p) { return fs.existsSync(p.path); });
 }
 
-// Génère les 4 PDF, les archive, met à jour pdfs_json ; renvoie les métadonnées
+// Pages réelles de l'app rendues en PDF (fidèles aux documents remplis)
+const RENDER_DOCS = [
+  { type: 'bon_travail',    label: 'Bon de travail',      page: 'Bon de travail.html',  title: 'Bon de travail',      fileBase: 'BonTravail',     dirKey: 'bons' },
+  { type: 'fiche_chantier', label: 'Fiche de chantier',   page: 'fiche_chantier.html',  title: 'Fiche de chantier',   fileBase: 'FicheChantier',  dirKey: 'fiches' },
+  { type: 'materiaux',      label: 'Suivi des matériaux', page: 'suivi_materiaux.html', title: 'Suivi des matériaux', fileBase: 'SuiviMateriaux', dirKey: 'mat' }
+];
+
+// Génère les PDF en rendant les VRAIES pages du chantier, les archive,
+// fusionne en Rapport complet, met à jour pdfs_json ; renvoie les métadonnées.
 async function generateAndArchivePdfs(reportRow) {
   const report  = rowToReport(reportRow);
   const details = report.details || {};
   const photos  = getPhotoFiles(report);
-  const history = getHistory(report.job_number, report.id);
-  const assets  = { logo: LOGO_BUF };
-  const summary = { dayCost: details.day_cost, totalCost: details.total_cost };
-
-  const bon     = await pdfgen.genBonTravail({ report: report, details: details, photos: photos, assets: assets });
-  const fiche   = await pdfgen.genFicheChantier({ report: report, details: details, photos: photos, assets: assets, history: history });
-  const mat     = await pdfgen.genSuiviMateriaux({ report: report, details: details, assets: assets });
-  const complet = await pdfgen.genRapportComplet({ report: report, details: details, photos: photos, assets: assets, summary: summary, parts: [bon, fiche, mat] });
 
   const dirs = ensureProjectDirs(projectFolderName(report));
   const proj = projectFolderName(report);
   const date = sanitizeSeg(report.report_date || 'sans-date');
-  const defs = [
-    { type: 'bon_travail',    label: 'Bon de travail',      name: 'BonTravail_' + proj + '_' + date + '.pdf',     dir: dirs.bons,     buf: bon },
-    { type: 'fiche_chantier', label: 'Fiche de chantier',   name: 'FicheChantier_' + proj + '_' + date + '.pdf',  dir: dirs.fiches,   buf: fiche },
-    { type: 'materiaux',      label: 'Suivi des matériaux', name: 'SuiviMateriaux_' + proj + '_' + date + '.pdf', dir: dirs.mat,      buf: mat },
-    { type: 'complet',        label: 'Rapport complet',     name: 'RapportComplet_' + proj + '_' + date + '.pdf', dir: dirs.complets, buf: complet }
-  ];
+  const baseUrl = 'http://127.0.0.1:' + PORT;
+  const dateStr = report.report_date || '';
+  const logoDataUrl = LOGO_BUF ? ('data:image/jpeg;base64,' + LOGO_BUF.toString('base64')) : '';
+
+  // Paramètres d'URL : identité du chantier (les pages chargent ensuite les
+  // données sauvegardées isq_bon_travail_<job>, isq_fiche_<job>_jX, etc.)
+  const params = {};
+  if (report.job_number)   params.job_number   = report.job_number;
+  if (report.client_name)  params.client_name  = report.client_name;
+  if (details.job_address) params.job_address  = details.job_address;
+  if (details.foreman_name)params.foreman_name = details.foreman_name;
+  if (details.start_date)  params.start_date   = details.start_date;
+
   const meta = [];
-  defs.forEach(function (f) {
-    const full = path.join(f.dir, f.name);
-    fs.writeFileSync(full, f.buf);
-    meta.push({ type: f.type, label: f.label, filename: f.name, path: full, size: f.buf.length });
-  });
+  const buffers = {};
+  for (const def of RENDER_DOCS) {
+    try {
+      const buf = await render.renderPageToPdf({
+        baseUrl: baseUrl, pagePath: def.page, params: params,
+        docTitle: def.title, dateStr: dateStr, logoDataUrl: logoDataUrl,
+        sessionName: details.foreman_name || report.employee_name || ''
+      });
+      const name = def.fileBase + '_' + proj + '_' + date + '.pdf';
+      const full = path.join(dirs[def.dirKey], name);
+      fs.writeFileSync(full, buf);
+      meta.push({ type: def.type, label: def.label, filename: name, path: full, size: buf.length });
+      buffers[def.type] = buf;
+    } catch (e) { console.error('Rendu PDF ' + def.type + ' échoué:', e && e.message ? e.message : e); }
+  }
+
+  // Rapport complet = fusion des documents rendus (archive officielle)
+  try {
+    const merged = await LibPDF.create();
+    for (const def of RENDER_DOCS) {
+      const b = buffers[def.type];
+      if (!b) continue;
+      const src = await LibPDF.load(b);
+      const pages = await merged.copyPages(src, src.getPageIndices());
+      pages.forEach(function (p) { merged.addPage(p); });
+    }
+    if (merged.getPageCount() > 0) {
+      const cbuf = Buffer.from(await merged.save());
+      const cname = 'RapportComplet_' + proj + '_' + date + '.pdf';
+      const cfull = path.join(dirs.complets, cname);
+      fs.writeFileSync(cfull, cbuf);
+      meta.push({ type: 'complet', label: 'Rapport complet', filename: cname, path: cfull, size: cbuf.length });
+    }
+  } catch (e) { console.error('Fusion rapport complet échouée:', e && e.message ? e.message : e); }
 
   // Archiver aussi les photos du jour
   try {
