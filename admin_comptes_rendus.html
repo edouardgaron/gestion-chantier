@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Comptes rendus — Admin — InnovaSpray Québec</title>
+  <script src="isq-storage.js"></script>
+  <script src="isq-auth.js"></script>
+  <script src="isq-api.js"></script>
+  <script>ISQAuth.requireAdmin();</script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bleu:#0170B9; --bleu-f:#014d82; --orange:#FF6600; --gris:#F4F6F9;
+      --bordure:#D0D7E3; --texte:#1A1A2E; --vert:#2E7D32; --rouge:#C62828; --jaune:#8a6d00;
+    }
+    body { font-family:'Montserrat','Segoe UI',Arial,sans-serif; background:#EEF1F5; color:var(--texte); font-size:14px; line-height:1.5; padding-bottom:40px; }
+
+    .navbar {
+      background:linear-gradient(135deg,var(--bleu) 0%,var(--bleu-f) 100%); color:#fff; padding:12px 18px;
+      display:flex; align-items:center; gap:12px; flex-wrap:wrap; position:sticky; top:0; z-index:20; box-shadow:0 2px 10px rgba(0,0,0,.12);
+    }
+    .navbar .back { color:#fff; text-decoration:none; font-size:20px; background:rgba(255,255,255,.15); border-radius:8px; padding:6px 11px; flex-shrink:0; }
+    .navbar .nav-titles { min-width:0; flex:1 1 auto; }
+    .navbar .title { font-size:16px; font-weight:800; }
+    .navbar .subtitle { font-size:11px; opacity:.82; }
+
+    .wrap { max-width:1080px; margin:18px auto; padding:0 16px; }
+
+    .card { background:#fff; border-radius:12px; box-shadow:0 3px 14px rgba(0,0,0,.07); padding:18px; margin-bottom:16px; }
+
+    /* Filtres */
+    .filters { display:grid; grid-template-columns:repeat(auto-fit, minmax(170px,1fr)); gap:12px; align-items:end; }
+    .filters .field { display:flex; flex-direction:column; gap:5px; }
+    .filters label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.4px; color:#666; }
+    .filters input, .filters select {
+      border:1.5px solid var(--bordure); border-radius:8px; padding:10px 12px; font-family:inherit; font-size:15px;
+      background:var(--gris); color:var(--texte); width:100%;
+    }
+    .filters input:focus, .filters select:focus { outline:none; border-color:var(--bleu); background:#fff; }
+    .filter-actions { display:flex; gap:8px; }
+    .btn { padding:10px 16px; border-radius:8px; font-family:inherit; font-size:13px; font-weight:700; cursor:pointer; border:none; white-space:nowrap; }
+    .btn-blue { background:var(--bleu); color:#fff; }
+    .btn-ghost { background:#fff; color:var(--bleu); border:2px solid var(--bleu); }
+    .btn-blue:hover { background:var(--bleu-f); } .btn-ghost:hover { background:var(--bleu); color:#fff; }
+
+    .summary { font-size:13px; color:#666; margin:4px 2px 10px; font-weight:600; }
+
+    /* Liste */
+    .report-row {
+      display:flex; align-items:center; gap:14px; padding:14px 16px; border:1px solid var(--bordure);
+      border-radius:11px; margin-bottom:10px; cursor:pointer; background:#fff; transition:box-shadow .15s, border-color .15s;
+    }
+    .report-row:hover { box-shadow:0 4px 14px rgba(0,0,0,.09); border-color:var(--bleu); }
+    .rr-main { flex:1; min-width:0; }
+    .rr-title { font-size:15px; font-weight:700; color:var(--texte); }
+    .rr-sub { font-size:12px; color:#777; margin-top:2px; }
+    .rr-meta { text-align:right; flex-shrink:0; display:flex; flex-direction:column; align-items:flex-end; gap:6px; }
+    .status-badge { font-size:11px; font-weight:800; padding:3px 10px; border-radius:99px; text-transform:uppercase; letter-spacing:.3px; }
+    .st-envoye    { background:#e8f5e9; color:var(--vert); }
+    .st-erreur    { background:#fdecea; color:var(--rouge); }
+    .st-brouillon { background:#fff8e1; color:var(--jaune); }
+    .rr-photos { font-size:11px; color:#888; }
+
+    .empty { text-align:center; padding:40px 20px; color:#999; }
+    .loading-msg { text-align:center; padding:30px; color:#888; }
+
+    /* Modal détail */
+    .overlay { position:fixed; inset:0; background:rgba(20,30,45,.55); display:none; align-items:flex-start; justify-content:center; z-index:50; padding:20px 12px; overflow-y:auto; }
+    .overlay.open { display:flex; }
+    .modal { background:#fff; border-radius:14px; width:100%; max-width:760px; overflow:hidden; box-shadow:0 16px 60px rgba(0,0,0,.3); margin:auto; }
+    .modal-head { background:linear-gradient(135deg,var(--bleu) 0%,var(--bleu-f) 100%); color:#fff; padding:18px 22px; display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    .modal-head .mh-title { font-size:17px; font-weight:800; }
+    .modal-head .mh-sub { font-size:12px; opacity:.85; margin-top:2px; }
+    .modal-head .close { background:rgba(255,255,255,.18); border:none; color:#fff; width:34px; height:34px; border-radius:8px; font-size:20px; cursor:pointer; flex-shrink:0; }
+    .modal-body { padding:20px 22px; }
+
+    .info-table { width:100%; border:1px solid var(--bordure); border-radius:10px; overflow:hidden; border-collapse:collapse; margin-bottom:18px; }
+    .info-table tr { border-bottom:1px solid #eef1f5; }
+    .info-table td { padding:10px 13px; vertical-align:top; font-size:14px; }
+    .info-table td.k { background:var(--gris); font-size:12px; font-weight:700; color:#555; text-transform:uppercase; letter-spacing:.3px; width:38%; white-space:nowrap; }
+    .info-table td.v { white-space:pre-wrap; word-break:break-word; }
+
+    .sec-label { font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.5px; color:var(--bleu); margin:18px 0 10px; }
+    .photo-grid { display:flex; flex-wrap:wrap; gap:10px; }
+    .photo-grid a { display:block; width:120px; }
+    .photo-grid img { width:120px; height:120px; object-fit:cover; border-radius:9px; border:1px solid var(--bordure); display:block; }
+    .photo-cap { font-size:11px; color:#777; text-align:center; margin-top:3px; }
+
+    .logs { background:var(--gris); border-radius:9px; padding:12px 14px; font-size:12px; }
+    .log-line { padding:4px 0; border-bottom:1px solid #e6eaf0; display:flex; gap:8px; }
+    .log-line:last-child { border-bottom:none; }
+    .log-ok { color:var(--vert); font-weight:700; } .log-err { color:var(--rouge); font-weight:700; }
+
+    .modal-foot { padding:16px 22px; border-top:1px solid var(--bordure); display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    .resend-status { font-size:13px; font-weight:700; }
+
+    @media (max-width:560px) {
+      .rr-meta { display:none; }
+      .report-row::after { content:''; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="navbar">
+  <a href="index.html" class="back">←</a>
+  <div class="nav-titles">
+    <div class="title">Comptes rendus quotidiens</div>
+    <div class="subtitle">Espace administrateur</div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- FILTRES -->
+  <div class="card">
+    <div class="filters">
+      <div class="field">
+        <label for="fl_from">Du</label>
+        <input type="date" id="fl_from">
+      </div>
+      <div class="field">
+        <label for="fl_to">Au</label>
+        <input type="date" id="fl_to">
+      </div>
+      <div class="field">
+        <label for="fl_job">Chantier</label>
+        <input type="text" id="fl_job" placeholder="N° ou nom">
+      </div>
+      <div class="field">
+        <label for="fl_emp">Employé</label>
+        <input type="text" id="fl_emp" placeholder="Nom">
+      </div>
+      <div class="field">
+        <label for="fl_status">Statut</label>
+        <select id="fl_status">
+          <option value="">Tous</option>
+          <option value="envoye">Envoyé</option>
+          <option value="erreur">Erreur</option>
+          <option value="brouillon">Brouillon</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>&nbsp;</label>
+        <div class="filter-actions">
+          <button class="btn btn-blue" onclick="loadReports()">🔎 Filtrer</button>
+          <button class="btn btn-ghost" onclick="resetFilters()">Réinitialiser</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="summary" id="summary"></div>
+
+  <!-- LISTE -->
+  <div id="list"><div class="loading-msg">Chargement…</div></div>
+
+</div>
+
+<!-- MODAL DÉTAIL -->
+<div class="overlay" id="overlay" onclick="if(event.target===this) closeModal()">
+  <div class="modal">
+    <div class="modal-head">
+      <div>
+        <div class="mh-title" id="m_title">Compte rendu</div>
+        <div class="mh-sub" id="m_sub"></div>
+      </div>
+      <button class="close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="m_body"></div>
+    <div class="modal-foot">
+      <button class="btn btn-blue" id="m_resend" onclick="resendCurrent()">🔄 Renvoyer le courriel</button>
+      <span class="resend-status" id="m_resend_status"></span>
+    </div>
+  </div>
+</div>
+
+<script>
+var currentId = null;
+
+document.addEventListener('DOMContentLoaded', function () {
+  // Vérifier le jeton serveur ; sinon redirige au login
+  ISQApi.get('/api/session/me').then(function (r) {
+    if (r.ok) loadReports();
+  });
+});
+
+function resetFilters() {
+  ['fl_from','fl_to','fl_job','fl_emp'].forEach(function (id) { document.getElementById(id).value = ''; });
+  document.getElementById('fl_status').value = '';
+  loadReports();
+}
+
+async function loadReports() {
+  var params = [];
+  var from = v('fl_from'), to = v('fl_to'), job = v('fl_job'), emp = v('fl_emp'), st = v('fl_status');
+  if (from) params.push('from=' + encodeURIComponent(from));
+  if (to)   params.push('to=' + encodeURIComponent(to));
+  if (job)  params.push('job=' + encodeURIComponent(job));
+  if (emp)  params.push('employee=' + encodeURIComponent(emp));
+  if (st)   params.push('status=' + encodeURIComponent(st));
+  var qs = params.length ? ('?' + params.join('&')) : '';
+
+  document.getElementById('list').innerHTML = '<div class="loading-msg">Chargement…</div>';
+  var r = await ISQApi.get('/api/daily-reports' + qs);
+  if (!r.ok) { document.getElementById('list').innerHTML = '<div class="empty">Erreur de chargement.</div>'; return; }
+  renderList(r.data);
+}
+
+function renderList(reports) {
+  var summary = document.getElementById('summary');
+  var list = document.getElementById('list');
+  if (!reports.length) {
+    summary.textContent = '';
+    list.innerHTML = '<div class="card empty">Aucun compte rendu pour ces critères.</div>';
+    return;
+  }
+  var nEnvoye = reports.filter(function (r) { return r.status === 'envoye'; }).length;
+  var nErr = reports.filter(function (r) { return r.status === 'erreur'; }).length;
+  summary.textContent = reports.length + ' compte' + (reports.length > 1 ? 's' : '') + ' rendu' + (reports.length > 1 ? 's' : '') +
+    ' • ' + nEnvoye + ' envoyé' + (nEnvoye > 1 ? 's' : '') + (nErr ? (' • ' + nErr + ' en erreur') : '');
+
+  list.innerHTML = '';
+  reports.forEach(function (r) {
+    var row = document.createElement('div');
+    row.className = 'report-row';
+    var chantier = r.job_name || r.job_number || 'Chantier';
+    var stClass = r.status === 'envoye' ? 'st-envoye' : (r.status === 'erreur' ? 'st-erreur' : 'st-brouillon');
+    var stLabel = r.status === 'envoye' ? '✓ Envoyé' : (r.status === 'erreur' ? '✕ Erreur' : '⋯ Brouillon');
+    var nPhotos = (r.photos || []).length;
+    row.innerHTML =
+      '<div class="rr-main">' +
+        '<div class="rr-title">' + esc(chantier) + (r.job_number && r.job_name ? ' <span style="color:#999;font-weight:600;">(' + esc(r.job_number) + ')</span>' : '') + '</div>' +
+        '<div class="rr-sub">📅 ' + esc(r.report_date || '') + ' &nbsp;•&nbsp; 👷 ' + esc(r.employee_name || '') +
+          (r.hours_worked ? (' &nbsp;•&nbsp; ⏱️ ' + esc(r.hours_worked) + ' h') : '') + '</div>' +
+      '</div>' +
+      '<div class="rr-meta">' +
+        '<span class="status-badge ' + stClass + '">' + stLabel + '</span>' +
+        '<span class="rr-photos">' + (nPhotos ? ('📷 ' + nPhotos) : 'Aucune photo') + '</span>' +
+      '</div>';
+    row.onclick = function () { openDetail(r.id); };
+    list.appendChild(row);
+  });
+}
+
+async function openDetail(id) {
+  currentId = id;
+  document.getElementById('m_resend_status').textContent = '';
+  document.getElementById('m_body').innerHTML = '<div class="loading-msg">Chargement…</div>';
+  document.getElementById('overlay').classList.add('open');
+
+  var r = await ISQApi.get('/api/daily-reports/' + id);
+  if (!r.ok) { document.getElementById('m_body').innerHTML = '<div class="empty">Erreur de chargement.</div>'; return; }
+  renderDetail(r.data);
+}
+
+function renderDetail(d) {
+  document.getElementById('m_title').textContent = d.job_name || d.job_number || 'Compte rendu';
+  document.getElementById('m_sub').textContent = (d.report_date || '') + ' — ' + (d.employee_name || '');
+
+  var stClass = d.status === 'envoye' ? 'st-envoye' : (d.status === 'erreur' ? 'st-erreur' : 'st-brouillon');
+  var stLabel = d.status === 'envoye' ? '✓ Envoyé' : (d.status === 'erreur' ? '✕ Erreur' : '⋯ Brouillon');
+
+  var rows = '';
+  rows += trow('Statut', '<span class="status-badge ' + stClass + '">' + stLabel + '</span>' +
+    (d.email_sent_at ? ('<span style="color:#777;font-size:12px;"> &nbsp;le ' + esc(fmtDate(d.email_sent_at)) + '</span>') : ''), true);
+  if (d.status === 'erreur' && d.email_error) rows += trow('Dernière erreur', '<span style="color:var(--rouge);">' + esc(d.email_error) + '</span>', true);
+  rows += trow('Destinataire', esc(d.email_to || '—'));
+  if (d.job_number) rows += trow('N° de chantier', esc(d.job_number));
+  if (d.client_name) rows += trow('Client', esc(d.client_name));
+  rows += trow('Employé', esc(d.employee_name || '—'));
+  rows += trow('Date', esc(d.report_date || '—'));
+  var plage = [d.arrival_time, d.departure_time].filter(Boolean).join(' → ');
+  if (plage) rows += trow('Heures sur place', esc(plage));
+  rows += trow('Heures travaillées', esc(d.hours_worked || '—'));
+  rows += trow('Travaux réalisés', esc(d.work_done || '—'));
+  rows += trow('Matériel utilisé', esc(d.materials_used || '—'));
+  rows += trow('Problèmes', esc(d.problems || '—'));
+  rows += trow('Travaux restants', esc(d.remaining_work || '—'));
+  rows += trow('Commentaires', esc(d.comments || '—'));
+  if (d.signature) rows += trow('Confirmé par', esc(d.signature));
+
+  var html = '<table class="info-table">' + rows + '</table>';
+
+  // Photos
+  if (d.photos && d.photos.length) {
+    var token = ISQApi.getToken();
+    html += '<div class="sec-label">📷 Photos (' + d.photos.length + ')</div><div class="photo-grid">';
+    d.photos.forEach(function (p) {
+      var url = '/api/daily-reports/' + d.id + '/photos/' + encodeURIComponent(p.filename) + '?token=' + encodeURIComponent(token);
+      html += '<a href="' + url + '" target="_blank"><img src="' + url + '" alt="' + esc(p.label) + '"><div class="photo-cap">' + esc(p.label) + '</div></a>';
+    });
+    html += '</div>';
+  }
+
+  // Logs d'envoi
+  if (d.logs && d.logs.length) {
+    html += '<div class="sec-label">📜 Historique des envois</div><div class="logs">';
+    d.logs.forEach(function (l) {
+      html += '<div class="log-line"><span class="' + (l.success ? 'log-ok' : 'log-err') + '">' +
+        (l.success ? '✓' : '✕') + '</span><span style="color:#888;white-space:nowrap;">' + esc(fmtDate(l.attempted_at)) +
+        '</span><span>' + esc(l.message || '') + '</span></div>';
+    });
+    html += '</div>';
+  }
+
+  document.getElementById('m_body').innerHTML = html;
+}
+
+async function resendCurrent() {
+  if (!currentId) return;
+  var btn = document.getElementById('m_resend');
+  var st = document.getElementById('m_resend_status');
+  btn.disabled = true;
+  st.style.color = 'var(--jaune)';
+  st.textContent = '⏳ Envoi…';
+  var r = await ISQApi.post('/api/daily-reports/' + currentId + '/resend', {});
+  btn.disabled = false;
+  if (r.ok && r.data.status === 'envoye') {
+    st.style.color = 'var(--vert)';
+    st.textContent = '✓ ' + (r.data.message || 'Renvoyé.');
+    openDetail(currentId);   // rafraîchir le détail
+    loadReports();           // rafraîchir la liste
+  } else {
+    st.style.color = 'var(--rouge)';
+    st.textContent = '✕ ' + (r.data && (r.data.error || r.data.message) ? (r.data.error || r.data.message) : 'Échec du renvoi.');
+  }
+}
+
+function closeModal() { document.getElementById('overlay').classList.remove('open'); currentId = null; }
+
+function trow(k, v, raw) { return '<tr><td class="k">' + esc(k) + '</td><td class="v">' + (raw ? v : v) + '</td></tr>'; }
+function v(id) { var el = document.getElementById(id); return el ? el.value.trim() : ''; }
+function esc(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function fmtDate(iso) {
+  try { var d = new Date(iso); return d.toLocaleString('fr-CA', { year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' }); }
+  catch (e) { return iso; }
+}
+</script>
+
+</body>
+</html>

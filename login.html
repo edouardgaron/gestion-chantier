@@ -8,6 +8,7 @@
   <script src="webhooks.config.js"></script>
   <script src="isq-storage.js"></script>
   <script src="isq-auth.js"></script>
+  <script src="isq-api.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -238,6 +239,8 @@ async function handleLogin(e) {
   var ok = await ISQAuth.login(username, password);
 
   if (ok) {
+    // Obtenir aussi un jeton serveur (pour les routes API protégées : comptes rendus, etc.)
+    try { await ISQApi.login(username, password); } catch (e) {}
     window.location.replace('index.html');
   } else {
     errEl.classList.add('show');

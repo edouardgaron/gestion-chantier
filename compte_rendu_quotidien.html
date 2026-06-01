@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Compte rendu quotidien — InnovaSpray Québec</title>
+  <script src="isq-storage.js"></script>
+  <script src="isq-auth.js"></script>
+  <script src="isq-api.js"></script>
+  <script>ISQAuth.requireLogin();</script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bleu:    #0170B9;
+      --bleu-f:  #014d82;
+      --orange:  #FF6600;
+      --gris:    #F4F6F9;
+      --bordure: #D0D7E3;
+      --texte:   #1A1A2E;
+      --vert:    #2E7D32;
+      --rouge:   #C62828;
+    }
+    body {
+      font-family: 'Montserrat', 'Segoe UI', Arial, sans-serif;
+      background: #EEF1F5;
+      color: var(--texte);
+      font-size: 15px;
+      line-height: 1.5;
+      padding-bottom: 40px;
+    }
+
+    /* Barre supérieure */
+    .navbar {
+      background: linear-gradient(135deg, var(--bleu) 0%, var(--bleu-f) 100%);
+      color: #fff;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      box-shadow: 0 2px 10px rgba(0,0,0,.12);
+    }
+    .navbar .back {
+      color: #fff; text-decoration: none; font-size: 22px; line-height: 1;
+      background: rgba(255,255,255,.15); border-radius: 8px; padding: 6px 11px; flex-shrink: 0;
+    }
+    .navbar .nav-titles { min-width: 0; flex: 1 1 auto; }
+    .navbar .title { font-size: 16px; font-weight: 800; letter-spacing: .3px; }
+    .navbar .subtitle { font-size: 11px; opacity: .82; margin-top: 1px; }
+
+    .wrap { max-width: 640px; margin: 16px auto; padding: 0 14px; }
+
+    .card {
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 3px 16px rgba(0,0,0,.07);
+      padding: 20px 18px;
+      margin-bottom: 16px;
+    }
+    .card-title {
+      font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .6px;
+      color: var(--bleu); margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid var(--gris);
+      display: flex; align-items: center; gap: 8px;
+    }
+
+    .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+    .field:last-child { margin-bottom: 0; }
+    .field label { font-size: 12px; font-weight: 700; color: #444; }
+    .field label .req { color: var(--orange); }
+    .field .hint { font-size: 11px; color: #999; }
+
+    input, select, textarea {
+      width: 100%;
+      border: 1.5px solid var(--bordure);
+      border-radius: 9px;
+      padding: 13px 14px;
+      font-family: inherit;
+      font-size: 16px;            /* 16px évite le zoom auto sur iOS */
+      color: var(--texte);
+      background: var(--gris);
+      transition: border-color .15s, background .15s;
+    }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: var(--bleu); background: #fff; }
+    textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
+    select { appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='3'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 40px; }
+
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 460px) { .row2 { grid-template-columns: 1fr; } }
+
+    /* Photos */
+    .photo-group { margin-bottom: 18px; }
+    .photo-group:last-child { margin-bottom: 0; }
+    .photo-label { font-size: 13px; font-weight: 700; color: #333; margin-bottom: 8px; display: flex; align-items: center; gap: 7px; }
+    .photo-badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 99px; color: #fff; }
+    .badge-avant   { background: #8e44ad; }
+    .badge-pendant { background: var(--orange); }
+    .badge-apres   { background: var(--vert); }
+    .photo-add {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      border: 2px dashed var(--bordure); border-radius: 10px; padding: 16px;
+      color: var(--bleu); font-weight: 700; font-size: 14px; cursor: pointer; background: #fafbfc;
+      min-height: 56px;
+    }
+    .photo-add:active { background: #f0f4f8; }
+    .photo-input { display: none; }
+    .thumbs { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .thumb { position: relative; width: 78px; height: 78px; border-radius: 9px; overflow: hidden; border: 1px solid var(--bordure); }
+    .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .thumb .rm {
+      position: absolute; top: 2px; right: 2px; background: rgba(198,40,40,.92); color: #fff;
+      border: none; width: 22px; height: 22px; border-radius: 50%; font-size: 14px; font-weight: 700;
+      cursor: pointer; line-height: 1; display: flex; align-items: center; justify-content: center;
+    }
+
+    /* Confirmation / signature */
+    .confirm-row { display: flex; align-items: flex-start; gap: 10px; background: var(--gris); border-radius: 10px; padding: 14px; }
+    .confirm-row input[type="checkbox"] { width: 22px; height: 22px; flex-shrink: 0; margin-top: 1px; accent-color: var(--bleu); }
+    .confirm-row label { font-size: 13px; color: #444; font-weight: 600; }
+
+    /* Bouton envoyer */
+    .btn-send {
+      width: 100%; padding: 17px; background: var(--orange); color: #fff; border: none;
+      border-radius: 12px; font-family: inherit; font-size: 17px; font-weight: 800; cursor: pointer;
+      letter-spacing: .3px; box-shadow: 0 4px 14px rgba(255,102,0,.32); transition: background .2s, transform .1s;
+      display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 58px;
+    }
+    .btn-send:hover { background: #e65c00; }
+    .btn-send:active { transform: scale(.99); }
+    .btn-send:disabled { background: #bbb; box-shadow: none; cursor: default; }
+
+    .status-box { margin-top: 14px; padding: 14px 16px; border-radius: 11px; font-size: 14px; font-weight: 700; display: none; }
+    .status-box.show { display: block; }
+    .status-box.ok      { background: #e8f5e9; color: var(--vert); border: 1.5px solid #a5d6a7; }
+    .status-box.err     { background: #fdf3f2; color: var(--rouge); border: 1.5px solid #e6b0aa; }
+    .status-box.loading { background: #fff8e1; color: #8a6d00; border: 1.5px solid #ffe082; }
+    .status-box .retry {
+      margin-top: 10px; padding: 10px 16px; background: var(--rouge); color: #fff; border: none;
+      border-radius: 8px; font-family: inherit; font-weight: 700; font-size: 13px; cursor: pointer;
+    }
+
+    /* Écran de confirmation */
+    .success-screen { display: none; text-align: center; padding: 30px 18px; }
+    .success-screen.show { display: block; }
+    .success-screen .check {
+      width: 84px; height: 84px; border-radius: 50%; background: var(--vert); color: #fff;
+      font-size: 46px; display: flex; align-items: center; justify-content: center; margin: 0 auto 18px;
+    }
+    .success-screen h2 { font-size: 22px; font-weight: 800; color: var(--texte); margin-bottom: 8px; }
+    .success-screen p { font-size: 14px; color: #666; margin-bottom: 22px; }
+    .success-screen .btn-new {
+      display: inline-block; padding: 14px 26px; background: var(--bleu); color: #fff; border: none;
+      border-radius: 10px; font-family: inherit; font-size: 15px; font-weight: 700; cursor: pointer; text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+
+<div class="navbar">
+  <a href="index.html" class="back">←</a>
+  <div class="nav-titles">
+    <div class="title">Compte rendu de la journée</div>
+    <div class="subtitle">InnovaSpray Québec</div>
+  </div>
+</div>
+
+<div class="wrap" id="formWrap">
+
+  <!-- INFOS DE BASE -->
+  <div class="card">
+    <div class="card-title">👷 Informations</div>
+
+    <div class="field">
+      <label for="f_employee">Nom de l'employé <span class="req">*</span></label>
+      <input type="text" id="f_employee" placeholder="Votre nom">
+    </div>
+
+    <div class="row2">
+      <div class="field">
+        <label for="f_date">Date <span class="req">*</span></label>
+        <input type="date" id="f_date">
+      </div>
+      <div class="field">
+        <label for="f_hours">Heures travaillées</label>
+        <input type="number" id="f_hours" step="0.25" min="0" placeholder="0" inputmode="decimal">
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="f_project">Chantier / projet <span class="req">*</span></label>
+      <select id="f_project" onchange="onProjectChange()"></select>
+    </div>
+
+    <div class="field" id="manualProjectField" style="display:none;">
+      <label for="f_project_manual">Nom du chantier (saisie manuelle) <span class="req">*</span></label>
+      <input type="text" id="f_project_manual" placeholder="ex : Résidence Tremblay, 12 rue Principale">
+    </div>
+
+    <div class="row2">
+      <div class="field">
+        <label for="f_arrival">Heure d'arrivée</label>
+        <input type="time" id="f_arrival" onchange="computeHours()">
+      </div>
+      <div class="field">
+        <label for="f_departure">Heure de départ</label>
+        <input type="time" id="f_departure" onchange="computeHours()">
+      </div>
+    </div>
+  </div>
+
+  <!-- TRAVAUX -->
+  <div class="card">
+    <div class="card-title">🛠️ Travaux</div>
+
+    <div class="field">
+      <label for="f_work">Travaux réalisés aujourd'hui <span class="req">*</span></label>
+      <textarea id="f_work" placeholder="Décrivez ce qui a été fait aujourd'hui…"></textarea>
+    </div>
+
+    <div class="field">
+      <label for="f_materials">Matériel utilisé</label>
+      <textarea id="f_materials" placeholder="Peinture, apprêt, quantités, équipement…"></textarea>
+    </div>
+
+    <div class="field">
+      <label for="f_problems">Problèmes rencontrés</label>
+      <textarea id="f_problems" placeholder="Imprévus, retards, bris, manques… (laisser vide si aucun)"></textarea>
+    </div>
+
+    <div class="field">
+      <label for="f_remaining">Travaux restants</label>
+      <textarea id="f_remaining" placeholder="Ce qu'il reste à faire pour la suite…"></textarea>
+    </div>
+
+    <div class="field">
+      <label for="f_comments">Commentaires importants</label>
+      <textarea id="f_comments" placeholder="Toute information utile pour le bureau…"></textarea>
+    </div>
+  </div>
+
+  <!-- PHOTOS -->
+  <div class="card">
+    <div class="card-title">📷 Photos du chantier</div>
+
+    <div class="photo-group">
+      <div class="photo-label"><span class="photo-badge badge-avant">AVANT</span> Avant les travaux</div>
+      <label class="photo-add" for="photo_avant">＋ Ajouter des photos</label>
+      <input class="photo-input" type="file" id="photo_avant" accept="image/*" multiple onchange="addPhotos('avant', this)">
+      <div class="thumbs" id="thumbs_avant"></div>
+    </div>
+
+    <div class="photo-group">
+      <div class="photo-label"><span class="photo-badge badge-pendant">PENDANT</span> Pendant les travaux</div>
+      <label class="photo-add" for="photo_pendant">＋ Ajouter des photos</label>
+      <input class="photo-input" type="file" id="photo_pendant" accept="image/*" multiple onchange="addPhotos('pendant', this)">
+      <div class="thumbs" id="thumbs_pendant"></div>
+    </div>
+
+    <div class="photo-group">
+      <div class="photo-label"><span class="photo-badge badge-apres">APRÈS</span> Après les travaux</div>
+      <label class="photo-add" for="photo_apres">＋ Ajouter des photos</label>
+      <input class="photo-input" type="file" id="photo_apres" accept="image/*" multiple onchange="addPhotos('apres', this)">
+      <div class="thumbs" id="thumbs_apres"></div>
+    </div>
+  </div>
+
+  <!-- CONFIRMATION -->
+  <div class="card">
+    <div class="card-title">✍️ Confirmation</div>
+    <div class="field">
+      <label for="f_signature">Signature (tapez votre nom pour confirmer) <span class="req">*</span></label>
+      <input type="text" id="f_signature" placeholder="Votre nom complet">
+    </div>
+    <div class="confirm-row">
+      <input type="checkbox" id="f_confirm">
+      <label for="f_confirm">Je confirme que les informations ci-dessus sont exactes et complètes pour la journée.</label>
+    </div>
+  </div>
+
+  <button class="btn-send" id="btnSend" onclick="submitReport()">
+    <span>📤</span> Envoyer le compte rendu
+  </button>
+
+  <div class="status-box" id="statusBox"></div>
+
+</div><!-- /formWrap -->
+
+<!-- ÉCRAN DE CONFIRMATION -->
+<div class="wrap">
+  <div class="success-screen card" id="successScreen">
+    <div class="check">✓</div>
+    <h2>Compte rendu envoyé&nbsp;!</h2>
+    <p id="successMsg">Le compte rendu a bien été envoyé au bureau.</p>
+    <button class="btn-new" onclick="resetForm()">＋ Nouveau compte rendu</button>
+  </div>
+</div>
+
+<script>
+// ── État des photos (en mémoire, data URLs compressées) ──
+var PHOTOS = { avant: [], pendant: [], apres: [] };
+var DRAFT_KEY = 'isq_cr_draft';
+var lastReportId = null;
+
+// ── Initialisation ──
+document.addEventListener('DOMContentLoaded', function () {
+  var session = ISQAuth.getSession();
+  if (session && session.nom) {
+    document.getElementById('f_employee').value = session.nom;
+    document.getElementById('f_signature').value = session.nom;
+  }
+  // Date du jour par défaut
+  document.getElementById('f_date').value = todayISO();
+
+  populateProjects();
+  restoreDraft();
+
+  // Sauvegarde de brouillon à chaque saisie
+  ['f_employee','f_date','f_hours','f_arrival','f_departure','f_work','f_materials',
+   'f_problems','f_remaining','f_comments','f_signature','f_project','f_project_manual']
+    .forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.addEventListener('input', saveDraft);
+    });
+});
+
+function todayISO() {
+  var d = new Date();
+  var m = String(d.getMonth() + 1).padStart(2, '0');
+  var day = String(d.getDate()).padStart(2, '0');
+  return d.getFullYear() + '-' + m + '-' + day;
+}
+
+// ── Liste des projets (depuis ISQStore) ──
+function getProjectsList() {
+  try { return JSON.parse(ISQStore.getItem('isq_projets_liste') || '[]'); } catch (e) { return []; }
+}
+
+function populateProjects() {
+  var sel = document.getElementById('f_project');
+  var list = getProjectsList();
+  var html = '<option value="">— Sélectionnez un chantier —</option>';
+  list.forEach(function (p) {
+    var label = (p.job_number ? (p.job_number + ' — ') : '') + (p.client_name || p.job_address || 'Sans nom');
+    html += '<option value="' + esc(p.job_number || label) + '">' + esc(label) + '</option>';
+  });
+  html += '<option value="__manual__">✏️ Autre / saisie manuelle…</option>';
+  sel.innerHTML = html;
+}
+
+function onProjectChange() {
+  var manual = document.getElementById('f_project').value === '__manual__';
+  document.getElementById('manualProjectField').style.display = manual ? 'flex' : 'none';
+  saveDraft();
+}
+
+function getSelectedProject() {
+  var sel = document.getElementById('f_project');
+  var val = sel.value;
+  if (val === '__manual__') {
+    var name = document.getElementById('f_project_manual').value.trim();
+    return { job_number: '', job_name: name, client_name: '' };
+  }
+  if (!val) return null;
+  var p = getProjectsList().find(function (x) { return (x.job_number || '') === val; });
+  if (p) {
+    return {
+      job_number: p.job_number || '',
+      job_name: p.client_name || p.job_address || ('Chantier ' + p.job_number),
+      client_name: p.client_name || ''
+    };
+  }
+  return { job_number: val, job_name: val, client_name: '' };
+}
+
+// ── Calcul des heures ──
+function computeHours() {
+  var a = document.getElementById('f_arrival').value;
+  var d = document.getElementById('f_departure').value;
+  if (!a || !d) return;
+  var pa = a.split(':'), pd = d.split(':');
+  var minA = (+pa[0]) * 60 + (+pa[1]);
+  var minD = (+pd[0]) * 60 + (+pd[1]);
+  var diff = minD - minA;
+  if (diff < 0) diff += 24 * 60; // chevauchement minuit
+  var h = Math.round((diff / 60) * 100) / 100;
+  document.getElementById('f_hours').value = h;
+  saveDraft();
+}
+
+// ── Photos : compression côté client puis stockage en mémoire ──
+function addPhotos(stage, input) {
+  var files = Array.prototype.slice.call(input.files || []);
+  input.value = ''; // permettre de re-sélectionner le même fichier
+  files.forEach(function (file) {
+    if (!file.type || file.type.indexOf('image/') !== 0) return;
+    compressImage(file, function (dataUrl) {
+      PHOTOS[stage].push(dataUrl);
+      renderThumbs(stage);
+      saveDraft();
+    });
+  });
+}
+
+function compressImage(file, cb) {
+  var reader = new FileReader();
+  reader.onload = function (e) {
+    var img = new Image();
+    img.onload = function () {
+      var MAX = 1600;
+      var w = img.width, h = img.height;
+      if (w > MAX || h > MAX) {
+        if (w >= h) { h = Math.round(h * MAX / w); w = MAX; }
+        else        { w = Math.round(w * MAX / h); h = MAX; }
+      }
+      var canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      var ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, w, h);
+      ctx.drawImage(img, 0, 0, w, h);
+      cb(canvas.toDataURL('image/jpeg', 0.7));
+    };
+    img.onerror = function () { /* image illisible, ignorée */ };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function renderThumbs(stage) {
+  var box = document.getElementById('thumbs_' + stage);
+  box.innerHTML = '';
+  PHOTOS[stage].forEach(function (dataUrl, i) {
+    var div = document.createElement('div');
+    div.className = 'thumb';
+    div.innerHTML = '<img src="' + dataUrl + '" alt=""><button class="rm" title="Retirer">×</button>';
+    div.querySelector('.rm').onclick = function () { PHOTOS[stage].splice(i, 1); renderThumbs(stage); saveDraft(); };
+    box.appendChild(div);
+  });
+}
+
+// ── Brouillon local (résilience : ne rien perdre) ──
+function saveDraft() {
+  try {
+    var draft = {
+      employee: val('f_employee'), date: val('f_date'), hours: val('f_hours'),
+      arrival: val('f_arrival'), departure: val('f_departure'),
+      project: val('f_project'), projectManual: val('f_project_manual'),
+      work: val('f_work'), materials: val('f_materials'), problems: val('f_problems'),
+      remaining: val('f_remaining'), comments: val('f_comments'), signature: val('f_signature'),
+      photos: PHOTOS
+    };
+    ISQStore.setItem(DRAFT_KEY, JSON.stringify(draft));
+  } catch (e) {}
+}
+
+function restoreDraft() {
+  var draft;
+  try { draft = JSON.parse(ISQStore.getItem(DRAFT_KEY) || 'null'); } catch (e) { draft = null; }
+  if (!draft) return;
+  // Ne restaurer que si le brouillon concerne aujourd'hui (sinon nouvelle journée = nouveau rapport)
+  if (draft.date && draft.date !== todayISO()) { ISQStore.removeItem(DRAFT_KEY); return; }
+  setVal('f_employee', draft.employee); setVal('f_hours', draft.hours);
+  setVal('f_arrival', draft.arrival); setVal('f_departure', draft.departure);
+  setVal('f_work', draft.work); setVal('f_materials', draft.materials);
+  setVal('f_problems', draft.problems); setVal('f_remaining', draft.remaining);
+  setVal('f_comments', draft.comments); setVal('f_signature', draft.signature);
+  if (draft.project) { document.getElementById('f_project').value = draft.project; onProjectChange(); }
+  setVal('f_project_manual', draft.projectManual);
+  if (draft.photos) {
+    PHOTOS = { avant: draft.photos.avant || [], pendant: draft.photos.pendant || [], apres: draft.photos.apres || [] };
+    renderThumbs('avant'); renderThumbs('pendant'); renderThumbs('apres');
+  }
+}
+
+// ── Envoi ──
+async function submitReport() {
+  var project = getSelectedProject();
+  var employee = val('f_employee');
+  var date = val('f_date');
+  var work = val('f_work');
+  var signature = val('f_signature');
+  var confirmed = document.getElementById('f_confirm').checked;
+
+  // Validation côté client
+  var errors = [];
+  if (!employee) errors.push("le nom de l'employé");
+  if (!date) errors.push('la date');
+  if (!project || !(project.job_number || project.job_name)) errors.push('le chantier');
+  if (!work) errors.push('les travaux réalisés');
+  if (!signature) errors.push('la signature');
+  if (errors.length) { showStatus('⚠️ Veuillez remplir : ' + errors.join(', ') + '.', 'err'); return; }
+  if (!confirmed) { showStatus('⚠️ Veuillez cocher la case de confirmation avant d\'envoyer.', 'err'); return; }
+
+  var allPhotos = [];
+  ['avant', 'pendant', 'apres'].forEach(function (st) {
+    PHOTOS[st].forEach(function (dataUrl) { allPhotos.push({ stage: st, dataUrl: dataUrl }); });
+  });
+
+  var payload = {
+    employee_name: employee,
+    report_date: date,
+    job_number: project.job_number,
+    job_name: project.job_name,
+    client_name: project.client_name,
+    arrival_time: val('f_arrival'),
+    departure_time: val('f_departure'),
+    hours_worked: val('f_hours'),
+    work_done: work,
+    materials_used: val('f_materials'),
+    problems: val('f_problems'),
+    remaining_work: val('f_remaining'),
+    comments: val('f_comments'),
+    signature: signature,
+    photos: allPhotos
+  };
+
+  var btn = document.getElementById('btnSend');
+  btn.disabled = true;
+  showStatus('⏳ Envoi en cours… (' + allPhotos.length + ' photo' + (allPhotos.length !== 1 ? 's' : '') + ')', 'loading');
+
+  var r = await ISQApi.post('/api/daily-reports', payload);
+  btn.disabled = false;
+
+  if (r.ok && r.data.emailSent) {
+    lastReportId = r.data.id;
+    ISQStore.removeItem(DRAFT_KEY);
+    showSuccess(r.data.message || 'Compte rendu envoyé au bureau.');
+  } else if (r.data && r.data.saved) {
+    // Enregistré mais courriel échoué : proposer un renvoi
+    lastReportId = r.data.id;
+    showStatus('⚠️ ' + (r.data.message || 'Enregistré, mais le courriel a échoué.') +
+      (r.data.error ? '\n\nDétail : ' + r.data.error : ''), 'err', true);
+  } else {
+    showStatus('❌ ' + (r.data && r.data.error ? r.data.error : 'Échec de l\'envoi. Réessayez.'), 'err');
+  }
+}
+
+async function retrySend() {
+  if (!lastReportId) return submitReport();
+  var btn = document.getElementById('btnSend');
+  btn.disabled = true;
+  showStatus('⏳ Nouvelle tentative d\'envoi…', 'loading');
+  var r = await ISQApi.post('/api/daily-reports/' + lastReportId + '/resend', {});
+  btn.disabled = false;
+  if (r.ok && r.data.status === 'envoye') {
+    ISQStore.removeItem(DRAFT_KEY);
+    showSuccess(r.data.message || 'Courriel renvoyé au bureau.');
+  } else {
+    showStatus('❌ ' + (r.data && (r.data.error || r.data.message) ? (r.data.error || r.data.message) : 'Le renvoi a échoué.'), 'err', true);
+  }
+}
+
+// ── UI helpers ──
+function showStatus(msg, kind, withRetry) {
+  var box = document.getElementById('statusBox');
+  box.className = 'status-box show ' + (kind || '');
+  box.style.whiteSpace = 'pre-line';
+  box.textContent = msg;
+  if (withRetry) {
+    var b = document.createElement('button');
+    b.className = 'retry';
+    b.textContent = '🔄 Réessayer l\'envoi';
+    b.onclick = retrySend;
+    box.appendChild(document.createElement('br'));
+    box.appendChild(b);
+  }
+  box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function showSuccess(msg) {
+  document.getElementById('formWrap').style.display = 'none';
+  document.getElementById('successMsg').textContent = msg;
+  document.getElementById('successScreen').classList.add('show');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function resetForm() {
+  PHOTOS = { avant: [], pendant: [], apres: [] };
+  ISQStore.removeItem(DRAFT_KEY);
+  ['f_work','f_materials','f_problems','f_remaining','f_comments','f_arrival','f_departure','f_hours','f_project_manual']
+    .forEach(function (id) { setVal(id, ''); });
+  document.getElementById('f_project').value = '';
+  document.getElementById('f_confirm').checked = false;
+  document.getElementById('manualProjectField').style.display = 'none';
+  ['avant','pendant','apres'].forEach(renderThumbs);
+  document.getElementById('f_date').value = todayISO();
+  document.getElementById('statusBox').className = 'status-box';
+  document.getElementById('successScreen').classList.remove('show');
+  document.getElementById('formWrap').style.display = '';
+  lastReportId = null;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function val(id) { var el = document.getElementById(id); return el ? el.value.trim() : ''; }
+function setVal(id, v) { var el = document.getElementById(id); if (el) el.value = v || ''; }
+function esc(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+</script>
+
+</body>
+</html>

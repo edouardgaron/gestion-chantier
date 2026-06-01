@@ -12,6 +12,6 @@ window.ISQ_WEBHOOKS = {
   meteo:           '',   // 🔔 Alerte météo
   lookup:          'https://edouardgaron.app.n8n.cloud/webhook/sheets-lookup',   // 🔍 Lookup Google Sheets
   liste_projets:   'https://edouardgaron.app.n8n.cloud/webhook/liste-projets',   // 📋 Liste des projets (retourne un tableau JSON)
-  submit:          'https://edouardgaron.app.n8n.cloud/webhook/isq-fiches-chantier',   // 📤 Soumission de fiches au bureau
+  submit:          '',   // ⚠️ DÉPRÉCIÉ — l'envoi des comptes rendus est maintenant NATIF (Nodemailer + SMTP Gmail), voir /api/daily-reports. Plus aucun appel à n8n pour le courriel.
   google_place_id: ''    // ⭐ Google Place ID pour les avis Google
 };
