@@ -116,6 +116,31 @@
       cursor: pointer; line-height: 1; display: flex; align-items: center; justify-content: center;
     }
 
+    /* Sections repliables (champs avancés optionnels) */
+    .collapsible .card-title { cursor: pointer; margin-bottom: 0; user-select: none; }
+    .collapsible .card-title .chev { margin-left: auto; transition: transform .2s; font-size: 14px; color: #999; }
+    .collapsible.open .card-title .chev { transform: rotate(180deg); }
+    .collapsible .collapse-body { display: none; padding-top: 16px; }
+    .collapsible.open .collapse-body { display: block; }
+    .opt-tag { font-size: 10px; font-weight: 700; color: #999; background: var(--gris); border-radius: 99px; padding: 2px 8px; margin-left: 6px; }
+
+    /* Matériaux */
+    .mat-item { border: 1.5px solid var(--bordure); border-radius: 11px; padding: 12px; margin-bottom: 12px; background: #fbfcfd; position: relative; }
+    .mat-item .mat-head { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }
+    .mat-item .mat-head select { flex: 1; }
+    .mat-rm { background: #fdecea; color: var(--rouge); border: none; width: 38px; height: 38px; border-radius: 8px; font-size: 18px; cursor: pointer; flex-shrink: 0; }
+    .mat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .mat-grid .full { grid-column: 1 / -1; }
+    .mat-grid label { font-size: 10px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: .3px; margin-bottom: 3px; display: block; }
+    .mat-grid input { padding: 9px 10px; font-size: 15px; }
+    .mat-check { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #555; font-weight: 600; padding-top: 6px; }
+    .mat-check input { width: 20px; height: 20px; accent-color: var(--orange); }
+    .btn-add-mat { width: 100%; padding: 13px; background: #eef4fb; color: var(--bleu); border: 1.5px dashed var(--bleu); border-radius: 10px; font-family: inherit; font-weight: 700; font-size: 14px; cursor: pointer; }
+    .btn-add-mat:active { background: #e0ecf8; }
+    .mat-empty { font-size: 13px; color: #999; text-align: center; padding: 10px 0; }
+    .mat-cost { font-size: 13px; font-weight: 700; color: var(--texte); text-align: right; margin-top: 8px; }
+    .mat-cost span { color: var(--bleu); }
+
     /* Confirmation / signature */
     .confirm-row { display: flex; align-items: flex-start; gap: 10px; background: var(--gris); border-radius: 10px; padding: 14px; }
     .confirm-row input[type="checkbox"] { width: 22px; height: 22px; flex-shrink: 0; margin-top: 1px; accent-color: var(--bleu); }
@@ -209,6 +234,16 @@
         <input type="time" id="f_departure" onchange="computeHours()">
       </div>
     </div>
+
+    <div class="field">
+      <label for="f_employees_present">Autres employés présents</label>
+      <input type="text" id="f_employees_present" placeholder="ex : Éric Roy, Sophie Lavoie (optionnel)">
+    </div>
+
+    <div class="field">
+      <label for="f_foreman">Chef d'équipe</label>
+      <input type="text" id="f_foreman" placeholder="Nom du chef d'équipe">
+    </div>
   </div>
 
   <!-- TRAVAUX -->
@@ -267,6 +302,76 @@
     </div>
   </div>
 
+  <!-- ÉTAT DU CHANTIER (optionnel, repliable) -->
+  <div class="card collapsible" id="sectionEtat">
+    <div class="card-title" onclick="toggleSection('sectionEtat')">
+      <span>🏗️ État du chantier</span><span class="opt-tag">optionnel</span><span class="chev">▾</span>
+    </div>
+    <div class="collapse-body">
+      <div class="field">
+        <label for="f_percent">Pourcentage complété : <span id="pctLabel">0</span> %</label>
+        <input type="range" id="f_percent" min="0" max="100" step="5" value="0" oninput="document.getElementById('pctLabel').textContent=this.value; saveDraft();">
+      </div>
+      <div class="field">
+        <label for="f_current_step">Étape actuelle</label>
+        <input type="text" id="f_current_step" placeholder="ex : Application apprêt">
+      </div>
+      <div class="field">
+        <label for="f_remaining_steps">Étapes restantes</label>
+        <textarea id="f_remaining_steps" placeholder="Étapes à venir pour terminer le chantier…"></textarea>
+      </div>
+      <div class="field">
+        <label for="f_zones">Zones complétées aujourd'hui</label>
+        <textarea id="f_zones" placeholder="ex : Façade avant, côté garage"></textarea>
+      </div>
+      <div class="field">
+        <label for="f_extra_work">Travaux supplémentaires</label>
+        <textarea id="f_extra_work" placeholder="Travaux hors mandat initial…"></textarea>
+      </div>
+      <div class="field">
+        <label for="f_problem_priority">Priorité du problème</label>
+        <select id="f_problem_priority">
+          <option value="">— Aucune —</option>
+          <option value="Basse">Basse</option>
+          <option value="Moyenne">Moyenne</option>
+          <option value="Haute">Haute</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="f_corrective">Action corrective</label>
+        <textarea id="f_corrective" placeholder="Mesure prise ou prévue pour régler le problème…"></textarea>
+      </div>
+      <div class="field">
+        <label for="f_supervisor">Commentaires du superviseur</label>
+        <textarea id="f_supervisor" placeholder="Observations du superviseur…"></textarea>
+      </div>
+      <div class="field">
+        <label for="f_notes">Notes importantes</label>
+        <textarea id="f_notes" placeholder="Informations à retenir…"></textarea>
+      </div>
+      <div class="field">
+        <label for="f_tomorrow">Travaux prévus demain</label>
+        <textarea id="f_tomorrow" placeholder="Planification du lendemain…"></textarea>
+      </div>
+      <div class="field">
+        <label for="f_foreman_signature">Signature du chef d'équipe</label>
+        <input type="text" id="f_foreman_signature" placeholder="Nom du chef d'équipe pour validation">
+      </div>
+    </div>
+  </div>
+
+  <!-- MATÉRIAUX (optionnel, repliable) -->
+  <div class="card collapsible" id="sectionMat">
+    <div class="card-title" onclick="toggleSection('sectionMat')">
+      <span>🧰 Matériaux &amp; outils utilisés</span><span class="opt-tag">optionnel</span><span class="chev">▾</span>
+    </div>
+    <div class="collapse-body">
+      <div id="matList"></div>
+      <button type="button" class="btn-add-mat" onclick="addMaterial()">＋ Ajouter un matériau / outil</button>
+      <div class="mat-cost" id="matCost"></div>
+    </div>
+  </div>
+
   <!-- CONFIRMATION -->
   <div class="card">
     <div class="card-title">✍️ Confirmation</div>
@@ -317,13 +422,23 @@ document.addEventListener('DOMContentLoaded', function () {
   populateProjects();
   restoreDraft();
 
+  renderMaterials();
+
   // Sauvegarde de brouillon à chaque saisie
   ['f_employee','f_date','f_hours','f_arrival','f_departure','f_work','f_materials',
-   'f_problems','f_remaining','f_comments','f_signature','f_project','f_project_manual']
+   'f_problems','f_remaining','f_comments','f_signature','f_project','f_project_manual',
+   'f_employees_present','f_foreman','f_current_step','f_remaining_steps','f_zones','f_extra_work',
+   'f_problem_priority','f_corrective','f_supervisor','f_notes','f_tomorrow','f_foreman_signature']
     .forEach(function (id) {
       var el = document.getElementById(id);
       if (el) el.addEventListener('input', saveDraft);
     });
+
+  // Pré-remplir le chef d'équipe depuis le projet sélectionné si vide
+  document.getElementById('f_project').addEventListener('change', function () {
+    var p = getSelectedProject();
+    if (p && p.meta && p.meta.foreman_name && !val('f_foreman')) setVal('f_foreman', p.meta.foreman_name);
+  });
 });
 
 function todayISO() {
@@ -361,7 +476,7 @@ function getSelectedProject() {
   var val = sel.value;
   if (val === '__manual__') {
     var name = document.getElementById('f_project_manual').value.trim();
-    return { job_number: '', job_name: name, client_name: '' };
+    return { job_number: '', job_name: name, client_name: '', meta: {} };
   }
   if (!val) return null;
   var p = getProjectsList().find(function (x) { return (x.job_number || '') === val; });
@@ -369,10 +484,24 @@ function getSelectedProject() {
     return {
       job_number: p.job_number || '',
       job_name: p.client_name || p.job_address || ('Chantier ' + p.job_number),
-      client_name: p.client_name || ''
+      client_name: p.client_name || '',
+      // Métadonnées du projet reprises automatiquement pour les PDF
+      meta: {
+        client_phone: p.client_phone || '',
+        client_email: p.client_email || '',
+        job_address: p.job_address || '',
+        work_type: p.work_type || '',
+        start_date: p.start_date || '',
+        end_date: p.end_date || '',
+        foreman_name: p.foreman_name || ''
+      }
     };
   }
-  return { job_number: val, job_name: val, client_name: '' };
+  return { job_number: val, job_name: val, client_name: '', meta: {} };
+}
+
+function toggleSection(id) {
+  document.getElementById(id).classList.toggle('open');
 }
 
 // ── Calcul des heures ──
@@ -441,6 +570,78 @@ function renderThumbs(stage) {
   });
 }
 
+// ── Matériaux & outils ──
+var MATERIALS = [];
+var MAT_CATEGORIES = [
+  { value: 'peinture', label: '🎨 Peinture' },
+  { value: 'materiau', label: '📦 Matériau' },
+  { value: 'outil',    label: '🧰 Outil' }
+];
+
+function addMaterial(data) {
+  MATERIALS.push(data || { category: 'peinture', item: '', color: '', used: '', remaining: '', unit_cost: '', broken: false, replace: false });
+  renderMaterials();
+  saveDraft();
+}
+function removeMaterial(i) { MATERIALS.splice(i, 1); renderMaterials(); saveDraft(); }
+
+function renderMaterials() {
+  var box = document.getElementById('matList');
+  box.innerHTML = '';
+  if (!MATERIALS.length) {
+    box.innerHTML = '<div class="mat-empty">Aucun matériau ajouté. Touchez « Ajouter » pour en saisir un.</div>';
+  }
+  MATERIALS.forEach(function (m, i) {
+    var isTool = m.category === 'outil';
+    var div = document.createElement('div');
+    div.className = 'mat-item';
+    var opts = MAT_CATEGORIES.map(function (c) {
+      return '<option value="' + c.value + '"' + (m.category === c.value ? ' selected' : '') + '>' + c.label + '</option>';
+    }).join('');
+    div.innerHTML =
+      '<div class="mat-head">' +
+        '<select data-mi="' + i + '" data-mf="category">' + opts + '</select>' +
+        '<button type="button" class="mat-rm" title="Retirer" data-rm="' + i + '">×</button>' +
+      '</div>' +
+      '<div class="mat-grid">' +
+        '<div class="full"><label>' + (m.category === 'peinture' ? 'Produit' : (isTool ? 'Outil' : 'Matériau')) + '</label>' +
+          '<input type="text" data-mi="' + i + '" data-mf="item" value="' + esc(m.item) + '" placeholder="Désignation"></div>' +
+        (m.category === 'peinture' ? '<div class="full"><label>Couleur</label><input type="text" data-mi="' + i + '" data-mf="color" value="' + esc(m.color) + '" placeholder="ex : Blanc cassé"></div>' : '') +
+        '<div><label>Qté utilisée</label><input type="text" data-mi="' + i + '" data-mf="used" value="' + esc(m.used) + '" inputmode="decimal"></div>' +
+        '<div><label>Qté restante</label><input type="text" data-mi="' + i + '" data-mf="remaining" value="' + esc(m.remaining) + '" inputmode="decimal"></div>' +
+        (isTool ? '' : '<div class="full"><label>Coût unitaire ($)</label><input type="number" step="0.01" data-mi="' + i + '" data-mf="unit_cost" value="' + esc(m.unit_cost) + '" inputmode="decimal" placeholder="0.00"></div>') +
+        '<div class="mat-check"><input type="checkbox" data-mi="' + i + '" data-mf="broken"' + (m.broken ? ' checked' : '') + '><span>Bris / perte</span></div>' +
+        (isTool ? '<div class="mat-check"><input type="checkbox" data-mi="' + i + '" data-mf="replace"' + (m.replace ? ' checked' : '') + '><span>Remplacement requis</span></div>' : '') +
+      '</div>';
+    box.appendChild(div);
+  });
+  // brancher les événements
+  box.querySelectorAll('[data-mi]').forEach(function (el) {
+    var i = +el.getAttribute('data-mi'), f = el.getAttribute('data-mf');
+    var evt = (el.type === 'checkbox') ? 'change' : 'input';
+    el.addEventListener(evt, function () {
+      MATERIALS[i][f] = (el.type === 'checkbox') ? el.checked : el.value;
+      if (f === 'category') renderMaterials();   // change de colonnes
+      if (f === 'unit_cost' || f === 'used') updateMatCost();
+      saveDraft();
+    });
+  });
+  box.querySelectorAll('[data-rm]').forEach(function (b) {
+    b.addEventListener('click', function () { removeMaterial(+b.getAttribute('data-rm')); });
+  });
+  updateMatCost();
+}
+
+function updateMatCost() {
+  var total = 0;
+  MATERIALS.forEach(function (m) {
+    if (m.category === 'outil') return;
+    total += (parseFloat(m.used) || 0) * (parseFloat(m.unit_cost) || 0);
+  });
+  var el = document.getElementById('matCost');
+  el.innerHTML = total > 0 ? ('Coût matériel du jour : <span>' + total.toLocaleString('fr-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' $</span>') : '';
+}
+
 // ── Brouillon local (résilience : ne rien perdre) ──
 function saveDraft() {
   try {
@@ -448,8 +649,15 @@ function saveDraft() {
       employee: val('f_employee'), date: val('f_date'), hours: val('f_hours'),
       arrival: val('f_arrival'), departure: val('f_departure'),
       project: val('f_project'), projectManual: val('f_project_manual'),
+      employees_present: val('f_employees_present'), foreman: val('f_foreman'),
       work: val('f_work'), materials: val('f_materials'), problems: val('f_problems'),
       remaining: val('f_remaining'), comments: val('f_comments'), signature: val('f_signature'),
+      // champs étendus
+      percent: val('f_percent'), current_step: val('f_current_step'), remaining_steps: val('f_remaining_steps'),
+      zones: val('f_zones'), extra_work: val('f_extra_work'), problem_priority: val('f_problem_priority'),
+      corrective: val('f_corrective'), supervisor: val('f_supervisor'), notes: val('f_notes'),
+      tomorrow: val('f_tomorrow'), foreman_signature: val('f_foreman_signature'),
+      matItems: MATERIALS,
       photos: PHOTOS
     };
     ISQStore.setItem(DRAFT_KEY, JSON.stringify(draft));
@@ -464,11 +672,20 @@ function restoreDraft() {
   if (draft.date && draft.date !== todayISO()) { ISQStore.removeItem(DRAFT_KEY); return; }
   setVal('f_employee', draft.employee); setVal('f_hours', draft.hours);
   setVal('f_arrival', draft.arrival); setVal('f_departure', draft.departure);
+  setVal('f_employees_present', draft.employees_present); setVal('f_foreman', draft.foreman);
   setVal('f_work', draft.work); setVal('f_materials', draft.materials);
   setVal('f_problems', draft.problems); setVal('f_remaining', draft.remaining);
   setVal('f_comments', draft.comments); setVal('f_signature', draft.signature);
+  // champs étendus
+  setVal('f_current_step', draft.current_step); setVal('f_remaining_steps', draft.remaining_steps);
+  setVal('f_zones', draft.zones); setVal('f_extra_work', draft.extra_work);
+  setVal('f_problem_priority', draft.problem_priority); setVal('f_corrective', draft.corrective);
+  setVal('f_supervisor', draft.supervisor); setVal('f_notes', draft.notes);
+  setVal('f_tomorrow', draft.tomorrow); setVal('f_foreman_signature', draft.foreman_signature);
+  if (draft.percent) { setVal('f_percent', draft.percent); var pl = document.getElementById('pctLabel'); if (pl) pl.textContent = draft.percent; }
   if (draft.project) { document.getElementById('f_project').value = draft.project; onProjectChange(); }
   setVal('f_project_manual', draft.projectManual);
+  if (Array.isArray(draft.matItems) && draft.matItems.length) { MATERIALS = draft.matItems; renderMaterials(); }
   if (draft.photos) {
     PHOTOS = { avant: draft.photos.avant || [], pendant: draft.photos.pendant || [], apres: draft.photos.apres || [] };
     renderThumbs('avant'); renderThumbs('pendant'); renderThumbs('apres');
@@ -499,6 +716,40 @@ async function submitReport() {
     PHOTOS[st].forEach(function (dataUrl) { allPhotos.push({ stage: st, dataUrl: dataUrl }); });
   });
 
+  // Nettoyer les matériaux (retirer les lignes vides)
+  var materials = MATERIALS.filter(function (m) { return (m.item && m.item.trim()) || m.used || m.unit_cost; })
+    .map(function (m) {
+      return {
+        category: m.category || 'materiau', item: (m.item || '').trim(), color: (m.color || '').trim(),
+        used: m.used || '', remaining: m.remaining || '', unit_cost: m.unit_cost || '',
+        broken: !!m.broken, replace: !!m.replace
+      };
+    });
+
+  var meta = project.meta || {};
+  var details = {
+    employees_present: val('f_employees_present') || employee,
+    foreman_name: val('f_foreman'),
+    foreman_signature: val('f_foreman_signature'),
+    zones_completed: val('f_zones'),
+    extra_work: val('f_extra_work'),
+    percent_complete: val('f_percent'),
+    current_step: val('f_current_step'),
+    remaining_steps: val('f_remaining_steps'),
+    problem_priority: val('f_problem_priority'),
+    corrective_action: val('f_corrective'),
+    supervisor_comments: val('f_supervisor'),
+    important_notes: val('f_notes'),
+    tomorrow_work: val('f_tomorrow'),
+    // métadonnées du projet (pour la fiche de chantier)
+    client_phone: meta.client_phone || '',
+    client_email: meta.client_email || '',
+    job_address: meta.job_address || '',
+    work_type: meta.work_type || '',
+    start_date: meta.start_date || '',
+    end_date: meta.end_date || ''
+  };
+
   var payload = {
     employee_name: employee,
     report_date: date,
@@ -514,6 +765,8 @@ async function submitReport() {
     remaining_work: val('f_remaining'),
     comments: val('f_comments'),
     signature: signature,
+    details: details,
+    materials: materials,
     photos: allPhotos
   };
 
@@ -579,9 +832,15 @@ function showSuccess(msg) {
 
 function resetForm() {
   PHOTOS = { avant: [], pendant: [], apres: [] };
+  MATERIALS = [];
   ISQStore.removeItem(DRAFT_KEY);
-  ['f_work','f_materials','f_problems','f_remaining','f_comments','f_arrival','f_departure','f_hours','f_project_manual']
+  ['f_work','f_materials','f_problems','f_remaining','f_comments','f_arrival','f_departure','f_hours','f_project_manual',
+   'f_employees_present','f_foreman','f_current_step','f_remaining_steps','f_zones','f_extra_work',
+   'f_corrective','f_supervisor','f_notes','f_tomorrow','f_foreman_signature']
     .forEach(function (id) { setVal(id, ''); });
+  setVal('f_problem_priority', '');
+  setVal('f_percent', '0'); var pl = document.getElementById('pctLabel'); if (pl) pl.textContent = '0';
+  renderMaterials();
   document.getElementById('f_project').value = '';
   document.getElementById('f_confirm').checked = false;
   document.getElementById('manualProjectField').style.display = 'none';
