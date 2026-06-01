@@ -93,34 +93,30 @@ async function renderPageToPdf(o) {
     try { await page.evaluate(function () { return document.fonts ? document.fonts.ready : null; }); } catch (e) {}
     await new Promise(function (r) { setTimeout(r, 1000); });
 
-    // Cadrage : masquer les éléments d'écran non imprimables (boutons, etc.)
+    // Cadrage d'impression : masquer les éléments d'écran, garder les couleurs,
+    // et éviter de couper les cartes/sections/lignes de tableau entre deux pages.
+    // (Chaque page a déjà son propre en-tête de marque : on n'en rajoute pas, on
+    //  ajoute seulement un pied de page avec la numérotation.)
     await page.addStyleTag({ content:
       '@page { margin: 0; }' +
-      '.no-print, .btn-print, .btn-save, .toast, .btn-home, .top-bar button, #isq-user-badge { display:none !important; }' +
-      'html, body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }'
+      '.no-print, .btn-print, .btn-save, .btn-trigger, .toast, .btn-home, .top-bar button, ' +
+      '.navbar button, #isq-user-badge, [onclick*="print"] { display:none !important; }' +
+      'html, body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; ' +
+      'background:#fff !important; }' +
+      '* { box-shadow: none !important; }' +
+      // éviter les coupures disgracieuses
+      '.card, .section, .cfg-section, .doc-card, .mat-item, .info-box, .contact-box, ' +
+      '[class*="-card"], [class*="card-"], .color-card, .cp-card, .grid-item { ' +
+      '  page-break-inside: avoid; break-inside: avoid; }' +
+      'tr, img { page-break-inside: avoid; break-inside: avoid; }' +
+      'thead { display: table-header-group; }' +            // répéter l'en-tête du tableau
+      'h1, h2, h3, .section-title, [class*="section-title"] { page-break-after: avoid; }'
     });
 
-    const logo = o.logoDataUrl
-      ? '<img src="' + o.logoDataUrl + '" style="height:24px;width:auto;margin-right:8px;border-radius:3px;">'
-      : '';
-
-    // En-tête de marque (sur chaque page) — le « cadrage »
-    const headerTemplate =
-      '<div style="font-family:Arial,sans-serif; width:100%; box-sizing:border-box; padding:4px 10mm 0;">' +
-        '<div style="display:flex; align-items:center;">' +
-          '<div style="display:flex; align-items:center; flex:1;">' + logo +
-            '<span style="font-size:9px; font-weight:bold; color:#0170B9; letter-spacing:.3px;">INNOVASPRAY QUÉBEC</span>' +
-          '</div>' +
-          '<span style="font-size:9px; color:#555; font-weight:bold;">' + esc(o.docTitle || '') + '</span>' +
-          '<span style="font-size:8px; color:#999; margin-left:10px;">' + esc(o.dateStr || '') + '</span>' +
-        '</div>' +
-        '<div style="height:2px; background:#FF6600; margin-top:3px;"></div>' +
-      '</div>';
-
     const footerTemplate =
-      '<div style="font-family:Arial,sans-serif; width:100%; box-sizing:border-box; padding:0 10mm 4px; ' +
-        'font-size:8px; color:#999; display:flex; justify-content:space-between; align-items:center;">' +
-        '<span>InnovaSpray Québec — Document généré automatiquement</span>' +
+      '<div style="font-family:Arial,sans-serif; width:100%; box-sizing:border-box; padding:0 12mm 3px; ' +
+        'font-size:8px; color:#888; display:flex; justify-content:space-between; align-items:center;">' +
+        '<span>InnovaSpray Québec — ' + esc(o.docTitle || '') + (o.dateStr ? ' — ' + esc(o.dateStr) : '') + '</span>' +
         '<span>Page <span class="pageNumber"></span> / <span class="totalPages"></span></span>' +
       '</div>';
 
@@ -128,9 +124,9 @@ async function renderPageToPdf(o) {
       format: 'A4',
       printBackground: true,
       displayHeaderFooter: true,
-      headerTemplate: headerTemplate,
+      headerTemplate: '<div></div>',   // pas d'en-tête ajouté (la page a le sien)
       footerTemplate: footerTemplate,
-      margin: { top: '24mm', bottom: '16mm', left: '8mm', right: '8mm' }
+      margin: { top: '8mm', bottom: '14mm', left: '7mm', right: '7mm' }
     });
 
     return Buffer.isBuffer(pdf) ? pdf : Buffer.from(pdf);
