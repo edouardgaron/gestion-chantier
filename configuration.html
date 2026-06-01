@@ -7,6 +7,7 @@
   <title>Configuration — InnovaSpray Québec</title>
   <script src="isq-storage.js"></script>
   <script src="isq-auth.js"></script>
+  <script src="isq-api.js"></script>
   <script>ISQAuth.requireAdmin();</script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -236,6 +237,39 @@
       text-align: center;
     }
 
+    /* ── Configuration courriel ── */
+    .email-card { border-color: #0170B9; }
+    .field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
+    .field label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: #555; }
+    .field input {
+      border: 1.5px solid var(--bordure); border-radius: 7px; padding: 11px 13px;
+      font-family: inherit; font-size: 15px; color: var(--texte); background: var(--gris);
+      transition: border-color .2s, background .2s; min-height: 46px;
+    }
+    .field input:focus { outline: none; border-color: var(--bleu); background: #fff; }
+    .field .hint { font-size: 11px; color: #888; font-weight: 500; }
+    .email-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
+    .btn-primary, .btn-secondary {
+      padding: 12px 20px; border-radius: 7px; font-family: inherit; font-size: 14px;
+      font-weight: 700; cursor: pointer; min-height: 46px; transition: background .2s, transform .1s; border: none;
+    }
+    .btn-primary { background: var(--orange); color: #fff; }
+    .btn-primary:hover { background: #cc5200; }
+    .btn-secondary { background: #fff; color: var(--bleu); border: 2px solid var(--bleu); }
+    .btn-secondary:hover { background: var(--bleu); color: #fff; }
+    .btn-primary:disabled, .btn-secondary:disabled { opacity: .6; cursor: default; transform: none; }
+    .email-status { margin-top: 14px; padding: 11px 14px; border-radius: 7px; font-size: 13px; font-weight: 700; display: none; }
+    .email-status.show { display: block; }
+    .email-status.ok  { background: #e8f5e9; color: #2e7d32; border: 1.5px solid #a5d6a7; }
+    .email-status.err { background: #fdf3f2; color: #c0392b; border: 1.5px solid #e6b0aa; }
+    .email-status.loading { background: #fff8e1; color: #8a6d00; border: 1.5px solid #ffe082; }
+    .help-box {
+      background: #fff8e1; border: 1px solid #ffe082; border-radius: 7px;
+      padding: 12px 14px; font-size: 12px; color: #6d5800; margin-bottom: 16px; line-height: 1.6;
+    }
+    .help-box a { color: var(--bleu); font-weight: 700; }
+    .help-box ol { margin: 6px 0 0 18px; }
+
     @media print {
       body { background: #fff; }
       .top-bar { display: none !important; }
@@ -275,7 +309,53 @@
 
   <div class="body">
 
-    <div class="section-title">⚙️ Normes de production utilisées dans les calculs</div>
+    <div class="section-title">📬 Envoi des comptes rendus par courriel</div>
+
+    <div class="cfg-section email-card">
+      <div class="cfg-section-title">Configuration courriel (SMTP Gmail)</div>
+
+      <div class="help-box">
+        <strong>Comment obtenir un « mot de passe d'application » Gmail (gratuit, 2 minutes) :</strong>
+        <ol>
+          <li>La <strong>validation en deux étapes</strong> doit être activée sur le compte Google.</li>
+          <li>Allez sur <a href="https://myaccount.google.com/apppasswords" target="_blank">myaccount.google.com/apppasswords</a></li>
+          <li>Créez un mot de passe (nom : « InnovaSpray Chantier ») et copiez les 16 caractères.</li>
+          <li>Collez-le ci-dessous. Ce mot de passe <strong>n'expire pas</strong> (contrairement à l'ancien jeton n8n).</li>
+        </ol>
+      </div>
+
+      <div class="field">
+        <label for="em_user">Identifiant Gmail (expéditeur)</label>
+        <input type="email" id="em_user" autocomplete="off" placeholder="exemple@gmail.com">
+        <span class="hint">L'adresse Gmail qui enverra les courriels.</span>
+      </div>
+
+      <div class="field">
+        <label for="em_pass">Mot de passe d'application (16 caractères)</label>
+        <input type="password" id="em_pass" autocomplete="new-password" placeholder="••••••••••••••••">
+        <span class="hint" id="em_pass_hint">Laissez vide pour conserver le mot de passe déjà enregistré.</span>
+      </div>
+
+      <div class="field">
+        <label for="em_to">Adresse de réception des comptes rendus</label>
+        <input type="email" id="em_to" autocomplete="off" placeholder="garonedouard@gmail.com">
+        <span class="hint">L'adresse qui recevra chaque compte rendu de fin de journée.</span>
+      </div>
+
+      <div class="field">
+        <label for="em_from">Nom affiché de l'expéditeur</label>
+        <input type="text" id="em_from" autocomplete="off" placeholder="InnovaSpray Québec">
+      </div>
+
+      <div class="email-actions">
+        <button class="btn-primary" id="em_save" onclick="saveEmailConfig()">💾 Enregistrer</button>
+        <button class="btn-secondary" id="em_test" onclick="testEmailConfig()">🔌 Tester la connexion</button>
+      </div>
+
+      <div class="email-status" id="em_status"></div>
+    </div>
+
+    <div class="section-title" style="margin-top:28px;">⚙️ Normes de production utilisées dans les calculs</div>
 
     <div class="cfg-note">
       Ces valeurs sont utilisées par le <strong>Bon de travail</strong> pour calculer automatiquement les quantités de peinture et les heures de travail. Toute modification est sauvegardée instantanément.
@@ -632,10 +712,70 @@ function showSaveStatus(msg) {
   saveTimer = setTimeout(function() { el.textContent = ''; }, 2500);
 }
 
+// ================================================================
+// CONFIGURATION COURRIEL — envoi natif des comptes rendus
+// ================================================================
+function emStatus(msg, kind) {
+  var el = document.getElementById('em_status');
+  el.textContent = msg;
+  el.className = 'email-status show ' + (kind || '');
+}
+
+async function loadEmailConfig() {
+  var r = await ISQApi.get('/api/email-config');
+  if (!r.ok) { return; }
+  var c = r.data;
+  document.getElementById('em_user').value = c.smtpUser || '';
+  document.getElementById('em_to').value   = c.recipient || '';
+  document.getElementById('em_from').value = c.fromName || 'InnovaSpray Québec';
+  var hint = document.getElementById('em_pass_hint');
+  if (c.envManaged) {
+    document.getElementById('em_pass').placeholder = '(géré par variable d\'environnement)';
+    hint.textContent = 'Le mot de passe est défini par une variable d\'environnement serveur.';
+  } else if (c.hasPassword) {
+    hint.textContent = '✓ Un mot de passe est déjà enregistré. Laissez vide pour le conserver.';
+  } else {
+    hint.textContent = '⚠️ Aucun mot de passe enregistré — les courriels ne pourront pas être envoyés.';
+  }
+}
+
+async function saveEmailConfig() {
+  var btn = document.getElementById('em_save');
+  btn.disabled = true;
+  emStatus('⏳ Enregistrement…', 'loading');
+  var body = {
+    smtpUser:  document.getElementById('em_user').value.trim(),
+    recipient: document.getElementById('em_to').value.trim(),
+    fromName:  document.getElementById('em_from').value.trim()
+  };
+  var pass = document.getElementById('em_pass').value.trim();
+  if (pass) body.smtpPass = pass;
+  var r = await ISQApi.post('/api/email-config', body);
+  btn.disabled = false;
+  if (r.ok) {
+    emStatus('✓ Configuration enregistrée.', 'ok');
+    document.getElementById('em_pass').value = '';
+    loadEmailConfig();
+  } else {
+    emStatus('❌ ' + (r.data.error || 'Échec de l\'enregistrement.'), 'err');
+  }
+}
+
+async function testEmailConfig() {
+  var btn = document.getElementById('em_test');
+  btn.disabled = true;
+  emStatus('⏳ Test de la connexion SMTP…', 'loading');
+  var r = await ISQApi.post('/api/email-config/test', {});
+  btn.disabled = false;
+  if (r.ok && r.data.ok) emStatus('✓ ' + r.data.message, 'ok');
+  else emStatus('❌ ' + (r.data.error || 'Échec du test.'), 'err');
+}
+
 loadCFG();
 
 document.addEventListener('DOMContentLoaded', function() {
   fillCFGInputs();
+  loadEmailConfig();
 
   document.querySelectorAll('[data-cfg]').forEach(function(el) {
     el.addEventListener('input', function() {

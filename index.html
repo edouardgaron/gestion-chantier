@@ -809,6 +809,13 @@
       <a class="btn-open" href="configuration.html">Ouvrir →</a>
     </div>
 
+    <div class="doc-card" id="cardComptesRendus" style="display:none;">
+      <div class="doc-icon">📬</div>
+      <div class="doc-title">Comptes rendus reçus</div>
+      <div class="doc-desc">Consulter les comptes rendus quotidiens des employés — filtres, photos, statut d'envoi, renvoi</div>
+      <a class="btn-open" href="admin_comptes_rendus.html">Ouvrir →</a>
+    </div>
+
     <div class="doc-card" id="cardGestionUsers" style="display:none;">
       <div class="doc-icon">👥</div>
       <div class="doc-title">Gestion des utilisateurs</div>
@@ -885,9 +892,9 @@
     </div>
   </div>
 
-  <!-- COMPTE RENDU -->
+  <!-- COMPTE RENDU QUOTIDIEN (formulaire employé — envoi natif, sans n8n) -->
   <div class="cr-status" id="crStatus"></div>
-  <button class="btn-compterendu" id="btnCR" onclick="ouvrirModalCompteRendu()">
+  <button class="btn-compterendu" id="btnCR" onclick="window.location.href='compte_rendu_quotidien.html'">
     <span class="cr-icon">📬</span>
     Compte rendu de la journée
   </button>
@@ -926,8 +933,10 @@ document.addEventListener('DOMContentLoaded', function () {
   if (session && session.role === 'admin') {
     var cc = document.getElementById('cardConfig');
     var cu = document.getElementById('cardGestionUsers');
+    var cr = document.getElementById('cardComptesRendus');
     if (cc) cc.style.display = '';
     if (cu) cu.style.display = '';
+    if (cr) cr.style.display = '';
   }
 });
 </script>
