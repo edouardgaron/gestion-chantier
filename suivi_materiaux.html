@@ -1495,14 +1495,15 @@ addWasteRow();
         importItems.forEach(function(item) {
           if (!item.nom || !item.qty) return;
           var catId = item.catId || 'cat-ext';
-          var unitCost = lookupCataloguePrice(item.nom);
+          // Prix + quantité automatiques selon la config et le type de surface du projet
+          var pc = prixConfigImport(item, p.surface_type);
           addRow(catId, false);
           var tr = document.querySelector('#mainBody tr[data-row="' + rowSeq + '"]');
           if (!tr) return;
           tr.dataset.imported = '1';
-          if (tr.querySelector('.prod-in')) tr.querySelector('.prod-in').value = item.nom;
-          if (tr.querySelector('.qty-ord'))  tr.querySelector('.qty-ord').value  = item.qty;
-          if (unitCost && tr.querySelector('.unit-cost')) tr.querySelector('.unit-cost').value = unitCost;
+          if (tr.querySelector('.prod-in')) tr.querySelector('.prod-in').value = pc.nom;
+          if (tr.querySelector('.qty-ord'))  tr.querySelector('.qty-ord').value  = pc.qty;
+          if (pc.unitCost && tr.querySelector('.unit-cost')) tr.querySelector('.unit-cost').value = pc.unitCost;
           recalcRow(tr.querySelector('.qty-ord') || tr);
           openCats[catId] = true;
         });
@@ -1557,6 +1558,63 @@ function lookupCataloguePrice(nomStr) {
     }
   }
   return '';
+}
+
+// ================================================================
+// PRIX AUTOMATIQUE SELON LA CONFIG + LE TYPE DE SURFACE (import Bon de travail)
+// ================================================================
+function _prixConfig() {
+  var c = {};
+  try { c = JSON.parse(ISQStore.getItem('isq_config') || '{}'); } catch(e) {}
+  var D = {
+    prix_peinture_stuc: 142.09, prix_peinture_vinyle_bois: 53.50, prix_peinture_tole_metal: 221.18,
+    prix_papier_brun: 7.64, prix_tape: 6.79, prix_polythene: 16.49,
+    prix_appret: 0, prix_garnitures: 0, prix_toiture: 0, prix_portes_fenetres: 0, prix_disque: 0
+  };
+  Object.keys(D).forEach(function(k){
+    var v = parseFloat(c[k]);
+    c[k] = (!isNaN(v) && v > 0) ? v : D[k];
+  });
+  return c;
+}
+
+// Retourne { qty, unitCost, nom } pour une ligne importée, selon item.key et le type de surface.
+// Peinture du corps : stuc/tôle = seau de 5 gal, vinyle/bois/canexcel = au gallon.
+function prixConfigImport(item, surface) {
+  var C = _prixConfig();
+  var s = (surface || '').toLowerCase()
+    .replace(/[àâä]/g,'a').replace(/[éèê]/g,'e').replace(/[îï]/g,'i')
+    .replace(/[ôö]/g,'o').replace(/[ùû]/g,'u').replace(/ç/g,'c');
+  var gallons = parseFloat(item.qty) || 0;
+  var res = { qty: item.qty, unitCost: '', nom: item.nom };
+
+  var prix = 0, mode = 'unit'; // 'seau5' | 'gallon' | 'unit'
+  switch (item.key) {
+    case 'mat_1': // peinture du corps — selon la surface
+      if (/tole|metal|acier/.test(s))                              { prix = C.prix_peinture_tole_metal; mode = 'seau5'; }
+      else if (/stuc|crepi|brique|agr|beton|macon|pierre/.test(s)) { prix = C.prix_peinture_stuc;       mode = 'seau5'; }
+      else                                                         { prix = C.prix_peinture_vinyle_bois; mode = 'gallon'; }
+      break;
+    case 'mat_2': prix = C.prix_appret;          mode = 'gallon'; break;
+    case 'mat_3': prix = C.prix_garnitures;      mode = 'gallon'; break;
+    case 'mat_4': prix = C.prix_toiture;         mode = 'gallon'; break;
+    case 'mat_5': prix = C.prix_portes_fenetres; mode = 'gallon'; break;
+    case 'mat_6': prix = C.prix_tape;            mode = 'unit';   break;
+    case 'mat_7': prix = C.prix_polythene;       mode = 'unit';   break;
+    case 'mat_8': prix = C.prix_papier_brun;     mode = 'unit';   break;
+    case 'mat_9': prix = C.prix_disque;          mode = 'unit';   break;
+  }
+
+  if (prix && prix > 0) {
+    res.unitCost = String(prix);
+    if (mode === 'seau5')      { res.qty = String(Math.max(1, Math.ceil(gallons / 5))); res.nom = item.nom + ' (seau 5 gal)'; }
+    else if (mode === 'gallon'){ res.qty = String(Math.max(1, Math.ceil(gallons))); }
+    // 'unit' : quantité inchangée (rouleaux, disques…)
+  } else {
+    // Aucun prix configuré → repli sur le catalogue (comportement d'origine)
+    res.unitCost = lookupCataloguePrice(item.nom) || '';
+  }
+  return res;
 }
 
 function saveDocData() {

@@ -658,6 +658,43 @@
       </table>
     </div>
 
+    <!-- AUTRES PRODUITS (à compléter) -->
+    <div class="cfg-section">
+      <div class="cfg-section-title">Autres produits (peintures &amp; accessoires)</div>
+      <table class="cfg-table">
+        <thead>
+          <tr><th>Produit</th><th>Unité</th><th>Prix</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Apprêt</td>
+            <td>par gallon</td>
+            <td style="white-space:nowrap;"><input type="number" data-cfg="prix_appret" step="0.01"><span class="cfg-unit">$</span></td>
+          </tr>
+          <tr>
+            <td>Peinture garnitures / corniche</td>
+            <td>par gallon</td>
+            <td style="white-space:nowrap;"><input type="number" data-cfg="prix_garnitures" step="0.01"><span class="cfg-unit">$</span></td>
+          </tr>
+          <tr>
+            <td>Peinture toiture</td>
+            <td>par gallon</td>
+            <td style="white-space:nowrap;"><input type="number" data-cfg="prix_toiture" step="0.01"><span class="cfg-unit">$</span></td>
+          </tr>
+          <tr>
+            <td>Peinture portes / fenêtres</td>
+            <td>par gallon</td>
+            <td style="white-space:nowrap;"><input type="number" data-cfg="prix_portes_fenetres" step="0.01"><span class="cfg-unit">$</span></td>
+          </tr>
+          <tr>
+            <td>Disque à sabler</td>
+            <td>par disque</td>
+            <td style="white-space:nowrap;"><input type="number" data-cfg="prix_disque" step="0.01"><span class="cfg-unit">$</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
     <!-- MASQUAGE / CONSOMMABLES -->
     <div class="cfg-section">
       <div class="cfg-section-title">Masquage / consommables</div>
@@ -735,7 +772,13 @@ var CFG_DEFAULTS = {
   prix_peinture_tole_metal: 221.18,
   prix_papier_brun: 7.64,
   prix_tape: 6.79,
-  prix_polythene: 16.49
+  prix_polythene: 16.49,
+  // Autres produits (prix à compléter par l'utilisateur)
+  prix_appret: 0,
+  prix_garnitures: 0,
+  prix_toiture: 0,
+  prix_portes_fenetres: 0,
+  prix_disque: 0
 };
 
 function loadCFG() {

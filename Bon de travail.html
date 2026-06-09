@@ -1739,7 +1739,7 @@ function updateMatImport() {
     var nom   = nomEl ? ((nomEl.value || '').trim() || (nomEl.placeholder || '').trim()) : '';
     var qty   = qtyEl ? (qtyEl.value || '').trim() : '';
     if (!nom || !qty || qty === '0') return;
-    items.push({nom: nom, qty: qty, catId: m.catId});
+    items.push({nom: nom, qty: qty, catId: m.catId, key: m.key});
   });
   if (items.length > 0) {
     ISQStore.setItem('isq_import_materiaux', JSON.stringify(items));
