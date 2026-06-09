@@ -1374,7 +1374,8 @@ addWasteRow();
       if (p.job_number) saved = JSON.parse(ISQStore.getItem('isq_materiaux_' + p.job_number) || 'null');
       if (!saved) {
         var _courantMat = JSON.parse(ISQStore.getItem('isq_materiaux_courant') || 'null');
-        if (_courantMat && (!p.job_number || !_courantMat.job_number || _courantMat.job_number === p.job_number)) saved = _courantMat;
+        // Repli "courant" uniquement si AUCUN projet n'est sélectionné (isolation stricte par chantier)
+        if (_courantMat && !p.job_number) saved = _courantMat;
       }
     } catch(e) {}
     if (saved) {

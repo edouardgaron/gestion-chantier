@@ -1912,7 +1912,7 @@ function chargerListeSheets(silent) {
       var data;
       try { data = JSON.parse(text); } catch(e) { throw new Error('INVALID_JSON:' + text.substring(0, 120)); }
       var projets = Array.isArray(data) ? data : (data.projets || data.data || data.rows || []);
-      if (!projets.length) { showToastMsg('⚠️ Aucun projet reçu depuis Sheets'); return; }
+      if (!projets.length) { if (!silent) showToastMsg('⚠️ Aucun projet reçu depuis Sheets'); return; }
 
       var local = [];
       try { local = JSON.parse(ISQStore.getItem(PROJ_LIST_KEY) || '[]'); } catch(e) {}
@@ -1924,12 +1924,22 @@ function chargerListeSheets(silent) {
         for (var i = 0; i < local.length; i++) {
           if (local[i].job_number === p.job_number) { localEntry = local[i]; break; }
         }
-        merged.push(Object.assign({}, p, {
-          _from_sheets: true,
-          saved_at: localEntry ? localEntry.saved_at : null
-        }));
+        // Fusion additive : on part des données Sheets, puis le local NON VIDE est prioritaire
+        // (on ne perd jamais une info saisie/sauvegardée localement ; Sheets ne fait que combler
+        //  les champs absents et ajouter les nouveaux clients).
+        var entry = Object.assign({}, p);
+        if (localEntry) {
+          Object.keys(localEntry).forEach(function(k) {
+            if (k === '_from_sheets') return;
+            var v = localEntry[k];
+            if (v !== '' && v !== null && v !== undefined) entry[k] = v;
+          });
+        }
+        entry._from_sheets = true;
+        entry.saved_at = localEntry ? localEntry.saved_at : null;
+        merged.push(entry);
       });
-      // Ajouter les projets locaux absents de Sheets
+      // Ajouter les projets locaux absents de Sheets (jamais supprimés)
       local.forEach(function(l) {
         var already = false;
         for (var j = 0; j < merged.length; j++) { if (merged[j].job_number === l.job_number) { already = true; break; } }
@@ -1938,9 +1948,10 @@ function chargerListeSheets(silent) {
 
       ISQStore.setItem(PROJ_LIST_KEY, JSON.stringify(merged));
       renderProjectsList();
-      showToastMsg('✅ ' + projets.length + ' projet' + (projets.length !== 1 ? 's' : '') + ' chargé' + (projets.length !== 1 ? 's' : '') + ' depuis Sheets');
+      if (!silent) showToastMsg('✅ ' + projets.length + ' projet' + (projets.length !== 1 ? 's' : '') + ' chargé' + (projets.length !== 1 ? 's' : '') + ' depuis Sheets');
     })
     .catch(function(err) {
+      if (silent) return; // chargement automatique : ne pas déranger l'employé si n8n est indisponible
       var msg = err.message || '';
       if (msg.toLowerCase().indexOf('networkerror') !== -1 || msg.toLowerCase().indexOf('failed to fetch') !== -1 || msg.toLowerCase().indexOf('load failed') !== -1) {
         showToastMsg('❌ Connexion impossible — n8n est-il démarré ? Vérifiez l\'URL dans ⚙️ Webhooks');

@@ -2093,7 +2093,8 @@ document.addEventListener('input', function(e) {
       if (jobNumber) saved = JSON.parse(ISQStore.getItem('isq_bon_travail_' + jobNumber) || 'null');
       if (!saved) {
         var _courantBT = JSON.parse(ISQStore.getItem('isq_bon_travail_courant') || 'null');
-        if (_courantBT && (!jobNumber || !_courantBT.job_number || _courantBT.job_number === jobNumber)) saved = _courantBT;
+        // Repli "courant" uniquement si AUCUN projet n'est sélectionné (isolation stricte par chantier)
+        if (_courantBT && !jobNumber) saved = _courantBT;
       }
     } catch(e) {}
 
