@@ -536,7 +536,7 @@
       </div>
     </div>
     <div class="header-meta">
-      <input type="text" class="header-input num-input" data-jobber-field="job_number" value="#JOB-2024-001" placeholder="#JOB-____-___">
+      <input type="text" class="header-input num-input" data-jobber-field="job_number" value="" placeholder="#JOB-____-___">
       <p>Inspection finale : <input type="text" class="header-input" data-jobber-field="inspection_date" value="" placeholder="AAAA-MM-JJ" style="width:110px;"></p>
       <p>Inspecteur : <input type="text" class="header-input" data-jobber-field="inspector_name" value="" placeholder="Nom de l'inspecteur" style="width:140px;"></p>
     </div>
@@ -1056,8 +1056,9 @@
       if (p.job_number) saved = JSON.parse(ISQStore.getItem('isq_checklist_' + p.job_number) || 'null');
       if (!saved) {
         var _courantCL = JSON.parse(ISQStore.getItem('isq_checklist_courant') || 'null');
-        // Repli "courant" uniquement si AUCUN projet n'est sélectionné (isolation stricte par chantier)
-        if (_courantCL && !p.job_number) saved = _courantCL;
+        // Repli sur "courant" : aucun projet sélectionné, OU brouillon sans projet (à récupérer
+        // pour ne rien perdre), OU brouillon du même chantier — jamais les données d'un autre chantier.
+        if (_courantCL && (!p.job_number || !_courantCL.job_number || _courantCL.job_number === p.job_number)) saved = _courantCL;
       }
     } catch(e) {}
     if (saved) {

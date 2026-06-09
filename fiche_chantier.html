@@ -1263,15 +1263,17 @@ window.addEventListener('DOMContentLoaded', function() {
       if (p.job_number) saved = JSON.parse(ISQStore.getItem('isq_fiche_' + p.job_number + '_j1') || 'null');
       if (!saved) {
         var _courantFJ1 = JSON.parse(ISQStore.getItem('isq_fiche_courant_j1') || 'null');
-        // Repli "courant" uniquement si AUCUN projet n'est sélectionné (isolation stricte par chantier)
-        if (_courantFJ1 && !p.job_number) saved = _courantFJ1;
+        // Repli sur "courant" : aucun projet sélectionné, OU brouillon sans projet (à récupérer
+        // pour ne rien perdre), OU brouillon du même chantier — jamais les données d'un autre chantier.
+        if (_courantFJ1 && (!p.job_number || !_courantFJ1.job_number || _courantFJ1.job_number === p.job_number)) saved = _courantFJ1;
       }
       // Compatibilité avec les anciennes clés sans numéro de jour
       if (!saved && p.job_number) saved = JSON.parse(ISQStore.getItem('isq_fiche_' + p.job_number) || 'null');
       if (!saved) {
         var _courantF = JSON.parse(ISQStore.getItem('isq_fiche_courant') || 'null');
-        // Repli "courant" uniquement si AUCUN projet n'est sélectionné (isolation stricte par chantier)
-        if (_courantF && !p.job_number) saved = _courantF;
+        // Repli sur "courant" : aucun projet sélectionné, OU brouillon sans projet (à récupérer
+        // pour ne rien perdre), OU brouillon du même chantier — jamais les données d'un autre chantier.
+        if (_courantF && (!p.job_number || !_courantF.job_number || _courantF.job_number === p.job_number)) saved = _courantF;
       }
     } catch(e) {}
     if (saved) {

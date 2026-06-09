@@ -1800,6 +1800,9 @@ function saveJobData() {
     if (!jobNum) {
       try { jobNum = JSON.parse(ISQStore.getItem('isq_projet') || '{}').job_number || ''; } catch(e){}
     }
+    // Estampiller le numéro de chantier dans les données (le champ job_number est un <div> ignoré
+    // à la collecte) — nécessaire pour isoler correctement les chantiers au rechargement.
+    data.job_number = jobNum;
     var json = JSON.stringify(data);
     if (jobNum) ISQStore.setItem('isq_bon_travail_' + jobNum, json);
     ISQStore.setItem('isq_bon_travail_courant', json);
@@ -2093,8 +2096,9 @@ document.addEventListener('input', function(e) {
       if (jobNumber) saved = JSON.parse(ISQStore.getItem('isq_bon_travail_' + jobNumber) || 'null');
       if (!saved) {
         var _courantBT = JSON.parse(ISQStore.getItem('isq_bon_travail_courant') || 'null');
-        // Repli "courant" uniquement si AUCUN projet n'est sélectionné (isolation stricte par chantier)
-        if (_courantBT && !jobNumber) saved = _courantBT;
+        // Repli sur "courant" : aucun projet sélectionné, OU brouillon sans projet (à récupérer
+        // pour ne rien perdre), OU brouillon du même chantier — jamais les données d'un autre chantier.
+        if (_courantBT && (!jobNumber || !_courantBT.job_number || _courantBT.job_number === jobNumber)) saved = _courantBT;
       }
     } catch(e) {}
 
