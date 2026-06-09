@@ -185,7 +185,7 @@
 <body>
 
 <div class="navbar">
-  <a href="index.html" class="back">←</a>
+  <a href="index.html" class="back" onclick="event.preventDefault();saveDraft();window.location.href='index.html';">←</a>
   <div class="nav-titles">
     <div class="title">Compte rendu de la journée</div>
     <div class="subtitle">InnovaSpray Québec</div>
@@ -668,8 +668,8 @@ function restoreDraft() {
   var draft;
   try { draft = JSON.parse(ISQStore.getItem(DRAFT_KEY) || 'null'); } catch (e) { draft = null; }
   if (!draft) return;
-  // Ne restaurer que si le brouillon concerne aujourd'hui (sinon nouvelle journée = nouveau rapport)
-  if (draft.date && draft.date !== todayISO()) { ISQStore.removeItem(DRAFT_KEY); return; }
+  // Le brouillon est conservé indéfiniment tant que le rapport n'a pas été envoyé
+  // (effacé automatiquement après un envoi réussi). On le restaure quelle que soit sa date.
   setVal('f_employee', draft.employee); setVal('f_hours', draft.hours);
   setVal('f_arrival', draft.arrival); setVal('f_departure', draft.departure);
   setVal('f_employees_present', draft.employees_present); setVal('f_foreman', draft.foreman);
