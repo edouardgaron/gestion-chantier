@@ -625,6 +625,66 @@
       </div>
     </div>
 
+    <div class="section-title" style="margin-top:28px;">💲 Prix des produits</div>
+
+    <div class="cfg-note">
+      Prix unitaires des produits selon le type de surface, et des consommables de masquage. Toute modification est sauvegardée instantanément.
+    </div>
+
+    <!-- PEINTURE / REVÊTEMENT PAR SURFACE -->
+    <div class="cfg-section">
+      <div class="cfg-section-title">Peinture / revêtement — par type de surface</div>
+      <table class="cfg-table">
+        <thead>
+          <tr><th>Surface</th><th>Produit</th><th>Prix</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Stuc et crépi</td>
+            <td><strong>4-110XIC/05</strong><div style="font-size:11px;color:#888;margin-top:2px;">PP PERMA EXT PTFX ELAS WPB 4-110XIC 2189</div></td>
+            <td style="white-space:nowrap;"><input type="number" data-cfg="prix_peinture_stuc" step="0.01"><span class="cfg-unit">$</span></td>
+          </tr>
+          <tr>
+            <td>Vinyle / bois / Canexcel</td>
+            <td><strong>K33TQ8354</strong><div style="font-size:11px;color:#888;margin-top:2px;">DURATION SATIN ULTRA</div></td>
+            <td style="white-space:nowrap;"><input type="number" data-cfg="prix_peinture_vinyle_bois" step="0.01"><span class="cfg-unit">$</span></td>
+          </tr>
+          <tr>
+            <td>Tôle / métal</td>
+            <td><strong>16440/05</strong><div style="font-size:11px;color:#888;margin-top:2px;">DU DMND EXT LTX SAT WHT 16440 2189</div></td>
+            <td style="white-space:nowrap;"><input type="number" data-cfg="prix_peinture_tole_metal" step="0.01"><span class="cfg-unit">$</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- MASQUAGE / CONSOMMABLES -->
+    <div class="cfg-section">
+      <div class="cfg-section-title">Masquage / consommables</div>
+      <table class="cfg-table">
+        <thead>
+          <tr><th>Produit</th><th>Référence</th><th>Prix</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Papier brun</td>
+            <td><strong>TRC12915/EA</strong><div style="font-size:11px;color:#888;margin-top:2px;">SU 12915 15X180 BRN MASK PAPER</div></td>
+            <td style="white-space:nowrap;"><input type="number" data-cfg="prix_papier_brun" step="0.01"><span class="cfg-unit">$</span></td>
+          </tr>
+          <tr>
+            <td>Ruban (tape)</td>
+            <td><strong>MMM43022/EA</strong><div style="font-size:11px;color:#888;margin-top:2px;">SU 2055-48NP 2 SCOTCH GREEN MASK TAPE</div></td>
+            <td style="white-space:nowrap;"><input type="number" data-cfg="prix_tape" step="0.01"><span class="cfg-unit">$</span></td>
+          </tr>
+          <tr>
+            <td>Polythène</td>
+            <td><strong>MMM90040/EA</strong><div style="font-size:11px;color:#888;margin-top:2px;">SU AMF99 99X90 HAND-MASKR ADV MSK FILM</div></td>
+            <td style="white-space:nowrap;"><input type="number" data-cfg="prix_polythene" step="0.01"><span class="cfg-unit">$</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
   </div><!-- /body -->
 
   <div class="doc-footer">
@@ -668,7 +728,14 @@ var CFG_DEFAULTS = {
   calf_fen_double_maq: 1.166,  calf_fen_double_app: 0.30,  calf_fen_double_tube: 0.6,
   tape_par_gal: 5, tape_par_poly: 0.5, poly_par_fen: 5,
   papier_par_gal: 8, disque_par_pi2: 100,
-  nacelle_jour: 450, nacelle_semaine: 1650
+  nacelle_jour: 450, nacelle_semaine: 1650,
+  // Prix des produits ($/unité)
+  prix_peinture_stuc: 142.09,
+  prix_peinture_vinyle_bois: 53.50,
+  prix_peinture_tole_metal: 221.18,
+  prix_papier_brun: 7.64,
+  prix_tape: 6.79,
+  prix_polythene: 16.49
 };
 
 function loadCFG() {
